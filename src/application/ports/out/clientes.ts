@@ -19,7 +19,8 @@ export type ResultadoBusqueda = {
   readonly score: number;
 };
 
-export type ConsultaBusqueda = { readonly texto: string; readonly comuna?: string; readonly limite: number };
+/** `rutDigitos`: búsqueda por RUT (prefijo, sin puntos ni guion); en ese caso `texto` va vacío. */
+export type ConsultaBusqueda = { readonly texto: string; readonly rutDigitos?: string; readonly comuna?: string; readonly limite: number };
 
 export type NuevoClienteConLocal = {
   readonly rut?: string;

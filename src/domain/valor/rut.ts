@@ -35,3 +35,12 @@ export const normalizarRut = (rut: Rut): string => `${rut.cuerpo}-${rut.dv}`;
 
 export const formatearRut = (rut: Rut): string =>
   `${String(rut.cuerpo).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}-${rut.dv}`;
+
+/**
+ * Si lo escrito es solo un RUT (números, con o sin puntos y guion, con o sin dígito verificador) devuelve sus caracteres
+ * sin signos para buscar por prefijo; si no, `undefined`. Pide al menos 5 cifras para no confundirlo con un número de calle.
+ */
+export const dichoComoRut = (texto: string): string | undefined => {
+  const limpio = texto.replace(/[.\s-]/g, '').toUpperCase();
+  return /^\d{5,8}[\dK]?$/.test(limpio) ? limpio : undefined;
+};

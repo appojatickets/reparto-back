@@ -9,6 +9,23 @@ import { fakeClientes, localDe } from './fakes-clientes.test-util.js';
 const despachador = usuarioDe({ id: 'u-d', rol: 'despachador' });
 const admin = usuarioDe();
 
+describe('buscarClientes por RUT', () => {
+  it('un RUT escrito solo con números busca por RUT (sin puntos ni guion) y no por texto', async () => {
+    const clientes = fakeClientes();
+    const buscar = crearBuscarClientes({ clientes });
+    await buscar(despachador, { q: '77.975.918-0' });
+    expect(clientes.buscar).toHaveBeenLastCalledWith('empresa-1', { texto: '', rutDigitos: '779759180', limite: 8 });
+    await buscar(despachador, { q: '77975918', comuna: 'San Bernardo', limite: 3 });
+    expect(clientes.buscar).toHaveBeenLastCalledWith('empresa-1', { texto: '', rutDigitos: '77975918', comuna: 'San Bernardo', limite: 3 });
+  });
+
+  it('un número de calle no se toma por RUT', async () => {
+    const clientes = fakeClientes();
+    await crearBuscarClientes({ clientes })(despachador, { q: 'colon 765' });
+    expect(clientes.buscar).toHaveBeenLastCalledWith('empresa-1', { texto: 'colon 765', limite: 8 });
+  });
+});
+
 describe('buscarClientes', () => {
   it('normaliza el texto (tildes, mayúsculas) y filtra por la empresa del actor', async () => {
     const clientes = fakeClientes();

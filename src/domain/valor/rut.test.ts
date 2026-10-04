@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatearRut, normalizarRut, parsearRut } from './rut.js';
+import { dichoComoRut, formatearRut, normalizarRut, parsearRut } from './rut.js';
 
 describe('Rut (módulo 11)', () => {
   it.each([
@@ -33,5 +33,19 @@ describe('Rut (módulo 11)', () => {
     const r = parsearRut('12.345.678-4');
     expect(!r.ok && r.error.codigo).toBe('RUT_DV_INVALIDO');
     expect(!r.ok && r.error.mensaje).toContain('dígito');
+  });
+});
+
+describe('dichoComoRut', () => {
+  it('reconoce un RUT escrito solo con números, con o sin signos y dígito verificador', () => {
+    expect(dichoComoRut('77975918')).toBe('77975918');
+    expect(dichoComoRut('77.975.918-0')).toBe('779759180');
+    expect(dichoComoRut('7797591 8 0')).toBe('779759180');
+    expect(dichoComoRut('1234567k')).toBe('1234567K');
+    expect(dichoComoRut('12345')).toBe('12345');
+  });
+
+  it('no confunde un número de calle, una dirección ni un nombre con un RUT', () => {
+    for (const t of ['765', '1234', 'Av. Colón 765', 'minimarket 12345', '12 de octubre 123456', '', 'rabet', '123456789012']) expect(dichoComoRut(t), t).toBeUndefined();
   });
 });

@@ -177,3 +177,27 @@ describe('aislamiento entre empresas (nadie ve datos de otra empresa)', () => {
     expect(await repo.coincidenciaDeDireccion(e, undefined, 'plaza central 1')).toBeUndefined();
   });
 });
+
+describe('búsqueda por RUT', () => {
+  it('encuentra al cliente y todas sus direcciones por RUT (con o sin dígito verificador), y respeta empresa y comuna', async () => {
+    const a = await crearEmpresa(db, 'A-rut');
+    const b = await crearEmpresa(db, 'B-rut');
+    await repo.importar(a, [
+      { claveCliente: 'x', rut: '77975918-0', razonSocial: 'Rabelo Mágica SpA', locales: [
+        { claveLocal: 'x|1', direccion: 'Av. Colón Sur 765', comuna: 'San Bernardo', indices: [0] },
+        { claveLocal: 'x|2', direccion: 'Gran Avenida 1000', comuna: 'La Cisterna', indices: [1] },
+      ] },
+      { claveCliente: 'y', rut: '12345678-5', razonSocial: 'Otro SpA', locales: [{ claveLocal: 'y|1', direccion: 'Calle 1 10', comuna: 'Maipú', indices: [2] }] },
+    ]);
+    await repo.importar(b, [{ claveCliente: 'z', rut: '77975918-0', razonSocial: 'Ajeno', locales: [{ claveLocal: 'z|1', direccion: 'Calle 9 9', comuna: 'Maipú', indices: [0] }] }]);
+
+    const porCuerpo = await repo.buscar(a, { texto: '', rutDigitos: '77975918', limite: 8 });
+    expect(porCuerpo.map((r) => r.direccion).sort()).toEqual(['Av. Colón Sur 765', 'Gran Avenida 1000']);
+    expect(porCuerpo.every((r) => r.razonSocial === 'Rabelo Mágica SpA')).toBe(true);
+    expect((await repo.buscar(a, { texto: '', rutDigitos: '779759180', limite: 8 })).length).toBe(2);
+    expect((await repo.buscar(a, { texto: '', rutDigitos: '77975', limite: 8 })).length).toBe(2); // prefijo
+    expect((await repo.buscar(a, { texto: '', rutDigitos: '77975918', comuna: 'San Bernardo', limite: 8 })).map((r) => r.direccion)).toEqual(['Av. Colón Sur 765']);
+    expect(await repo.buscar(a, { texto: '', rutDigitos: '99999999', limite: 8 })).toEqual([]);
+    expect((await repo.buscar(b, { texto: '', rutDigitos: '77975918', limite: 8 })).map((r) => r.razonSocial)).toEqual(['Ajeno']);
+  });
+});

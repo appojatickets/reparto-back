@@ -41,18 +41,21 @@ export class PostgresClienteRepository implements ClienteRepository {
    * Autocompletado: ILIKE (lo acelera el índice trigram) para «rabe» → «Rabelo»; `<%` (word_similarity) tolera errores
    * de dictado. No se usa `%` porque una palabra corta contra una razón social larga da una similitud baja.
    */
-  async buscar(empresaId: string, { texto, comuna, limite }: ConsultaBusqueda): Promise<readonly ResultadoBusqueda[]> {
+  async buscar(empresaId: string, { texto, rutDigitos, comuna, limite }: ConsultaBusqueda): Promise<readonly ResultadoBusqueda[]> {
     const patron = `%${escaparLike(texto)}%`;
     const filtroComuna = comuna === undefined ? sql`` : sql`and l.comuna = ${comuna}`;
+    const filtroTexto = rutDigitos === undefined
+      ? sql`(c.razon_social_norm ilike ${patron} or l.direccion_norm ilike ${patron}
+             or ${texto}::text <% c.razon_social_norm or ${texto}::text <% l.direccion_norm)`
+      : sql`replace(c.rut, '-', '') like ${`${rutDigitos}%`}`;
     const r = await sql<FilaBusqueda>`
       select l.id as local_id, c.id as cliente_id, c.razon_social, l.direccion, l.comuna, l.lat, l.lng, l.pin_estado,
              l.foto_path, l.streetview_rumbo, l.nota,
-             greatest(word_similarity(${texto}::text, c.razon_social_norm), word_similarity(${texto}::text, l.direccion_norm))::float8 as score
+             ${rutDigitos === undefined ? sql`greatest(word_similarity(${texto}::text, c.razon_social_norm), word_similarity(${texto}::text, l.direccion_norm))::float8` : sql`1::float8`} as score
       from "local" l
       join cliente c on c.id = l.cliente_id
       where l.empresa_id = ${empresaId} and c.estado in ('nuevo', 'activo') ${filtroComuna}
-        and (c.razon_social_norm ilike ${patron} or l.direccion_norm ilike ${patron}
-             or ${texto}::text <% c.razon_social_norm or ${texto}::text <% l.direccion_norm)
+        and ${filtroTexto}
       order by score desc, c.razon_social, l.direccion
       limit ${limite}`.execute(this.db);
     return r.rows.map((f) => ({
