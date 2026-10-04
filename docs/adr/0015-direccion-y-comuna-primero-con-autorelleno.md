@@ -7,7 +7,7 @@ Al principio la base de clientes está vacía: el chofer cargará, sobre todo, *
 
 ## Decisión
 1. **Un solo campo** al cargar: dirección (con la comuna al final) o nombre del cliente, por voz o texto. Ejemplo: «Av. Colón 765 San Bernardo».
-2. **La comuna se detecta del texto** (si termina con el nombre de una comuna; así «Av. Providencia 2500» no se confunde) y se usa como filtro de la búsqueda. Se muestra siempre, en grande, junto a la dirección: al cargar, en la lista de cargadas, en la ruta y en las paradas en riesgo.
+2. **La comuna se detecta del texto** (solo si el texto termina con el nombre de una comuna; así «Av. Providencia 2500» no se confunde) y se usa como filtro de la búsqueda. Se muestra siempre, en grande, junto a la dirección: al cargar, en la lista de cargadas, en la ruta y en las paradas en riesgo.
 3. **Sin nombre de cliente:** si no hay, el local se llama como su dirección; cualquiera puede completar el nombre después (colaborativo).
 4. **Comuna obligatoria** al crear un cliente nuevo; se preselecciona la detectada y se puede cambiar.
 5. **Autorrelleno:** lo ya cargado (dirección, comuna, nombre, pin, foto, notas, horario) aparece al escribir las primeras letras, tolerando tildes y errores de dictado; elegir un resultado carga la entrega sin más datos.
