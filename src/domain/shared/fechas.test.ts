@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diaDeSemana, esFechaValida, fechaEnChile, sumarDias } from './fechas.js';
+import { diaDeSemana, esFechaValida, fechaEnChile, minutosEnChile, sumarDias } from './fechas.js';
 
 describe('fechas', () => {
   it('valida fechas reales de calendario', () => {
@@ -35,5 +35,13 @@ describe('fechas', () => {
   it('una fecha inválida es un error de programación', () => {
     expect(() => sumarDias('x', 1)).toThrow();
     expect(() => diaDeSemana('x')).toThrow();
+  });
+});
+
+describe('minutosEnChile', () => {
+  it('usa la hora de Chile (verano UTC-3, invierno UTC-4)', () => {
+    expect(minutosEnChile(new Date('2026-10-05T12:00:00Z'))).toBe(9 * 60); // 09:00
+    expect(minutosEnChile(new Date('2026-07-01T12:30:00Z'))).toBe(8 * 60 + 30); // 08:30
+    expect(minutosEnChile(new Date('2026-10-06T02:59:00Z'))).toBe(23 * 60 + 59);
   });
 });

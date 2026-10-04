@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { err } from '../../domain/shared/result.js';
 import { crearReloj, usuarioDe } from './fakes.test-util.js';
 import { resolverDePrueba } from './fakes-facturas.test-util.js';
-import { CAMION_ID, FECHA, fakeCamionesRuta, fakeEmpresas, fakeFacturasRuta, fakeRutas, paradaDe } from './fakes-rutas.test-util.js';
+import { CAMION_ID, FECHA, fakeCamionesRuta, fakeEmpresas, fakeEntregasRuta, fakeFacturasRuta, fakeRutas, paradaDe } from './fakes-rutas.test-util.js';
 import { crearServiciosDeRuta } from './rutas.js';
 
 const despachador = usuarioDe({ id: 'u-d', rol: 'despachador' });
@@ -11,7 +11,7 @@ const montar = (opciones: { pendientes?: ReturnType<typeof paradaDe>[]; config?:
   const rutas = fakeRutas(opciones.pendientes ?? [paradaDe('A'), paradaDe('B'), paradaDe('C'), paradaDe('D')]);
   const empresas = fakeEmpresas(opciones.config);
   const facturas = fakeFacturasRuta();
-  const servicios = crearServiciosDeRuta({ rutas: rutas.repo, empresas, camiones: fakeCamionesRuta(), facturas, clock: crearReloj().clock, resolverCamion: resolverDePrueba() });
+  const servicios = crearServiciosDeRuta({ rutas: rutas.repo, empresas, camiones: fakeCamionesRuta(), facturas, entregas: fakeEntregasRuta(), clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba() });
   return { ...servicios, rutas, facturas, empresas };
 };
 const entrada = { camionId: CAMION_ID, fecha: FECHA };
@@ -89,6 +89,58 @@ describe('planificar', () => {
     s.rutas.estado.pendientes = [paradaDe('B')];
     const sin = await s.ver(despachador, entrada);
     expect(sin.ok && ids(sin.value)).toEqual(['f-B']); // la factura A ya no está en el camión
+  });
+});
+
+describe('ruta de hoy: desde dónde y desde cuándo se calcula', () => {
+  const montarHoy = (ahora: string, ultima?: { lat: number; lng: number }) => {
+    const rutas = fakeRutas([paradaDe('A'), paradaDe('B')]);
+    const entregas = fakeEntregasRuta();
+    if (ultima) entregas.ultimaPosicion.mockResolvedValue({ ...ultima, en: new Date(ahora) });
+    const facturas = fakeFacturasRuta();
+    const servicios = crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas, entregas, clock: crearReloj(ahora).clock, resolverCamion: resolverDePrueba() });
+    return { servicios, entregas, facturas };
+  };
+
+  it('si ya pasó la hora de salida, el cálculo parte de ahora y lo avisa; la salida planificada no cambia', async () => {
+    const { servicios } = montarHoy('2026-10-05T13:30:00Z'); // 10:30 en Chile, salida 08:00
+    const r = await servicios.planificar(despachador, entrada);
+    expect(r.ok && r.value).toMatchObject({ salidaMin: 480, calculadaDesdeMin: 630 });
+    expect(r.ok && r.value.paradas[0]?.llegada).toBeGreaterThan(630);
+  });
+
+  it('antes de la hora de salida no hay «calculada desde»', async () => {
+    const { servicios } = montarHoy('2026-10-05T10:00:00Z'); // 07:00
+    const r = await servicios.planificar(despachador, entrada);
+    expect(r.ok && r.value).not.toHaveProperty('calculadaDesdeMin');
+  });
+
+  it('una ruta de otro día no usa la hora actual ni consulta la última posición', async () => {
+    const { servicios, entregas } = montarHoy('2026-10-05T20:00:00Z');
+    const r = await servicios.planificar(despachador, { ...entrada, fecha: '2026-10-06' });
+    expect(r.ok && r.value).not.toHaveProperty('calculadaDesdeMin');
+    expect(entregas.ultimaPosicion).not.toHaveBeenCalled();
+  });
+
+  it('el camión que ya hizo paradas parte de su última posición: la primera llegada es más tardía que desde el depósito', async () => {
+    const lejos = montarHoy('2026-10-05T10:00:00Z', { lat: -33.62, lng: -70.52 });
+    const base = montarHoy('2026-10-05T10:00:00Z');
+    const a = await lejos.servicios.planificar(despachador, entrada);
+    const b = await base.servicios.planificar(despachador, entrada);
+    expect(a.ok && a.value.paradas[0]?.llegada).not.toBe(b.ok && b.value.paradas[0]?.llegada);
+    expect(lejos.entregas.ultimaPosicion).toHaveBeenCalledWith('empresa-1', CAMION_ID, FECHA);
+  });
+
+  it('muestra lo ya hecho hoy (entregado o no entregado) y no lo mete en la ruta', async () => {
+    const { servicios, facturas } = montarHoy('2026-10-05T10:00:00Z');
+    facturas.listar.mockResolvedValue([
+      { id: 'h1', estado: 'entregada', urgente: false, fecha: FECHA, local: { id: 'lh1', razonSocial: 'Kiosko', direccion: 'Calle 9', comuna: 'Maipú', tienePin: true } },
+      { id: 'h2', estado: 'no_entregada', urgente: false, fecha: FECHA, local: { id: 'lh2', razonSocial: 'Bazar', direccion: 'Calle 8', comuna: 'Pudahuel', tienePin: true } },
+      { id: 'h3', estado: 'pendiente', urgente: false, fecha: FECHA, local: { id: 'lh3', razonSocial: 'Otro', direccion: 'Calle 7', comuna: 'Maipú', tienePin: true } },
+    ]);
+    const r = await servicios.ver(despachador, entrada);
+    expect(r.ok && r.value.hechas.map((h) => [h.cliente, h.estado])).toEqual([['Kiosko', 'entregada'], ['Bazar', 'no_entregada']]);
+    expect(facturas.listar).toHaveBeenCalledWith('empresa-1', { fecha: FECHA, camionId: CAMION_ID, incluirHechas: true });
   });
 });
 
@@ -202,7 +254,7 @@ describe('ruta del chofer', () => {
   const chofer = usuarioDe({ id: 'u-chofer', rol: 'chofer' });
   const montarChofer = (jornada?: Parameters<typeof resolverDePrueba>[0]) => {
     const rutas = fakeRutas([paradaDe('A'), paradaDe('B')]);
-    return crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), clock: crearReloj().clock, resolverCamion: resolverDePrueba(jornada) });
+    return crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), entregas: fakeEntregasRuta(), clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba(jornada) });
   };
   const JORNADA_CAM = { id: 'j-1', usuarioId: 'u-chofer', fecha: FECHA, desde: new Date(), camion: { id: CAMION_ID, patente: 'ABCD12' } };
 

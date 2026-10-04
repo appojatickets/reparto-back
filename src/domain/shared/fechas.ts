@@ -30,3 +30,11 @@ export const diaDeSemana = (fecha: Fecha): 0 | 1 | 2 | 3 | 4 | 5 | 6 => {
   if (!m) throw new Error(`Fecha inválida: ${fecha}`);
   return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]))).getUTCDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6;
 };
+
+/** Minutos transcurridos del día en Chile (0..1439) para un instante dado. */
+export const minutosEnChile = (instante: Date): number => {
+  const partes = new Intl.DateTimeFormat('en-GB', { timeZone: ZONA_CHILE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(instante);
+  const h = Number(partes.find((p) => p.type === 'hour')?.value ?? 0);
+  const m = Number(partes.find((p) => p.type === 'minute')?.value ?? 0);
+  return h * 60 + m;
+};

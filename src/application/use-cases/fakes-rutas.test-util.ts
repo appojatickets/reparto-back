@@ -2,6 +2,7 @@ import { vi } from 'vitest';
 import type { ConfigEmpresa } from '../../domain/entidades/config-empresa.js';
 import { err, ok } from '../../domain/shared/result.js';
 import type { EmpresaRepository } from '../ports/out/empresa.js';
+import type { EntregaRepository } from '../ports/out/entregas.js';
 import type { FacturaParaRuta, GuardarRuta, RutaGuardada, RutaRepository } from '../ports/out/rutas.js';
 import { camionDe, facturaDe } from './fakes-facturas.test-util.js';
 import type { CamionRepository } from '../ports/out/camiones.js';
@@ -59,6 +60,12 @@ export const fakeFacturasRuta = () =>
   ({
     crear: vi.fn<FacturaRepository['crear']>(),
     obtener: vi.fn<FacturaRepository['obtener']>(),
-    listar: vi.fn<FacturaRepository['listar']>(),
+    listar: vi.fn<FacturaRepository['listar']>(() => Promise.resolve([])),
     actualizar: vi.fn<FacturaRepository['actualizar']>(() => Promise.resolve(ok(facturaDe()))),
   }) satisfies FacturaRepository;
+
+export const fakeEntregasRuta = () =>
+  ({
+    registrar: vi.fn<EntregaRepository['registrar']>(() => Promise.resolve()),
+    ultimaPosicion: vi.fn<EntregaRepository['ultimaPosicion']>(() => Promise.resolve(undefined)),
+  }) satisfies EntregaRepository;

@@ -163,7 +163,8 @@
                           "enum": [
                             "admin",
                             "despachador",
-                            "chofer"
+                            "chofer",
+                            "ayudante"
                           ]
                         },
                         "activo": {
@@ -668,7 +669,8 @@
                       "enum": [
                         "admin",
                         "despachador",
-                        "chofer"
+                        "chofer",
+                        "ayudante"
                       ]
                     },
                     "activo": {
@@ -924,7 +926,8 @@
                             "enum": [
                               "admin",
                               "despachador",
-                              "chofer"
+                              "chofer",
+                              "ayudante"
                             ]
                           },
                           "activo": {
@@ -1175,7 +1178,8 @@
                     "enum": [
                       "admin",
                       "despachador",
-                      "chofer"
+                      "chofer",
+                      "ayudante"
                     ]
                   },
                   "pin": {
@@ -1221,7 +1225,8 @@
                       "enum": [
                         "admin",
                         "despachador",
-                        "chofer"
+                        "chofer",
+                        "ayudante"
                       ]
                     },
                     "activo": {
@@ -5890,7 +5895,7 @@
     },
     "/v1/facturas": {
       "get": {
-        "summary": "Facturas de un día (hoy en Chile si no se indica), en orden de ingreso",
+        "summary": "Entregas de un día (hoy en Chile si no se indica), en orden de ingreso. Por defecto solo las pendientes.",
         "tags": [
           "facturas"
         ],
@@ -5937,6 +5942,18 @@
             "in": "query",
             "name": "incluirAnuladas",
             "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "in": "query",
+            "name": "incluirHechas",
+            "required": false
           }
         ],
         "security": [
@@ -5970,6 +5987,8 @@
                             "type": "string",
                             "enum": [
                               "pendiente",
+                              "entregada",
+                              "no_entregada",
                               "anulada"
                             ]
                           },
@@ -6327,6 +6346,8 @@
                       "type": "string",
                       "enum": [
                         "pendiente",
+                        "entregada",
+                        "no_entregada",
                         "anulada"
                       ]
                     },
@@ -6690,6 +6711,8 @@
                       "type": "string",
                       "enum": [
                         "pendiente",
+                        "entregada",
+                        "no_entregada",
                         "anulada"
                       ]
                     },
@@ -7573,6 +7596,9 @@
                     "salidaMin": {
                       "type": "number"
                     },
+                    "calculadaDesdeMin": {
+                      "type": "number"
+                    },
                     "horaLimiteRegresoMin": {
                       "type": "number"
                     },
@@ -7724,6 +7750,65 @@
                           "direccion",
                           "comuna",
                           "urgente"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "hechas": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facturaId": {
+                            "type": "string"
+                          },
+                          "folio": {
+                            "type": "string"
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cliente": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
+                          "urgente": {
+                            "type": "boolean"
+                          },
+                          "antesDeMin": {
+                            "type": "number"
+                          },
+                          "nota": {
+                            "type": "string"
+                          },
+                          "estado": {
+                            "type": "string",
+                            "enum": [
+                              "entregada",
+                              "no_entregada"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "facturaId",
+                          "localId",
+                          "cliente",
+                          "direccion",
+                          "comuna",
+                          "urgente",
+                          "estado"
                         ],
                         "additionalProperties": false
                       }
@@ -7939,6 +8024,7 @@
                     "horaLimiteRegresoMin",
                     "paradas",
                     "nuevas",
+                    "hechas",
                     "sinPin",
                     "noAtendidas",
                     "enRiesgo"
@@ -8214,6 +8300,9 @@
                     "salidaMin": {
                       "type": "number"
                     },
+                    "calculadaDesdeMin": {
+                      "type": "number"
+                    },
                     "horaLimiteRegresoMin": {
                       "type": "number"
                     },
@@ -8365,6 +8454,65 @@
                           "direccion",
                           "comuna",
                           "urgente"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "hechas": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facturaId": {
+                            "type": "string"
+                          },
+                          "folio": {
+                            "type": "string"
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cliente": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
+                          "urgente": {
+                            "type": "boolean"
+                          },
+                          "antesDeMin": {
+                            "type": "number"
+                          },
+                          "nota": {
+                            "type": "string"
+                          },
+                          "estado": {
+                            "type": "string",
+                            "enum": [
+                              "entregada",
+                              "no_entregada"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "facturaId",
+                          "localId",
+                          "cliente",
+                          "direccion",
+                          "comuna",
+                          "urgente",
+                          "estado"
                         ],
                         "additionalProperties": false
                       }
@@ -8580,6 +8728,7 @@
                     "horaLimiteRegresoMin",
                     "paradas",
                     "nuevas",
+                    "hechas",
                     "sinPin",
                     "noAtendidas",
                     "enRiesgo"
@@ -8920,6 +9069,9 @@
                     "salidaMin": {
                       "type": "number"
                     },
+                    "calculadaDesdeMin": {
+                      "type": "number"
+                    },
                     "horaLimiteRegresoMin": {
                       "type": "number"
                     },
@@ -9071,6 +9223,65 @@
                           "direccion",
                           "comuna",
                           "urgente"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "hechas": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facturaId": {
+                            "type": "string"
+                          },
+                          "folio": {
+                            "type": "string"
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cliente": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
+                          "urgente": {
+                            "type": "boolean"
+                          },
+                          "antesDeMin": {
+                            "type": "number"
+                          },
+                          "nota": {
+                            "type": "string"
+                          },
+                          "estado": {
+                            "type": "string",
+                            "enum": [
+                              "entregada",
+                              "no_entregada"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "facturaId",
+                          "localId",
+                          "cliente",
+                          "direccion",
+                          "comuna",
+                          "urgente",
+                          "estado"
                         ],
                         "additionalProperties": false
                       }
@@ -9286,6 +9497,7 @@
                     "horaLimiteRegresoMin",
                     "paradas",
                     "nuevas",
+                    "hechas",
                     "sinPin",
                     "noAtendidas",
                     "enRiesgo"
@@ -10670,6 +10882,309 @@
                   "enum": [
                     null
                   ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entregas/{id}/eventos": {
+      "post": {
+        "summary": "Avisar desde la parada: llegué, entregué, está cerrado, espero, no se entregó o vuelvo más tarde (con la posición si hay)",
+        "tags": [
+          "entregas"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tipo": {
+                    "type": "string",
+                    "enum": [
+                      "llegada",
+                      "entregado",
+                      "cerrado",
+                      "espera",
+                      "no_entregado",
+                      "vuelve_mas_tarde"
+                    ]
+                  },
+                  "lat": {
+                    "type": "number",
+                    "minimum": -90,
+                    "maximum": 90
+                  },
+                  "lng": {
+                    "type": "number",
+                    "minimum": -180,
+                    "maximum": 180
+                  },
+                  "precisionM": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "motivo": {
+                    "type": "string",
+                    "enum": [
+                      "cerrado",
+                      "no_recibe",
+                      "direccion",
+                      "otro"
+                    ]
+                  },
+                  "minutos": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 240
+                  }
+                },
+                "required": [
+                  "tipo"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "estado": {
+                      "type": "string",
+                      "enum": [
+                        "pendiente",
+                        "entregada",
+                        "no_entregada",
+                        "anulada"
+                      ]
+                    },
+                    "pinFijado": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "estado",
+                    "pinFijado"
+                  ],
+                  "additionalProperties": false
                 }
               }
             }

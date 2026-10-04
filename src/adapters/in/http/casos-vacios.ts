@@ -42,6 +42,7 @@ export const casosVacios = (): CasosDeUso => {
     miJornada: sinImplementar,
     iniciarJornada: sinImplementar,
     terminarJornada: sinImplementar,
+    registrarEvento: sinImplementar,
     obtenerHorario: sinImplementar,
     guardarHorario: sinImplementar,
     obtenerConfigEmpresa: sinImplementar,

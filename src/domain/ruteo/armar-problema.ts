@@ -22,6 +22,8 @@ export type EntradaParada = {
 export type DatosProblema = {
   readonly fecha: Fecha;
   readonly deposito: Coordenada;
+  /** Dónde está el camión ahora (última posición informada). Si no se indica, parte del depósito. Siempre termina en el depósito. */
+  readonly origen?: Coordenada;
   readonly salida: number;
   readonly horaLimiteRegresoMin: number;
   readonly entradas: readonly EntradaParada[];
@@ -36,7 +38,7 @@ export const armarProblema = (d: DatosProblema): { readonly problema: ProblemaRu
   const dia = diaDeSemana(d.fecha);
   const sinPin: EntradaParada[] = [];
   const paradas: ParadaRuta[] = [];
-  const coordenadas = new Map<string, Coordenada>([[ORIGEN, d.deposito], [DEPOSITO, d.deposito]]);
+  const coordenadas = new Map<string, Coordenada>([[ORIGEN, d.origen ?? d.deposito], [DEPOSITO, d.deposito]]);
 
   for (const e of d.entradas) {
     if (!e.coordenada) {

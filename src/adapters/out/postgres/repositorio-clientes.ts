@@ -284,6 +284,17 @@ export class PostgresClienteRepository implements ClienteRepository {
     return r.numUpdatedRows > 0n;
   }
 
+  async fijarPinSiFalta(empresaId: string, localId: string, lat: number, lng: number): Promise<boolean> {
+    const r = await this.db
+      .updateTable('local')
+      .set({ lat, lng, pin_estado: 'sugerido', pin_fuente: 'chofer' })
+      .where('id', '=', localId)
+      .where('empresa_id', '=', empresaId)
+      .where('lat', 'is', null)
+      .executeTakeFirst();
+    return r.numUpdatedRows > 0n;
+  }
+
   async coincidenciaDeDireccion(empresaId: string, rut: string | undefined, direccion: string): Promise<CoincidenciaLocal | undefined> {
     const norma = normalizarTexto(direccion);
     let consulta = this.db

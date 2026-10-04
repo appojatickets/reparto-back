@@ -13,8 +13,9 @@ const USUARIOS: Record<string, Usuario> = {
   't-admin': usuarioDe({ id: 'u-a', rol: 'admin', username: 'admin' }),
   't-desp': usuarioDe({ id: 'u-d', rol: 'despachador', username: 'desp' }),
   't-chofer': usuarioDe({ id: 'u-c', rol: 'chofer', username: 'chofer' }),
+  't-ayud': usuarioDe({ id: 'u-y', rol: 'ayudante', username: 'ayud' }),
 };
-const ROLES: Record<Rol, string> = { admin: 't-admin', despachador: 't-desp', chofer: 't-chofer' };
+const ROLES: Record<Rol, string> = { admin: 't-admin', despachador: 't-desp', chofer: 't-chofer', ayudante: 't-ayud' };
 
 const construir = async (extra: Partial<CasosDeUso> = {}) => {
   const casos: CasosDeUso = {
@@ -59,6 +60,7 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'GET', url: `/v1/rutas?camionId=${UUID}&fecha=2026-10-05`, permiso: 'rutas:leer', caso: 'verRuta' },
   { metodo: 'POST', url: '/v1/rutas/planificar', body: { camionId: UUID, fecha: '2026-10-05' }, permiso: 'rutas:escribir', caso: 'planificarRuta' },
   { metodo: 'POST', url: '/v1/rutas/operaciones', body: { camionId: UUID, fecha: '2026-10-05', version: 1, operacion: { tipo: 'ordenar' } }, permiso: 'rutas:escribir', caso: 'operarRuta' },
+  { metodo: 'POST', url: `/v1/entregas/${UUID}/eventos`, body: { tipo: 'llegada' }, permiso: 'entregas:registrar', caso: 'registrarEvento' },
   { metodo: 'GET', url: '/v1/jornada', permiso: 'jornada:gestionar', caso: 'miJornada' },
   { metodo: 'POST', url: '/v1/jornada', body: { camionId: UUID }, permiso: 'jornada:gestionar', caso: 'iniciarJornada' },
   { metodo: 'DELETE', url: '/v1/jornada', permiso: 'jornada:gestionar', caso: 'terminarJornada' },
@@ -80,7 +82,7 @@ describe('permisos: cada ruta exige su permiso y no llega al caso de uso sin él
         expect(caso).not.toHaveBeenCalled();
       });
 
-      for (const rol of ['admin', 'despachador', 'chofer'] as const) {
+      for (const rol of ['admin', 'despachador', 'chofer', 'ayudante'] as const) {
         const permitido = ruta.permiso === undefined || puede(rol, ruta.permiso);
         it(`${rol}: ${permitido ? 'puede (llega al caso de uso)' : '403 sin llegar al caso de uso'}`, async () => {
           const caso = vi.fn(() => { throw new Error('boom'); });
@@ -323,7 +325,7 @@ describe('camiones y facturas', () => {
 
 describe('rutas del día', () => {
   const auth = (rol: Rol) => ({ authorization: `Bearer ${ROLES[rol]}` });
-  const vista = { camionId: UUID, fecha: '2026-10-05', planificada: true, modo: 'sugerida' as const, version: 1, salidaMin: 480, horaLimiteRegresoMin: 1260, regreso: 700, regresoTardio: false, paradas: [], nuevas: [], sinPin: [], noAtendidas: [], enRiesgo: [] };
+  const vista = { camionId: UUID, fecha: '2026-10-05', planificada: true, modo: 'sugerida' as const, version: 1, salidaMin: 480, horaLimiteRegresoMin: 1260, regreso: 700, regresoTardio: false, paradas: [], nuevas: [], hechas: [], sinPin: [], noAtendidas: [], enRiesgo: [] };
 
   it('ver y planificar devuelven la vista; sin depósito responde 422 con el código', async () => {
     const verRuta = vi.fn().mockResolvedValueOnce(ok(vista)).mockResolvedValueOnce(err(errorApp('VALIDACION', 'Primero configura el depósito.', { codigo: 'SIN_DEPOSITO' })));
@@ -390,5 +392,32 @@ describe('horario del local', () => {
     const obtenerHorario = vi.fn(() => Promise.resolve(ok([{ dia: 6 as const, cerrado: true, tramos: [] }])));
     const r = await (await construir({ obtenerHorario })).inject({ method: 'GET', url: `/v1/locales/${UUID}/horario`, headers: auth('despachador') });
     expect(r.json()).toEqual({ dias: [{ dia: 6, cerrado: true, tramos: [] }] });
+  });
+});
+
+describe('avisos de entrega', () => {
+  const auth = (rol: Rol) => ({ authorization: `Bearer ${ROLES[rol]}` });
+  const url = `/v1/entregas/${UUID}/eventos`;
+
+  it('entrega el aviso al caso de uso con la posición y devuelve el estado y si se fijó el pin', async () => {
+    const registrarEvento = vi.fn(() => Promise.resolve(ok({ estado: 'pendiente' as const, pinFijado: true })));
+    const r = await (await construir({ registrarEvento })).inject({ method: 'POST', url, headers: auth('chofer'), payload: { tipo: 'llegada', lat: -33.45, lng: -70.66, precisionM: 12 } });
+    expect(r.statusCode).toBe(200);
+    expect(r.json()).toEqual({ estado: 'pendiente', pinFijado: true });
+    expect(registrarEvento).toHaveBeenCalledWith(USUARIOS['t-chofer'], UUID, { tipo: 'llegada', lat: -33.45, lng: -70.66, precisionM: 12 });
+  });
+
+  it('valida el cuerpo; conflicto y permiso del caso de uso salen con su código', async () => {
+    const registrarEvento = vi.fn()
+      .mockResolvedValueOnce(err(errorApp('CONFLICTO', 'Esa entrega ya está marcada como entregada.')))
+      .mockResolvedValueOnce(err(errorApp('SIN_PERMISO', 'Esa entrega no es de tu camión de hoy.')));
+    const app = await construir({ registrarEvento });
+    const enviar = (payload: object) => app.inject({ method: 'POST', url, headers: auth('ayudante'), payload });
+    expect((await enviar({ tipo: 'entregado' })).statusCode).toBe(409);
+    expect((await enviar({ tipo: 'entregado' })).statusCode).toBe(403);
+    expect((await enviar({ tipo: 'volar' })).statusCode).toBe(400);
+    expect((await enviar({ tipo: 'llegada', lat: 123, lng: 0 })).statusCode).toBe(400);
+    expect((await enviar({ tipo: 'espera', minutos: 500 })).statusCode).toBe(400);
+    expect(registrarEvento).toHaveBeenCalledTimes(2);
   });
 });

@@ -1,6 +1,7 @@
 import type { ConfigEmpresa, Deposito } from '../../domain/entidades/config-empresa.js';
 import type { Usuario } from '../../domain/entidades/usuario.js';
-import { esFechaValida } from '../../domain/shared/fechas.js';
+import { esFechaValida, fechaEnChile, minutosEnChile } from '../../domain/shared/fechas.js';
+import type { Coordenada } from '../../domain/valor/coordenada.js';
 import { err, ok, type Result } from '../../domain/shared/result.js';
 import { armarProblema, type EntradaParada } from '../../domain/ruteo/armar-problema.js';
 import { insertarNuevas, moverAlFrente, moverParada, ordenarPendientes, posponer, type EstadoRuta, type ResultadoOperacion } from '../../domain/ruteo/operaciones.js';
@@ -10,6 +11,7 @@ import { errorApp, type ErrorApp } from '../errores.js';
 import type { CamionRepository } from '../ports/out/camiones.js';
 import type { Clock } from '../ports/out/clock.js';
 import type { EmpresaRepository } from '../ports/out/empresa.js';
+import type { EntregaRepository } from '../ports/out/entregas.js';
 import type { FacturaRepository } from '../ports/out/facturas.js';
 import type { FacturaParaRuta, ModoRuta, RutaGuardada, RutaRepository } from '../ports/out/rutas.js';
 import type { ResolverCamion } from './jornada.js';
@@ -50,12 +52,16 @@ export type VistaRuta = {
   readonly modo?: ModoRuta;
   readonly version?: number;
   readonly salidaMin: number;
+  /** Si la ruta es de hoy y ya pasó la hora de salida (o el camión ya hizo paradas), desde cuándo se calculan las horas. */
+  readonly calculadaDesdeMin?: number;
   readonly horaLimiteRegresoMin: number;
   readonly regreso?: number;
   readonly regresoTardio?: boolean;
   readonly paradas: readonly ParadaVista[];
   /** Pendientes del camión con pin que todavía no tienen lugar en la ruta. */
   readonly nuevas: readonly ItemVista[];
+  /** Lo que ya se hizo hoy en este camión: entregado o no entregado. */
+  readonly hechas: readonly (ItemVista & { readonly estado: 'entregada' | 'no_entregada' })[];
   /** Pendientes sin pin: no se pueden ubicar hasta que alguien fije el pin del local. */
   readonly sinPin: readonly ItemVista[];
   readonly noAtendidas: readonly (ItemVista & { readonly conflictos: readonly string[] })[];
@@ -72,6 +78,7 @@ type Dependencias = {
   readonly empresas: EmpresaRepository;
   readonly camiones: CamionRepository;
   readonly facturas: FacturaRepository;
+  readonly entregas: EntregaRepository;
   readonly clock: Clock;
   readonly resolverCamion: ResolverCamion;
 };
@@ -81,6 +88,10 @@ type Contexto = {
   readonly deposito: Deposito;
   readonly items: readonly FacturaParaRuta[];
   readonly guardada: RutaGuardada | undefined;
+  /** Solo si la ruta es de hoy: la hora actual (la ruta no puede empezar antes) y la última posición del camión. */
+  readonly ahoraMin?: number;
+  readonly origen?: Coordenada;
+  readonly hechas: readonly (ItemVista & { readonly estado: 'entregada' | 'no_entregada' })[];
 };
 
 const itemDe = (f: FacturaParaRuta): ItemVista => ({
@@ -106,7 +117,7 @@ const entradaDe = (f: FacturaParaRuta): EntradaParada => ({
   urgente: f.urgente,
 });
 
-export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, clock, resolverCamion }: Dependencias) => {
+export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entregas, clock, resolverCamion }: Dependencias) => {
   const presupuesto = () => ({ reloj: () => clock.now().getTime(), limiteMs: LIMITE_OPTIMIZACION_MS });
 
   const cargar = async (actor: Usuario, camionId: string, fecha: string): Promise<Result<Contexto, ErrorApp>> => {
@@ -116,12 +127,36 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, cloc
     const [cams, config] = await Promise.all([camiones.listar(actor.empresaId, {}), empresas.obtenerConfig(actor.empresaId)]);
     if (!cams.some((c) => c.id === camionId)) return err(errorApp('NO_ENCONTRADO', 'El camión no existe.'));
     if (!config?.deposito) return err(errorApp('VALIDACION', 'Primero configura el depósito (de dónde salen los camiones).', { codigo: 'SIN_DEPOSITO' }));
-    const [items, guardada] = await Promise.all([rutas.facturasPendientes(actor.empresaId, camionId, fecha), rutas.obtener(actor.empresaId, camionId, fecha)]);
-    return ok({ config, deposito: config.deposito, items, guardada });
+    const esHoy = fecha === fechaEnChile(clock.now());
+    const [items, guardada, todas, ultima] = await Promise.all([
+      rutas.facturasPendientes(actor.empresaId, camionId, fecha),
+      rutas.obtener(actor.empresaId, camionId, fecha),
+      facturas.listar(actor.empresaId, { fecha, camionId, incluirHechas: true }),
+      esHoy ? entregas.ultimaPosicion(actor.empresaId, camionId, fecha) : Promise.resolve(undefined),
+    ]);
+    const hechas = todas.flatMap((f) =>
+      f.estado === 'entregada' || f.estado === 'no_entregada'
+        ? [{ facturaId: f.id, ...(f.folio !== undefined ? { folio: f.folio } : {}), localId: f.local.id, cliente: f.local.razonSocial, direccion: f.local.direccion, comuna: f.local.comuna, urgente: f.urgente, estado: f.estado }]
+        : [],
+    );
+    return ok({
+      config, deposito: config.deposito, items, guardada, hechas,
+      ...(esHoy ? { ahoraMin: minutosEnChile(clock.now()) } : {}),
+      ...(ultima ? { origen: { lat: ultima.lat, lng: ultima.lng } } : {}),
+    });
   };
 
+  /** `salida` es la planificada; el cálculo de hoy no puede empezar antes de «ahora» y parte de donde está el camión. */
   const problemaDe = (ctx: Contexto, fecha: string, salida: number, fijas: readonly string[]) =>
-    armarProblema({ fecha, deposito: ctx.deposito, salida, horaLimiteRegresoMin: ctx.config.horaLimiteRegresoMin, entradas: ctx.items.map(entradaDe), fijas });
+    armarProblema({
+      fecha,
+      deposito: ctx.deposito,
+      ...(ctx.origen ? { origen: ctx.origen } : {}),
+      salida: ctx.ahoraMin !== undefined ? Math.max(salida, ctx.ahoraMin) : salida,
+      horaLimiteRegresoMin: ctx.config.horaLimiteRegresoMin,
+      entradas: ctx.items.map(entradaDe),
+      fijas,
+    });
 
   const vistaDe = (
     ctx: Contexto,
@@ -147,6 +182,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, cloc
       planificada: plan !== undefined,
       ...(plan ? { modo: plan.modo, version: plan.version, regreso: plan.solucion.regreso, regresoTardio: plan.solucion.regresoTardio } : {}),
       salidaMin,
+      ...(plan && plan.problema.salida !== salidaMin ? { calculadaDesdeMin: plan.problema.salida } : {}),
       horaLimiteRegresoMin: ctx.config.horaLimiteRegresoMin,
       paradas: (plan?.solucion.detalle ?? []).map((d) => ({
         ...item(d.id),
@@ -160,6 +196,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, cloc
         fijada: fijas.has(d.id),
       })),
       nuevas,
+      hechas: ctx.hechas,
       sinPin: ctx.items.filter((f) => sinPinIds.has(f.facturaId)).map(itemDe),
       noAtendidas: (plan?.solucion.noAtendidas ?? []).map((n) => ({ ...item(n.paradaId), conflictos: n.conflictos })),
       enRiesgo: (plan?.solucion.enRiesgo ?? []).map((r) => ({ ...item(r.paradaId), cierre: r.cierre, conflictos: r.conflictos, sugerencias: r.sugerencias })),
@@ -171,6 +208,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, cloc
     ctx: Contexto,
     camionId: string,
     fecha: string,
+    salidaPlan: number,
     estado: { readonly problema: ProblemaRuta; readonly solucion: Solucion; readonly modo: ModoRuta },
     sinPin: readonly EntradaParada[],
     versionEsperada?: number,
@@ -178,7 +216,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, cloc
     const g = await rutas.guardar(actor.empresaId, {
       camionId,
       fecha,
-      salidaMin: estado.problema.salida,
+      salidaMin: salidaPlan,
       modo: estado.modo,
       orden: estado.solucion.orden,
       fijas: estado.problema.fijas,
@@ -186,7 +224,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, cloc
       ...(versionEsperada !== undefined ? { versionEsperada } : {}),
     });
     if (!g.ok) return err(errorApp('CONFLICTO', 'Otra persona cambió esta ruta. Se cargó la versión nueva; vuelve a intentar.', { codigo: 'RUTA_DESACTUALIZADA' }));
-    return ok(vistaDe(ctx, camionId, fecha, estado.problema.salida, sinPin, { solucion: estado.solucion, problema: estado.problema, modo: estado.modo, version: g.value.version }));
+    return ok(vistaDe(ctx, camionId, fecha, salidaPlan, sinPin, { solucion: estado.solucion, problema: estado.problema, modo: estado.modo, version: g.value.version }));
   };
 
   /** Lo que hay hoy para ese camión y día: la ruta guardada evaluada de nuevo (nada se recalcula si nadie lo pidió). */
@@ -209,7 +247,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, cloc
     if (!Number.isInteger(salida) || salida < 0 || salida > 1439) return err(errorApp('VALIDACION', 'La hora de salida no es válida.'));
     const { problema, sinPin } = problemaDe(ctx.value, entrada.fecha, salida, []);
     const solucion = optimizar(problema, { presupuesto: presupuesto() });
-    return guardarYVer(actor, ctx.value, entrada.camionId, entrada.fecha, { problema, solucion, modo: 'sugerida' }, sinPin);
+    return guardarYVer(actor, ctx.value, entrada.camionId, entrada.fecha, salida, { problema, solucion, modo: 'sugerida' }, sinPin);
   };
 
   const operar = async (actor: Usuario, entrada: { camionId: string; fecha: string; version: number; operacion: Operacion }): Promise<Result<VistaRuta, ErrorApp>> => {
@@ -277,7 +315,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, cloc
     };
     const r = aplicar();
     if (!r.ok) return r;
-    return guardarYVer(actor, ctx2, entrada.camionId, entrada.fecha, r.value, sinPin, entrada.version);
+    return guardarYVer(actor, ctx2, entrada.camionId, entrada.fecha, salida, r.value, sinPin, entrada.version);
   };
 
   return { ver, planificar, operar };

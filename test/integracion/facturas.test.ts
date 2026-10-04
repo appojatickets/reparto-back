@@ -1,6 +1,7 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { PostgresCamionRepository } from '../../src/adapters/out/postgres/repositorio-camiones.js';
 import { PostgresClienteRepository } from '../../src/adapters/out/postgres/repositorio-clientes.js';
+import { PostgresEntregaRepository } from '../../src/adapters/out/postgres/repositorio-entregas.js';
 import { PostgresFacturaRepository } from '../../src/adapters/out/postgres/repositorio-facturas.js';
 import { abrirDb, crearEmpresa, crearUsuario } from './utils.js';
 
@@ -147,5 +148,59 @@ describe('entrega sin folio', () => {
     expect(c.ok && c.value.folio).toBe('500');
     expect(await facturas.crear(s.empresa, { folio: '500', localId: s.kiosko, fecha: '2026-10-05', urgente: false, creadoPor: s.usuario })).toEqual({ ok: false, error: 'FOLIO_DUPLICADO' });
     expect((await facturas.listar(s.empresa, { fecha: '2026-10-05' })).length).toBe(3);
+  });
+});
+
+describe('entregas: estados, avisos y pin colaborativo', () => {
+  const entregas = new PostgresEntregaRepository(db);
+
+  it('registrar guarda el aviso y, si corresponde, deja la factura entregada o no entregada en el mismo paso', async () => {
+    const s = await sembrar();
+    const f = await facturas.crear(s.empresa, { localId: s.rabelo, fecha: '2026-10-05', camionId: s.camion.id, urgente: false, creadoPor: s.usuario });
+    if (!f.ok) throw new Error('factura');
+    await entregas.registrar(s.empresa, { tipo: 'llegada', facturaId: f.value.id, localId: s.rabelo, camionId: s.camion.id, usuarioId: s.usuario, lat: -33.43, lng: -70.61, precisionM: 9 });
+    expect((await facturas.obtener(s.empresa, f.value.id))?.estado).toBe('pendiente');
+    await entregas.registrar(s.empresa, { tipo: 'entregado', facturaId: f.value.id, localId: s.rabelo, camionId: s.camion.id, usuarioId: s.usuario, nuevoEstado: 'entregada' });
+    expect((await facturas.obtener(s.empresa, f.value.id))?.estado).toBe('entregada');
+    const eventos = await db.selectFrom('entrega_evento').select(['tipo', 'lat', 'precision_m']).where('factura_id', '=', f.value.id).orderBy('creado_en').execute();
+    expect(eventos.map((e) => e.tipo)).toEqual(['llegada', 'entregado']);
+    expect(eventos[0]).toMatchObject({ lat: -33.43, precision_m: 9 });
+  });
+
+  it('el listado solo trae pendientes salvo que se pidan las hechas; las no entregadas guardan el motivo', async () => {
+    const s = await sembrar();
+    const a = await facturas.crear(s.empresa, { localId: s.rabelo, fecha: '2026-10-05', camionId: s.camion.id, urgente: false, creadoPor: s.usuario });
+    const b = await facturas.crear(s.empresa, { localId: s.kiosko, fecha: '2026-10-05', camionId: s.camion.id, urgente: false, creadoPor: s.usuario });
+    if (!a.ok || !b.ok) throw new Error('facturas');
+    await entregas.registrar(s.empresa, { tipo: 'no_entregado', motivo: 'cerrado', facturaId: b.value.id, localId: s.kiosko, camionId: s.camion.id, usuarioId: s.usuario, nuevoEstado: 'no_entregada' });
+    expect((await facturas.listar(s.empresa, { fecha: '2026-10-05' })).map((f) => f.id)).toEqual([a.value.id]);
+    const todas = await facturas.listar(s.empresa, { fecha: '2026-10-05', incluirHechas: true });
+    expect(todas.map((f) => f.estado)).toEqual(['pendiente', 'no_entregada']);
+    expect((await db.selectFrom('entrega_evento').select('motivo').where('factura_id', '=', b.value.id).executeTakeFirstOrThrow()).motivo).toBe('cerrado');
+  });
+
+  it('el pin colaborativo solo se fija si el local no tiene; no pisa uno existente', async () => {
+    const s = await sembrar();
+    expect(await clientes.fijarPinSiFalta(s.empresa, s.kiosko, -33.5, -70.7)).toBe(true);
+    const fila = await db.selectFrom('local').select(['lat', 'lng', 'pin_estado', 'pin_fuente']).where('id', '=', s.kiosko).executeTakeFirstOrThrow();
+    expect(fila).toEqual({ lat: -33.5, lng: -70.7, pin_estado: 'sugerido', pin_fuente: 'chofer' });
+    expect(await clientes.fijarPinSiFalta(s.empresa, s.kiosko, -33.6, -70.8)).toBe(false); // ya tiene
+    expect(await clientes.fijarPinSiFalta(s.empresa, s.rabelo, -33.6, -70.8)).toBe(false); // Rabelo tenía pin importado
+    const otra = await sembrar();
+    expect(await clientes.fijarPinSiFalta(otra.empresa, s.kiosko, -33.6, -70.8)).toBe(false); // otra empresa
+  });
+
+  it('la última posición del camión ese día (hora de Chile) y nada de otros días ni camiones', async () => {
+    const s = await sembrar();
+    const f = await facturas.crear(s.empresa, { localId: s.rabelo, fecha: '2026-10-05', camionId: s.camion.id, urgente: false, creadoPor: s.usuario });
+    if (!f.ok) throw new Error('factura');
+    const base = { facturaId: f.value.id, localId: s.rabelo, camionId: s.camion.id, usuarioId: s.usuario };
+    await entregas.registrar(s.empresa, { ...base, tipo: 'llegada', lat: -33.41, lng: -70.61 });
+    await db.updateTable('entrega_evento').set({ creado_en: new Date('2026-10-05T13:00:00Z') }).where('factura_id', '=', f.value.id).execute();
+    await entregas.registrar(s.empresa, { ...base, tipo: 'entregado', lat: -33.42, lng: -70.62, nuevoEstado: 'entregada' });
+    await db.updateTable('entrega_evento').set({ creado_en: new Date('2026-10-05T15:00:00Z') }).where('factura_id', '=', f.value.id).where('tipo', '=', 'entregado').execute();
+    expect(await entregas.ultimaPosicion(s.empresa, s.camion.id, '2026-10-05')).toMatchObject({ lat: -33.42, lng: -70.62 });
+    expect(await entregas.ultimaPosicion(s.empresa, s.camion.id, '2026-10-06')).toBeUndefined();
+    expect(await entregas.ultimaPosicion(s.empresa, '00000000-0000-4000-8000-000000000000', '2026-10-05')).toBeUndefined();
   });
 });

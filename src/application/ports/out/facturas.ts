@@ -1,6 +1,6 @@
 import type { Result } from '../../../domain/shared/result.js';
 
-export type EstadoFactura = 'pendiente' | 'anulada';
+export type EstadoFactura = 'pendiente' | 'entregada' | 'no_entregada' | 'anulada';
 
 export type FacturaDetallada = {
   readonly id: string;
@@ -38,7 +38,14 @@ export type CambiosFactura = {
   readonly estado?: EstadoFactura;
 };
 
-export type FiltroFacturas = { readonly fecha: string; readonly camionId?: string; readonly sinCamion?: boolean; readonly incluirAnuladas?: boolean };
+export type FiltroFacturas = {
+  readonly fecha: string;
+  readonly camionId?: string;
+  readonly sinCamion?: boolean;
+  readonly incluirAnuladas?: boolean;
+  /** Incluye también las ya entregadas y las no entregadas (por defecto solo las pendientes). */
+  readonly incluirHechas?: boolean;
+};
 
 export interface FacturaRepository {
   crear(empresaId: string, f: NuevaFactura): Promise<Result<FacturaDetallada, 'FOLIO_DUPLICADO' | 'LOCAL_NO_EXISTE' | 'CAMION_NO_DISPONIBLE'>>;

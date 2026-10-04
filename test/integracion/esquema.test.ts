@@ -12,7 +12,7 @@ describe('esquema', () => {
       select c.relname, c.relrowsecurity from pg_class c join pg_namespace n on n.oid = c.relnamespace
       where n.nspname = 'public' and c.relkind = 'r' and c.relname <> 'pgmigrations' order by 1`.execute(db);
     const nombres = r.rows.map((f) => f.relname);
-    expect(nombres).toEqual(['camion', 'cliente', 'empresa', 'factura', 'horario_local', 'jornada', 'local', 'login_intento', 'parada_ruta', 'propuesta_pin', 'ruta', 'usuario']);
+    expect(nombres).toEqual(['camion', 'cliente', 'empresa', 'entrega_evento', 'factura', 'horario_local', 'jornada', 'local', 'login_intento', 'parada_ruta', 'propuesta_pin', 'ruta', 'usuario']);
     expect(r.rows.filter((f) => !f.relrowsecurity)).toEqual([]);
   });
 

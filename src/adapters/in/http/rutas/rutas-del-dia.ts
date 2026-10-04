@@ -30,6 +30,7 @@ const vistaRuta = z.object({
   modo: z.enum(['sugerida', 'manual']).optional(),
   version: z.number().optional(),
   salidaMin: z.number(),
+  calculadaDesdeMin: z.number().optional(),
   horaLimiteRegresoMin: z.number(),
   regreso: z.number().optional(),
   regresoTardio: z.boolean().optional(),
@@ -48,6 +49,7 @@ const vistaRuta = z.object({
     )
     .readonly(),
   nuevas: z.array(item).readonly(),
+  hechas: z.array(item.extend({ estado: z.enum(['entregada', 'no_entregada']) })).readonly(),
   sinPin: z.array(item).readonly(),
   noAtendidas: z.array(item.extend({ conflictos: z.array(z.string()).readonly() })).readonly(),
   enRiesgo: z.array(item.extend({ cierre: z.number(), conflictos: z.array(z.string()).readonly(), sugerencias: z.array(sugerencia).readonly() })).readonly(),

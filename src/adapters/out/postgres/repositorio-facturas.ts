@@ -7,7 +7,7 @@ import type { Tabla } from './db-types.js';
 const esDuplicado = (e: unknown): boolean => typeof e === 'object' && e !== null && (e as { code?: string }).code === '23505';
 
 type FilaDetallada = {
-  id: string; folio: string | null; fecha: string; estado: 'pendiente' | 'anulada'; total: number | null; antes_de_min: number | null;
+  id: string; folio: string | null; fecha: string; estado: 'pendiente' | 'entregada' | 'no_entregada' | 'anulada'; total: number | null; antes_de_min: number | null;
   urgente: boolean; nota: string | null; camion_id: string | null; patente: string | null; camion_alias: string | null;
   local_id: string; razon_social: string; direccion: string; comuna: string; tiene_pin: boolean;
 };
@@ -80,7 +80,10 @@ export class PostgresFacturaRepository implements FacturaRepository {
 
   async listar(empresaId: string, filtro: FiltroFacturas): Promise<readonly FacturaDetallada[]> {
     let q = detalle(this.db, empresaId).where('f.fecha_reparto', '=', filtro.fecha);
-    if (!filtro.incluirAnuladas) q = q.where('f.estado', '=', 'pendiente');
+    const estados: ('pendiente' | 'entregada' | 'no_entregada' | 'anulada')[] = ['pendiente'];
+    if (filtro.incluirHechas) estados.push('entregada', 'no_entregada');
+    if (filtro.incluirAnuladas) estados.push('anulada');
+    q = q.where('f.estado', 'in', estados);
     if (filtro.camionId !== undefined) q = q.where('f.camion_id', '=', filtro.camionId);
     if (filtro.sinCamion) q = q.where('f.camion_id', 'is', null);
     return (await q.orderBy('f.creado_en').orderBy('f.id').execute()).map(aFactura);

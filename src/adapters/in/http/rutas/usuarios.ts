@@ -3,7 +3,7 @@ import { actor } from '../auth.js';
 import { enviarError, RESPUESTAS_ERROR } from '../errores.js';
 import { idParam, SEGURIDAD, tipada, usuarioPublico, type ContextoRutas } from './comunes.js';
 
-const rol = z.enum(['admin', 'despachador', 'chofer']);
+const rol = z.enum(['admin', 'despachador', 'chofer', 'ayudante']);
 
 export const rutasUsuarios = ({ app, casos, guard }: ContextoRutas): void => {
   const a = tipada(app);

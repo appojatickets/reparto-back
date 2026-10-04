@@ -62,4 +62,12 @@ describe('armarProblema', () => {
     expect(verificarInvariantes(r.problema, s)).toEqual([]);
     expect(s.regreso).toBeGreaterThan(480);
   });
+
+  it('si el camión ya salió, el primer tramo parte de su posición y el regreso termina en el depósito', () => {
+    const entradas = [e('A', { coordenada: { lat: -33.4, lng: -70.6 } })];
+    const desdeDeposito = optimizar(armarProblema({ ...base, entradas }).problema);
+    const desdeLejos = optimizar(armarProblema({ ...base, origen: { lat: -33.61, lng: -70.53 }, entradas }).problema);
+    expect(desdeLejos.detalle[0]?.llegada).toBeGreaterThan(desdeDeposito.detalle[0]?.llegada ?? 0);
+    expect(desdeLejos.regreso).toBeGreaterThan(desdeLejos.detalle[0]?.salida ?? 0);
+  });
 });

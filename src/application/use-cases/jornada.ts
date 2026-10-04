@@ -1,4 +1,5 @@
 import type { Usuario } from '../../domain/entidades/usuario.js';
+import { esDeCamion } from '../../domain/permisos.js';
 import { fechaEnChile } from '../../domain/shared/fechas.js';
 import { err, ok, type Result } from '../../domain/shared/result.js';
 import { errorApp, type ErrorApp } from '../errores.js';
@@ -29,7 +30,7 @@ export const crearTerminarJornada = ({ jornadas, clock }: Deps) =>
  */
 export const crearResolverCamion = ({ jornadas, clock }: Deps) =>
   async (actor: Usuario, pedido: string | undefined): Promise<Result<string | undefined, ErrorApp>> => {
-    if (actor.rol !== 'chofer') return ok(pedido);
+    if (!esDeCamion(actor.rol)) return ok(pedido);
     const j = await jornadas.activa(actor.empresaId, actor.id, fechaEnChile(clock.now()));
     if (!j) return err(errorApp('VALIDACION', 'Primero elige el camión que manejas hoy.', { codigo: 'SIN_JORNADA' }));
     if (pedido !== undefined && pedido !== j.camion.id) return err(errorApp('SIN_PERMISO', 'Ese no es el camión que manejas hoy.'));

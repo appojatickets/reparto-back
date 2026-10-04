@@ -6,7 +6,7 @@ type Fecha = ColumnType<Date, Date | string | undefined, Date | string>;
 
 export type Tabla = {
   empresa: { id: Generated<string>; nombre: string; config: ColumnType<unknown, string | undefined, string>; config_version: Generated<number>; creado_en: Generated<Date> };
-  usuario: { id: string; empresa_id: string; rol: 'admin' | 'despachador' | 'chofer'; username: string; nombre: string; activo: Generated<boolean>; creado_en: Generated<Date> };
+  usuario: { id: string; empresa_id: string; rol: 'admin' | 'despachador' | 'chofer' | 'ayudante'; username: string; nombre: string; activo: Generated<boolean>; creado_en: Generated<Date> };
   cliente: {
     id: Generated<string>;
     empresa_id: string;
@@ -74,7 +74,7 @@ export type Tabla = {
     antes_de_min: number | null;
     urgente: Generated<boolean>;
     nota: string | null;
-    estado: Generated<'pendiente' | 'anulada'>;
+    estado: Generated<'pendiente' | 'entregada' | 'no_entregada' | 'anulada'>;
     creado_por: string | null;
     creado_en: Generated<Date>;
     actualizado_en: Generated<Date>;
@@ -92,6 +92,21 @@ export type Tabla = {
     actualizado_en: Generated<Date>;
   };
   parada_ruta: { ruta_id: string; factura_id: string; orden: number; fijada: Generated<boolean> };
+  entrega_evento: {
+    id: Generated<string>;
+    empresa_id: string;
+    factura_id: string;
+    local_id: string;
+    camion_id: string | null;
+    usuario_id: string | null;
+    tipo: 'llegada' | 'entregado' | 'cerrado' | 'espera' | 'no_entregado' | 'vuelve_mas_tarde';
+    motivo: 'cerrado' | 'no_recibe' | 'direccion' | 'otro' | null;
+    minutos: number | null;
+    lat: number | null;
+    lng: number | null;
+    precision_m: number | null;
+    creado_en: Generated<Date>;
+  };
   jornada: {
     id: Generated<string>;
     empresa_id: string;

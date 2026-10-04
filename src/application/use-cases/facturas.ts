@@ -1,3 +1,4 @@
+import { esDeCamion } from '../../domain/permisos.js';
 import type { Usuario } from '../../domain/entidades/usuario.js';
 import { esFechaValida, fechaEnChile } from '../../domain/shared/fechas.js';
 import { validarAntesDe, validarFactura, validarNota, validarTotal, type FacturaCruda } from '../../domain/entidades/factura.js';
@@ -41,19 +42,26 @@ export const crearRegistrarFactura = ({ facturas, clock, resolverCamion }: { fac
     }
   };
 
-export type EntradaListarFacturas = { readonly fecha?: string | undefined; readonly camionId?: string | undefined; readonly sinCamion?: boolean | undefined; readonly incluirAnuladas?: boolean | undefined };
+export type EntradaListarFacturas = {
+  readonly fecha?: string | undefined;
+  readonly camionId?: string | undefined;
+  readonly sinCamion?: boolean | undefined;
+  readonly incluirAnuladas?: boolean | undefined;
+  readonly incluirHechas?: boolean | undefined;
+};
 
 export const crearListarFacturas = ({ facturas, clock, resolverCamion }: { facturas: FacturaRepository; clock: Clock; resolverCamion: ResolverCamion }) =>
   async (actor: Usuario, entrada: EntradaListarFacturas = {}): Promise<Result<readonly FacturaDetallada[], ErrorApp>> => {
     if (entrada.fecha !== undefined && !esFechaValida(entrada.fecha)) return err(errorApp('VALIDACION', 'La fecha no es válida.'));
     const camion = await resolverCamion(actor, entrada.camionId);
     if (!camion.ok) return camion;
-    const esChofer = actor.rol === 'chofer';
+    const esChofer = esDeCamion(actor.rol);
     const filtro: FiltroFacturas = {
       fecha: entrada.fecha ?? fechaEnChile(clock.now()),
       ...(camion.value !== undefined ? { camionId: camion.value } : {}),
       ...(entrada.sinCamion === true && !esChofer ? { sinCamion: true } : {}),
       ...(entrada.incluirAnuladas === true ? { incluirAnuladas: true } : {}),
+      ...(entrada.incluirHechas === true ? { incluirHechas: true } : {}),
     };
     return ok(await facturas.listar(actor.empresaId, filtro));
   };
@@ -72,7 +80,7 @@ export type EntradaActualizarFactura = {
 export const crearActualizarFactura = ({ facturas, resolverCamion }: { facturas: FacturaRepository; resolverCamion: ResolverCamion }) =>
   async (actor: Usuario, id: string, e: EntradaActualizarFactura): Promise<Result<FacturaDetallada, ErrorApp>> => {
     const invalido = (m: string) => err(errorApp('VALIDACION', m));
-    if (actor.rol === 'chofer') {
+    if (esDeCamion(actor.rol)) {
       // Solo las facturas de su camión de hoy, y no puede pasarlas a otro camión.
       const actual = await facturas.obtener(actor.empresaId, id);
       if (!actual) return err(errorApp('NO_ENCONTRADO', 'La factura no existe.'));

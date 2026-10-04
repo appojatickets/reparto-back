@@ -77,6 +77,8 @@ export interface ClienteRepository {
   obtenerLocal(empresaId: string, localId: string): Promise<LocalDetalle | undefined>;
   /** Devuelve false si el local no existe en esa empresa. */
   actualizarLocal(empresaId: string, localId: string, cambios: CambiosLocal): Promise<boolean>;
+  /** Colaborativo: fija el pin solo si el local todavía no tiene (como «sugerido», fuente chofer). Devuelve si lo fijó. */
+  fijarPinSiFalta(empresaId: string, localId: string, lat: number, lng: number): Promise<boolean>;
   /** Con RUT busca ese cliente; sin RUT solo hay coincidencia si la dirección identifica un único local. */
   coincidenciaDeDireccion(empresaId: string, rut: string | undefined, direccion: string): Promise<CoincidenciaLocal | undefined>;
 }

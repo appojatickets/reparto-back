@@ -14,7 +14,7 @@ export const usuarioPublico = z.object({
   id: z.string(),
   username: z.string(),
   nombre: z.string(),
-  rol: z.enum(['admin', 'despachador', 'chofer']),
+  rol: z.enum(['admin', 'despachador', 'chofer', 'ayudante']),
   activo: z.boolean(),
 });
 
