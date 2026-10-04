@@ -3,7 +3,7 @@
 Lista viva de lo que el agente **no puede** hacer (paneles, claves, decisiones de negocio, pruebas con personas).
 Marca cada casilla al terminar. Nunca pegues claves secretas en el chat: cárgalas directo en el panel.
 
-Última actualización: 2026-10-04 (Fase 3a: facturas y camiones en línea).
+Última actualización: 2026-10-04 (Fase 3b: rutas sugeridas y acomodables en línea).
 
 ---
 
@@ -47,6 +47,15 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar.
 - [ ] Entrar como admin → **CAMIONES** → agregar al menos 2 patentes reales (ej. `AB1234`, `BCDF12`) con un nombre corto.
 - [ ] **FACTURAS DEL DÍA** → ingresar 4–5 facturas con los clientes de ejemplo (camión, folio, «antes de» y urgente). Probar un folio repetido (debe avisar) y cambiar una factura de camión.
 - [ ] Cuéntame qué se siente lento o confuso: esta pantalla es la que más se usará cada día.
+
+### A7. Probar la Fase 3b (rutas del día)
+Esperar ~2 min a que Render y Vercel terminen de desplegar.
+- [ ] **CONFIGURACIÓN** (solo admin) → pegar las coordenadas del depósito (en Google Maps: toca y mantén el punto, copia las dos cifras de arriba) y confirmar la hora de salida y la hora límite de regreso.
+- [ ] Revisar que los clientes con facturas tengan **pin** (si no, la ruta los lista aparte como «Sin ubicación»).
+- [ ] **RUTAS DEL DÍA** → elegir día y camión → **CALCULAR RUTA SUGERIDA**. Mirar si el orden y las horas de llegada te parecen razonables.
+- [ ] Probar SUBIR / BAJAR, «MÁS» → IR PRIMERO / DEJAR PARA DESPUÉS / QUITAR DEL CAMIÓN, y agregar una factura nueva al camión y usar **INSERTAR NUEVAS**.
+- [ ] Anotar qué ruta te parece mala (qué camión, qué día y por qué): con eso calibro el motor (las velocidades hoy son estimadas, spike S1).
+- [ ] Los horarios de los locales aún no se pueden cargar desde la pantalla (viene en la siguiente entrega): por ahora ningún local tiene restricción de horario salvo el «antes de» de la factura.
 
 ## B. Antes de usar el sistema con choferes reales
 
