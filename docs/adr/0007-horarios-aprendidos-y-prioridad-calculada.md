@@ -34,3 +34,12 @@ horarios y fotos.
 - **OpenStreetMap** (`opening_hours`, licencia ODbL, se puede guardar con atribución) tiene poca cobertura en almacenes
   pequeños de Chile; sirve como fuente `sugerido` de baja confianza si existe.
 - Las **fotos** de fachada siguen siendo las que toman los choferes; de Street View solo se guarda la referencia.
+
+## Principio: semiautomático (decisión del dueño)
+El sistema propone y calcula; una persona puede decidir a mano en cada punto.
+- **Lo manual manda:** un dato fijado por una persona (horario `confirmado`, pin `validado`, orden fijado por el chofer, camión
+  elegido) tiene prioridad sobre cualquier cálculo y el aprendizaje **no lo sobrescribe**; queda marcado como manual.
+- **Siempre se puede corregir:** horarios y pines se editan a mano; las sugerencias se aceptan, rechazan, editan o revierten.
+- **Urgente es manual:** la casilla de prioridad solo se conserva como marca manual de «entrega urgente» (sobrescribe el cálculo
+  para esa factura); la prioridad normal la calcula el motor.
+- **Auditoría:** se registra quién cambió qué y cuándo (transparencia y Ley 21.719).
