@@ -3,7 +3,7 @@
 Lista viva de lo que el agente **no puede** hacer (paneles, claves, decisiones de negocio, pruebas con personas).
 Marca cada casilla al terminar. Nunca pegues claves secretas en el chat: cárgalas directo en el panel.
 
-Última actualización: 2026-10-04 (Fase 2 en curso).
+Última actualización: 2026-10-04 (Fase 2: login real funcionando; faltan las pruebas con datos).
 
 ---
 
@@ -28,15 +28,16 @@ Sin esto, cualquiera con la clave publishable (que viaja en el navegador) podrí
 - [ ] En el mismo lugar, comprobar que **Confirm email** quede activado (las cuentas se crean ya confirmadas).
 - [ ] **Authentication → Providers → Email**: largo mínimo de contraseña en **6** (las claves de los choferes son de 6 dígitos).
 
-### A4. Crear tu usuario administrador
-- [ ] Supabase → **Authentication → Users → Add user → Create new user**.
+### A4. Crear tu usuario administrador — HECHO
+- [x] Supabase → **Authentication → Users → Add user → Create new user**.
   - Email: `admin@usuarios.reparto.test` (o `<tu usuario>@<AUTH_EMAIL_DOMAIN>`)
   - Password: 6 dígitos que no sean triviales (nada de 123456 ni 111111)
   - Marcar **Auto Confirm User**.
-- [ ] Avísame el nombre de usuario elegido (la parte antes de la `@`). Yo creo la empresa y enlazo tu perfil como `admin` (no requiere que me pases ninguna clave).
+- [x] Avísame el nombre de usuario elegido (la parte antes de la `@`). Yo creo la empresa y enlazo tu perfil como `admin` (no requiere que me pases ninguna clave).
 
-### A5. Probar el login en el navegador (cuando yo te avise que está desplegado)
-- [ ] Abrir `https://reparto-front.vercel.app`, entrar con tu usuario y clave, y contarme qué ves.
+### A5. Probar el login en el navegador
+- [x] Abrir `https://reparto-front.vercel.app`, entrar con tu usuario y clave. (Funciona.)
+- [ ] Importar los clientes de ejemplo, buscar «rabe», subir una foto de prueba (Storage aún no verificado de punta a punta).
 - [ ] Crear un chofer de prueba desde la pantalla de usuarios y entrar con él en una ventana privada. Confirmar que **no** ve el menú de administración.
 
 ---
