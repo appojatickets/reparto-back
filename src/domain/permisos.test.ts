@@ -9,7 +9,7 @@ describe('permisos por rol', () => {
   });
 
   it('el chofer NO accede a métricas, usuarios, importaciones ni a clientes', () => {
-    const prohibidos: Permiso[] = ['metricas:leer', 'usuarios:gestionar', 'clientes:importar', 'clientes:escribir', 'clientes:leer', 'pines:revisar'];
+    const prohibidos: Permiso[] = ['metricas:leer', 'usuarios:gestionar', 'clientes:importar', 'clientes:escribir', 'clientes:leer', 'pines:revisar', 'facturas:leer', 'facturas:escribir', 'camiones:gestionar'];
     for (const p of prohibidos) expect(puede('chofer', p)).toBe(false);
   });
 
@@ -20,6 +20,9 @@ describe('permisos por rol', () => {
     expect(puede('despachador', 'usuarios:gestionar')).toBe(false);
     expect(puede('despachador', 'metricas:leer')).toBe(false);
     expect(puede('despachador', 'clientes:importar')).toBe(false);
+    expect(puede('despachador', 'facturas:escribir')).toBe(true);
+    expect(puede('despachador', 'facturas:leer')).toBe(true);
+    expect(puede('despachador', 'camiones:gestionar')).toBe(false);
   });
 
   it('solo el admin ve métricas (regla de negocio central)', () => {

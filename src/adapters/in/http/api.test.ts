@@ -48,6 +48,12 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'POST', url: '/v1/archivos/url-subida', body: { localId: UUID, tipo: 'webp' }, permiso: 'archivos:subir', caso: 'solicitarUrlSubida' },
   { metodo: 'PUT', url: `/v1/locales/${UUID}/foto`, body: { path: 'a/b.webp' }, permiso: 'archivos:subir', caso: 'registrarFotoLocal' },
   { metodo: 'GET', url: `/v1/locales/${UUID}/foto-url`, permiso: 'clientes:leer', caso: 'obtenerUrlFoto' },
+  { metodo: 'GET', url: '/v1/camiones', permiso: 'facturas:leer', caso: 'listarCamiones' },
+  { metodo: 'POST', url: '/v1/camiones', body: { patente: 'AB1234' }, permiso: 'camiones:gestionar', caso: 'crearCamion' },
+  { metodo: 'PATCH', url: `/v1/camiones/${UUID}`, body: { activo: false }, permiso: 'camiones:gestionar', caso: 'actualizarCamion' },
+  { metodo: 'GET', url: '/v1/facturas', permiso: 'facturas:leer', caso: 'listarFacturas' },
+  { metodo: 'POST', url: '/v1/facturas', body: { folio: '1001', localId: UUID }, permiso: 'facturas:escribir', caso: 'registrarFactura' },
+  { metodo: 'PATCH', url: `/v1/facturas/${UUID}`, body: { urgente: true }, permiso: 'facturas:escribir', caso: 'actualizarFactura' },
 ];
 
 describe('permisos: cada ruta exige su permiso y no llega al caso de uso sin él', () => {
@@ -245,5 +251,62 @@ describe('respuestas de las rutas', () => {
     expect((await app.inject({ method: 'POST', url: '/v1/archivos/url-subida', headers: auth('chofer'), payload: { localId: UUID, tipo: 'gif' } })).statusCode).toBe(400);
     const l = await app.inject({ method: 'GET', url: `/v1/locales/${UUID}/foto-url`, headers: auth('despachador') });
     expect(l.json()).toEqual({ url: 'https://alm/leer', expiraEnSegundos: 300 });
+  });
+});
+
+describe('camiones y facturas', () => {
+  const auth = (rol: Rol) => ({ authorization: `Bearer ${ROLES[rol]}` });
+  const factura = { id: UUID, folio: '1001', fecha: '2026-10-05', estado: 'pendiente' as const, urgente: false, local: { id: UUID, razonSocial: 'Rabe', direccion: 'Calle 1', comuna: 'Maipú', tienePin: true } };
+
+  it('ingresar factura: 201 con el detalle; folio repetido 409; cliente inexistente 404', async () => {
+    const registrarFactura = vi.fn()
+      .mockResolvedValueOnce(ok(factura))
+      .mockResolvedValueOnce(err(errorApp('CONFLICTO', 'Ya existe una factura con el folio 1001.')))
+      .mockResolvedValueOnce(err(errorApp('NO_ENCONTRADO', 'El cliente no existe.')));
+    const app = await construir({ registrarFactura });
+    const llamar = () => app.inject({ method: 'POST', url: '/v1/facturas', headers: auth('despachador'), payload: { folio: '1001', localId: UUID, antesDeMin: 720, urgente: true } });
+    const a = await llamar();
+    expect(a.statusCode).toBe(201);
+    expect(a.json()).toMatchObject({ folio: '1001', local: { razonSocial: 'Rabe' } });
+    expect(registrarFactura).toHaveBeenCalledWith(USUARIOS['t-desp'], { folio: '1001', localId: UUID, antesDeMin: 720, urgente: true });
+    expect((await llamar()).statusCode).toBe(409);
+    expect((await llamar()).statusCode).toBe(404);
+  });
+
+  it('valida el cuerpo antes de llamar al caso de uso', async () => {
+    const registrarFactura = vi.fn();
+    const app = await construir({ registrarFactura });
+    const mal = (payload: object) => app.inject({ method: 'POST', url: '/v1/facturas', headers: auth('admin'), payload });
+    expect((await mal({ folio: '1', localId: 'no-uuid' })).statusCode).toBe(400);
+    expect((await mal({ folio: '1', localId: UUID, antesDeMin: 2000 })).statusCode).toBe(400);
+    expect((await mal({ folio: '1', localId: UUID, total: 10.5 })).statusCode).toBe(400);
+    expect(registrarFactura).not.toHaveBeenCalled();
+  });
+
+  it('listar facturas pasa los filtros ya convertidos (sinCamion y incluirAnuladas booleanos)', async () => {
+    const listarFacturas = vi.fn(() => Promise.resolve(ok([factura])));
+    const app = await construir({ listarFacturas });
+    const r = await app.inject({ method: 'GET', url: `/v1/facturas?fecha=2026-10-05&sinCamion=true&incluirAnuladas=false&camionId=${UUID}`, headers: auth('despachador') });
+    expect(r.statusCode).toBe(200);
+    expect(r.json<{ facturas: unknown[] }>().facturas).toHaveLength(1);
+    expect(listarFacturas).toHaveBeenCalledWith(USUARIOS['t-desp'], { fecha: '2026-10-05', sinCamion: true, incluirAnuladas: false, camionId: UUID });
+  });
+
+  it('actualizar factura permite null para quitar valores', async () => {
+    const actualizarFactura = vi.fn(() => Promise.resolve(ok(factura)));
+    const r = await (await construir({ actualizarFactura })).inject({ method: 'PATCH', url: `/v1/facturas/${UUID}`, headers: auth('despachador'), payload: { camionId: null, antesDeMin: null, nota: null } });
+    expect(r.statusCode).toBe(200);
+    expect(actualizarFactura).toHaveBeenCalledWith(USUARIOS['t-desp'], UUID, { camionId: null, antesDeMin: null, nota: null });
+  });
+
+  it('camiones: patente duplicada 409; el despachador lista pero no crea', async () => {
+    const crearCamion = vi.fn(() => Promise.resolve(err(errorApp('CONFLICTO', 'Ya existe un camión con la patente AB·1234.'))));
+    const listarCamiones = vi.fn(() => Promise.resolve([{ id: UUID, patente: 'AB1234', activo: true }]));
+    const app = await construir({ crearCamion, listarCamiones });
+    expect((await app.inject({ method: 'POST', url: '/v1/camiones', headers: auth('admin'), payload: { patente: 'AB1234' } })).statusCode).toBe(409);
+    expect((await app.inject({ method: 'POST', url: '/v1/camiones', headers: auth('despachador'), payload: { patente: 'AB1234' } })).statusCode).toBe(403);
+    const l = await app.inject({ method: 'GET', url: '/v1/camiones', headers: auth('despachador') });
+    expect(l.json()).toEqual({ camiones: [{ id: UUID, patente: 'AB1234', activo: true }] });
+    expect(listarCamiones).toHaveBeenCalledWith(USUARIOS['t-desp'], { soloActivos: true });
   });
 });

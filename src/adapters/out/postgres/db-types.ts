@@ -61,5 +61,22 @@ export type Tabla = {
     creado_en: Generated<Date>;
     resuelto_en: Date | null;
   };
+  camion: { id: Generated<string>; empresa_id: string; patente: string; alias: string | null; activo: Generated<boolean>; creado_en: Generated<Date> };
+  factura: {
+    id: Generated<string>;
+    empresa_id: string;
+    folio: string;
+    local_id: string;
+    camion_id: string | null;
+    fecha_reparto: string;
+    total: number | null;
+    antes_de_min: number | null;
+    urgente: Generated<boolean>;
+    nota: string | null;
+    estado: Generated<'pendiente' | 'anulada'>;
+    creado_por: string | null;
+    creado_en: Generated<Date>;
+    actualizado_en: Generated<Date>;
+  };
   login_intento: { usuario_id: string; intentos: Generated<number>; bloqueado_hasta: Date | null };
 };

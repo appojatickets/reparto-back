@@ -8,6 +8,9 @@ export const TODOS_LOS_PERMISOS = [
   'pines:revisar',
   'archivos:subir',
   'usuarios:gestionar',
+  'camiones:gestionar',
+  'facturas:leer',
+  'facturas:escribir',
   'metricas:leer',
 ] as const;
 
@@ -20,7 +23,7 @@ export type Permiso = (typeof TODOS_LOS_PERMISOS)[number];
  */
 const PERMISOS_POR_ROL: Readonly<Record<Rol, readonly Permiso[]>> = {
   admin: TODOS_LOS_PERMISOS,
-  despachador: ['clientes:leer', 'clientes:escribir', 'pines:proponer', 'pines:revisar', 'archivos:subir'],
+  despachador: ['clientes:leer', 'clientes:escribir', 'pines:proponer', 'pines:revisar', 'archivos:subir', 'facturas:leer', 'facturas:escribir'],
   chofer: ['pines:proponer', 'archivos:subir'],
 };
 

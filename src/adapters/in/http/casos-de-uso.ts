@@ -1,6 +1,8 @@
 import type { HealthReport } from '../../../application/use-cases/check-health.js';
 import type { crearActualizarLocal } from '../../../application/use-cases/actualizar-local.js';
 import type { crearObtenerUrlFoto, crearRegistrarFotoLocal, crearSolicitarUrlSubida } from '../../../application/use-cases/archivos.js';
+import type { crearActualizarCamion, crearCrearCamion, crearListarCamiones } from '../../../application/use-cases/camiones.js';
+import type { crearActualizarFactura, crearListarFacturas, crearRegistrarFactura } from '../../../application/use-cases/facturas.js';
 import type { crearAutenticarUsuario } from '../../../application/use-cases/autenticar-usuario.js';
 import type { crearBuscarClientes } from '../../../application/use-cases/buscar-clientes.js';
 import type { crearCrearClienteNuevo } from '../../../application/use-cases/crear-cliente-nuevo.js';
@@ -33,4 +35,10 @@ export type CasosDeUso = {
   readonly solicitarUrlSubida: ReturnType<typeof crearSolicitarUrlSubida>;
   readonly registrarFotoLocal: ReturnType<typeof crearRegistrarFotoLocal>;
   readonly obtenerUrlFoto: ReturnType<typeof crearObtenerUrlFoto>;
+  readonly listarCamiones: ReturnType<typeof crearListarCamiones>;
+  readonly crearCamion: ReturnType<typeof crearCrearCamion>;
+  readonly actualizarCamion: ReturnType<typeof crearActualizarCamion>;
+  readonly registrarFactura: ReturnType<typeof crearRegistrarFactura>;
+  readonly listarFacturas: ReturnType<typeof crearListarFacturas>;
+  readonly actualizarFactura: ReturnType<typeof crearActualizarFactura>;
 };
