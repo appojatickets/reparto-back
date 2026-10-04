@@ -47,9 +47,9 @@ Sin esto, cualquiera con la clave publishable (que viaja en el navegador) podrí
 ### B1. Respaldos
 Supabase Free **no** incluye respaldos automáticos (a verificar en la fecha). Fase 7 los resuelve; mientras tanto no cargues datos que no puedas volver a importar.
 
-### B2. Subir Render a Starter (decisión tuya, ~US$7/mes)
-Con esto el servidor deja de dormirse (ver `docs/adr/0006-render-starter-pagado.md`). Es la única excepción a «todo gratis».
-- [ ] Render → servicio `reparto-back` → **Settings → Instance Type → Starter**. Pide tarjeta; lo haces tú en el panel.
+### B2. Subir Render a Starter (~US$7/mes) — DESPUÉS de la semana de pruebas
+Con esto el servidor deja de dormirse (ver `docs/adr/0006-render-starter-pagado.md`). Decisión tuya: se activa cuando el sistema esté terminado y lleve ~1 semana de uso de prueba en plan gratis. Mientras tanto, el primer toque tras 15 min de inactividad espera hasta 1 minuto (con aviso en pantalla). Es la única excepción a «todo gratis».
+- [ ] (Más adelante) Render → servicio `reparto-back` → **Settings → Instance Type → Starter**. Pide tarjeta; lo haces tú en el panel.
 - [ ] Cuando lo cambies avísame: verifico en los logs que ya no se duerme.
 
 ### B3. Revisar el ping diario
