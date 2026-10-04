@@ -74,6 +74,10 @@ export class PostgresFacturaRepository implements FacturaRepository {
     }
   }
 
+  obtener(empresaId: string, id: string): Promise<FacturaDetallada | undefined> {
+    return this.porId(empresaId, id);
+  }
+
   async listar(empresaId: string, filtro: FiltroFacturas): Promise<readonly FacturaDetallada[]> {
     let q = detalle(this.db, empresaId).where('f.fecha_reparto', '=', filtro.fecha);
     if (!filtro.incluirAnuladas) q = q.where('f.estado', '=', 'pendiente');

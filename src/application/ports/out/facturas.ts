@@ -42,6 +42,7 @@ export type FiltroFacturas = { readonly fecha: string; readonly camionId?: strin
 
 export interface FacturaRepository {
   crear(empresaId: string, f: NuevaFactura): Promise<Result<FacturaDetallada, 'FOLIO_DUPLICADO' | 'LOCAL_NO_EXISTE' | 'CAMION_NO_DISPONIBLE'>>;
+  obtener(empresaId: string, id: string): Promise<FacturaDetallada | undefined>;
   listar(empresaId: string, filtro: FiltroFacturas): Promise<readonly FacturaDetallada[]>;
   actualizar(empresaId: string, id: string, cambios: CambiosFactura): Promise<Result<FacturaDetallada, 'NO_ENCONTRADA' | 'CAMION_NO_DISPONIBLE'>>;
 }

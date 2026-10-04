@@ -8,9 +8,17 @@ describe('permisos por rol', () => {
     for (const p of TODOS_LOS_PERMISOS) expect(puede('admin', p)).toBe(true);
   });
 
-  it('el chofer NO accede a métricas, usuarios, importaciones ni a clientes', () => {
-    const prohibidos: Permiso[] = ['metricas:leer', 'usuarios:gestionar', 'clientes:importar', 'clientes:escribir', 'clientes:leer', 'pines:revisar', 'facturas:leer', 'facturas:escribir', 'camiones:gestionar', 'rutas:leer', 'rutas:escribir', 'empresa:configurar'];
+  it('el chofer NO accede a métricas, usuarios, importaciones, edición de clientes, camiones ni configuración', () => {
+    const prohibidos: Permiso[] = ['metricas:leer', 'usuarios:gestionar', 'clientes:importar', 'clientes:escribir', 'pines:revisar', 'camiones:gestionar', 'empresa:configurar'];
     for (const p of prohibidos) expect(puede('chofer', p)).toBe(false);
+  });
+
+  it('el chofer carga sus facturas, ve su ruta, busca clientes y elige su camión del día', () => {
+    for (const p of ['facturas:leer', 'facturas:escribir', 'rutas:leer', 'rutas:escribir', 'clientes:leer', 'jornada:gestionar'] as const) expect(puede('chofer', p)).toBe(true);
+  });
+
+  it('solo el chofer y el admin tienen jornada', () => {
+    expect(roles.filter((r) => puede(r, 'jornada:gestionar'))).toEqual(['admin', 'chofer']);
   });
 
   it('el despachador gestiona clientes y pines, pero no usuarios ni métricas', () => {

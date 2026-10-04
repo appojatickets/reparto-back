@@ -2,6 +2,9 @@ import { vi } from 'vitest';
 import { err, ok } from '../../domain/shared/result.js';
 import type { Camion, CamionRepository } from '../ports/out/camiones.js';
 import type { FacturaDetallada, FacturaRepository } from '../ports/out/facturas.js';
+import type { Jornada, JornadaRepository } from '../ports/out/jornadas.js';
+import { crearReloj } from './fakes.test-util.js';
+import { crearResolverCamion } from './jornada.js';
 
 export const camionDe = (extra: Partial<Camion> = {}): Camion => ({ id: 'cam-1', patente: 'ABCD12', activo: true, ...extra });
 
@@ -25,8 +28,21 @@ export const fakeCamiones = () =>
 export const fakeFacturas = () =>
   ({
     crear: vi.fn<FacturaRepository['crear']>(() => Promise.resolve(ok(facturaDe()))),
+    obtener: vi.fn<FacturaRepository['obtener']>(() => Promise.resolve(facturaDe())),
     listar: vi.fn<FacturaRepository['listar']>(() => Promise.resolve([facturaDe()])),
     actualizar: vi.fn<FacturaRepository['actualizar']>(() => Promise.resolve(ok(facturaDe()))),
   }) satisfies FacturaRepository;
 
 export { err, ok };
+
+export const JORNADA: Jornada = { id: 'j-1', usuarioId: 'u-chofer', fecha: '2026-10-05', desde: new Date('2026-10-05T11:00:00Z'), camion: { id: 'cam-1', patente: 'ABCD12' } };
+
+export const fakeJornadas = (activa?: Jornada) =>
+  ({
+    activa: vi.fn<JornadaRepository['activa']>(() => Promise.resolve(activa)),
+    iniciar: vi.fn<JornadaRepository['iniciar']>((_e, usuarioId, camionId, fecha, ahora) => Promise.resolve(ok({ ...JORNADA, usuarioId, fecha, desde: ahora, camion: { id: camionId, patente: 'ABCD12' } }))),
+    terminar: vi.fn<JornadaRepository['terminar']>(() => Promise.resolve(true)),
+  }) satisfies JornadaRepository;
+
+/** El resolvedor real con una jornada fija (reloj de prueba: 2026-10-05 12:00 UTC). Despachador y admin pasan sin jornada. */
+export const resolverDePrueba = (activa?: Jornada) => crearResolverCamion({ jornadas: fakeJornadas(activa), clock: crearReloj().clock });

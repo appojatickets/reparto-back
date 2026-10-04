@@ -30,7 +30,7 @@ const construir = async (extra: Partial<CasosDeUso> = {}) => {
   return buildServer({ frontOrigin: 'https://front.test', casos });
 };
 
-type RutaProtegida = { metodo: 'GET' | 'POST' | 'PUT' | 'PATCH'; url: string; body?: object; permiso: Permiso | undefined; caso: keyof CasosDeUso };
+type RutaProtegida = { metodo: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; url: string; body?: object; permiso: Permiso | undefined; caso: keyof CasosDeUso };
 const filaCliente = { razonSocial: 'X', direccion: 'Calle 1', comuna: 'Maipú' };
 const RUTAS: RutaProtegida[] = [
   { metodo: 'GET', url: '/v1/usuarios', permiso: 'usuarios:gestionar', caso: 'listarUsuarios' },
@@ -59,6 +59,9 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'GET', url: `/v1/rutas?camionId=${UUID}&fecha=2026-10-05`, permiso: 'rutas:leer', caso: 'verRuta' },
   { metodo: 'POST', url: '/v1/rutas/planificar', body: { camionId: UUID, fecha: '2026-10-05' }, permiso: 'rutas:escribir', caso: 'planificarRuta' },
   { metodo: 'POST', url: '/v1/rutas/operaciones', body: { camionId: UUID, fecha: '2026-10-05', version: 1, operacion: { tipo: 'ordenar' } }, permiso: 'rutas:escribir', caso: 'operarRuta' },
+  { metodo: 'GET', url: '/v1/jornada', permiso: 'jornada:gestionar', caso: 'miJornada' },
+  { metodo: 'POST', url: '/v1/jornada', body: { camionId: UUID }, permiso: 'jornada:gestionar', caso: 'iniciarJornada' },
+  { metodo: 'DELETE', url: '/v1/jornada', permiso: 'jornada:gestionar', caso: 'terminarJornada' },
   { metodo: 'GET', url: `/v1/locales/${UUID}/horario`, permiso: 'clientes:leer', caso: 'obtenerHorario' },
   { metodo: 'PUT', url: `/v1/locales/${UUID}/horario`, body: { dias: [{ dia: 1, cerrado: false, tramos: [{ desde: 600, hasta: 1080 }] }] }, permiso: 'clientes:escribir', caso: 'guardarHorario' },
 ];

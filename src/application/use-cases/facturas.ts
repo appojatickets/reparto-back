@@ -3,6 +3,7 @@ import { esFechaValida, fechaEnChile } from '../../domain/shared/fechas.js';
 import { validarAntesDe, validarFactura, validarNota, validarTotal, type FacturaCruda } from '../../domain/entidades/factura.js';
 import { err, ok, type Result } from '../../domain/shared/result.js';
 import { errorApp, type ErrorApp } from '../errores.js';
+import type { ResolverCamion } from './jornada.js';
 import type { Clock } from '../ports/out/clock.js';
 import type { CambiosFactura, FacturaDetallada, FacturaRepository, FiltroFacturas } from '../ports/out/facturas.js';
 
@@ -11,15 +12,18 @@ const sinCamion = () => errorApp('NO_ENCONTRADO', 'El camión no existe o está 
 export type EntradaFactura = FacturaCruda & { readonly localId: string; readonly camionId?: string | undefined };
 
 /** Ingreso de una factura. Sin fecha se reparte hoy (hora de Chile). Un folio repetido se informa, nunca se duplica. */
-export const crearRegistrarFactura = ({ facturas, clock }: { facturas: FacturaRepository; clock: Clock }) =>
+export const crearRegistrarFactura = ({ facturas, clock, resolverCamion }: { facturas: FacturaRepository; clock: Clock; resolverCamion: ResolverCamion }) =>
   async (actor: Usuario, entrada: EntradaFactura): Promise<Result<FacturaDetallada, ErrorApp>> => {
     const v = validarFactura(entrada);
     if (!v.ok) return err(errorApp('VALIDACION', v.error.map((e) => e.mensaje).join(' '), { errores: v.error }));
+    // Un chofer carga siempre en el camión de su jornada.
+    const camion = await resolverCamion(actor, entrada.camionId);
+    if (!camion.ok) return camion;
     const r = await facturas.crear(actor.empresaId, {
       folio: v.value.folio,
       localId: entrada.localId,
       fecha: v.value.fecha ?? fechaEnChile(clock.now()),
-      ...(entrada.camionId !== undefined ? { camionId: entrada.camionId } : {}),
+      ...(camion.value !== undefined ? { camionId: camion.value } : {}),
       ...(v.value.total !== undefined ? { total: v.value.total } : {}),
       ...(v.value.antesDeMin !== undefined ? { antesDeMin: v.value.antesDeMin } : {}),
       urgente: v.value.urgente,
@@ -39,13 +43,16 @@ export const crearRegistrarFactura = ({ facturas, clock }: { facturas: FacturaRe
 
 export type EntradaListarFacturas = { readonly fecha?: string | undefined; readonly camionId?: string | undefined; readonly sinCamion?: boolean | undefined; readonly incluirAnuladas?: boolean | undefined };
 
-export const crearListarFacturas = ({ facturas, clock }: { facturas: FacturaRepository; clock: Clock }) =>
+export const crearListarFacturas = ({ facturas, clock, resolverCamion }: { facturas: FacturaRepository; clock: Clock; resolverCamion: ResolverCamion }) =>
   async (actor: Usuario, entrada: EntradaListarFacturas = {}): Promise<Result<readonly FacturaDetallada[], ErrorApp>> => {
     if (entrada.fecha !== undefined && !esFechaValida(entrada.fecha)) return err(errorApp('VALIDACION', 'La fecha no es válida.'));
+    const camion = await resolverCamion(actor, entrada.camionId);
+    if (!camion.ok) return camion;
+    const esChofer = actor.rol === 'chofer';
     const filtro: FiltroFacturas = {
       fecha: entrada.fecha ?? fechaEnChile(clock.now()),
-      ...(entrada.camionId !== undefined ? { camionId: entrada.camionId } : {}),
-      ...(entrada.sinCamion === true ? { sinCamion: true } : {}),
+      ...(camion.value !== undefined ? { camionId: camion.value } : {}),
+      ...(entrada.sinCamion === true && !esChofer ? { sinCamion: true } : {}),
       ...(entrada.incluirAnuladas === true ? { incluirAnuladas: true } : {}),
     };
     return ok(await facturas.listar(actor.empresaId, filtro));
@@ -62,9 +69,17 @@ export type EntradaActualizarFactura = {
 };
 
 /** Cambiar camión, día, condiciones o anular. `null` quita un valor (p. ej. sacar la hora límite). */
-export const crearActualizarFactura = ({ facturas }: { facturas: FacturaRepository }) =>
+export const crearActualizarFactura = ({ facturas, resolverCamion }: { facturas: FacturaRepository; resolverCamion: ResolverCamion }) =>
   async (actor: Usuario, id: string, e: EntradaActualizarFactura): Promise<Result<FacturaDetallada, ErrorApp>> => {
     const invalido = (m: string) => err(errorApp('VALIDACION', m));
+    if (actor.rol === 'chofer') {
+      // Solo las facturas de su camión de hoy, y no puede pasarlas a otro camión.
+      const actual = await facturas.obtener(actor.empresaId, id);
+      if (!actual) return err(errorApp('NO_ENCONTRADO', 'La factura no existe.'));
+      const propio = await resolverCamion(actor, actual.camion?.id ?? '');
+      if (!propio.ok) return propio.error.codigo === 'SIN_PERMISO' ? err(errorApp('SIN_PERMISO', 'Esa factura no es de tu camión de hoy.')) : propio;
+      if (e.camionId !== undefined) return err(errorApp('SIN_PERMISO', 'No puedes pasar la factura a otro camión.'));
+    }
     if (e.fecha !== undefined && !esFechaValida(e.fecha)) return invalido('La fecha no es válida.');
     if (typeof e.total === 'number' && !validarTotal(e.total)) return invalido('El total debe ser un número entero de pesos.');
     if (typeof e.antesDeMin === 'number' && !validarAntesDe(e.antesDeMin)) return invalido('La hora límite no es válida.');

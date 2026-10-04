@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { err } from '../../domain/shared/result.js';
 import { crearReloj, usuarioDe } from './fakes.test-util.js';
+import { resolverDePrueba } from './fakes-facturas.test-util.js';
 import { CAMION_ID, FECHA, fakeCamionesRuta, fakeEmpresas, fakeFacturasRuta, fakeRutas, paradaDe } from './fakes-rutas.test-util.js';
 import { crearServiciosDeRuta } from './rutas.js';
 
@@ -10,7 +11,7 @@ const montar = (opciones: { pendientes?: ReturnType<typeof paradaDe>[]; config?:
   const rutas = fakeRutas(opciones.pendientes ?? [paradaDe('A'), paradaDe('B'), paradaDe('C'), paradaDe('D')]);
   const empresas = fakeEmpresas(opciones.config);
   const facturas = fakeFacturasRuta();
-  const servicios = crearServiciosDeRuta({ rutas: rutas.repo, empresas, camiones: fakeCamionesRuta(), facturas, clock: crearReloj().clock });
+  const servicios = crearServiciosDeRuta({ rutas: rutas.repo, empresas, camiones: fakeCamionesRuta(), facturas, clock: crearReloj().clock, resolverCamion: resolverDePrueba() });
   return { ...servicios, rutas, facturas, empresas };
 };
 const entrada = { camionId: CAMION_ID, fecha: FECHA };
@@ -186,5 +187,30 @@ describe('acomodar la ruta', () => {
     expect(!q.ok && q.error.codigo).toBe('NO_ENCONTRADO');
     const salida = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'salida', salidaMin: -5 } });
     expect(!salida.ok && salida.error.codigo).toBe('VALIDACION');
+  });
+});
+
+describe('ruta del chofer', () => {
+  const chofer = usuarioDe({ id: 'u-chofer', rol: 'chofer' });
+  const montarChofer = (jornada?: Parameters<typeof resolverDePrueba>[0]) => {
+    const rutas = fakeRutas([paradaDe('A'), paradaDe('B')]);
+    return crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), clock: crearReloj().clock, resolverCamion: resolverDePrueba(jornada) });
+  };
+  const JORNADA_CAM = { id: 'j-1', usuarioId: 'u-chofer', fecha: FECHA, desde: new Date(), camion: { id: CAMION_ID, patente: 'ABCD12' } };
+
+  it('puede ver y calcular la ruta de su camión de hoy', async () => {
+    const s = montarChofer(JORNADA_CAM);
+    expect((await s.ver(chofer, entrada)).ok).toBe(true);
+    expect((await s.planificar(chofer, entrada)).ok).toBe(true);
+  });
+
+  it('no puede ver ni tocar la ruta de otro camión, ni sin jornada', async () => {
+    const s = montarChofer({ ...JORNADA_CAM, camion: { id: 'otro', patente: 'WXYZ99' } });
+    const otro = await s.ver(chofer, entrada);
+    expect(!otro.ok && otro.error.codigo).toBe('SIN_PERMISO');
+    const plan = await s.planificar(chofer, entrada);
+    expect(!plan.ok && plan.error.codigo).toBe('SIN_PERMISO');
+    const sin = await montarChofer().ver(chofer, entrada);
+    expect(!sin.ok && sin.error).toMatchObject({ detalle: { codigo: 'SIN_JORNADA' } });
   });
 });

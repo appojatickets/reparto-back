@@ -1,0 +1,63 @@
+import { z } from 'zod';
+import { actor } from '../auth.js';
+import { enviarError, RESPUESTAS_ERROR } from '../errores.js';
+import { SEGURIDAD, tipada, type ContextoRutas } from './comunes.js';
+
+const jornadaSchema = z.object({
+  id: z.string(),
+  fecha: z.string(),
+  desde: z.string(),
+  camion: z.object({ id: z.string(), patente: z.string(), alias: z.string().optional() }),
+});
+const aJson = (j: { id: string; fecha: string; desde: Date; camion: { id: string; patente: string; alias?: string } }) => ({ id: j.id, fecha: j.fecha, desde: j.desde.toISOString(), camion: j.camion });
+
+export const rutasJornada = ({ app, casos, guard }: ContextoRutas): void => {
+  const a = tipada(app);
+
+  a.get(
+    '/v1/jornada',
+    {
+      preHandler: guard('jornada:gestionar'),
+      schema: {
+        tags: ['jornada'],
+        summary: 'El camión que el usuario maneja hoy (null si todavía no lo eligió)',
+        security: SEGURIDAD,
+        response: { 200: z.object({ jornada: jornadaSchema.nullable() }), ...RESPUESTAS_ERROR },
+      },
+    },
+    async (req, reply) => {
+      const j = await casos.miJornada(actor(req));
+      return reply.send({ jornada: j ? aJson(j) : null });
+    },
+  );
+
+  a.post(
+    '/v1/jornada',
+    {
+      preHandler: guard('jornada:gestionar'),
+      schema: {
+        tags: ['jornada'],
+        summary: 'Elegir (o cambiar) el camión de hoy; cierra la jornada anterior',
+        security: SEGURIDAD,
+        body: z.object({ camionId: z.uuid() }),
+        response: { 200: jornadaSchema, ...RESPUESTAS_ERROR },
+      },
+    },
+    async (req, reply) => {
+      const r = await casos.iniciarJornada(actor(req), req.body.camionId);
+      return r.ok ? reply.send(aJson(r.value)) : enviarError(reply, r.error);
+    },
+  );
+
+  a.delete(
+    '/v1/jornada',
+    {
+      preHandler: guard('jornada:gestionar'),
+      schema: { tags: ['jornada'], summary: 'Terminar la jornada de hoy', security: SEGURIDAD, response: { 204: z.null(), ...RESPUESTAS_ERROR } },
+    },
+    async (req, reply) => {
+      await casos.terminarJornada(actor(req));
+      return reply.code(204).send(null);
+    },
+  );
+};

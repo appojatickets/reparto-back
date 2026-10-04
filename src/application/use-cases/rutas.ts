@@ -12,6 +12,7 @@ import type { Clock } from '../ports/out/clock.js';
 import type { EmpresaRepository } from '../ports/out/empresa.js';
 import type { FacturaRepository } from '../ports/out/facturas.js';
 import type { FacturaParaRuta, ModoRuta, RutaGuardada, RutaRepository } from '../ports/out/rutas.js';
+import type { ResolverCamion } from './jornada.js';
 
 /** Tiempo máximo de cómputo del optimizador por pedido (válvula de seguridad; con ~50 paradas toma una fracción). */
 const LIMITE_OPTIMIZACION_MS = 2500;
@@ -69,6 +70,7 @@ type Dependencias = {
   readonly camiones: CamionRepository;
   readonly facturas: FacturaRepository;
   readonly clock: Clock;
+  readonly resolverCamion: ResolverCamion;
 };
 
 type Contexto = {
@@ -100,11 +102,13 @@ const entradaDe = (f: FacturaParaRuta): EntradaParada => ({
   urgente: f.urgente,
 });
 
-export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, clock }: Dependencias) => {
+export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, clock, resolverCamion }: Dependencias) => {
   const presupuesto = () => ({ reloj: () => clock.now().getTime(), limiteMs: LIMITE_OPTIMIZACION_MS });
 
   const cargar = async (actor: Usuario, camionId: string, fecha: string): Promise<Result<Contexto, ErrorApp>> => {
     if (!esFechaValida(fecha)) return err(errorApp('VALIDACION', 'La fecha no es válida.'));
+    const propio = await resolverCamion(actor, camionId);
+    if (!propio.ok) return propio;
     const [cams, config] = await Promise.all([camiones.listar(actor.empresaId, {}), empresas.obtenerConfig(actor.empresaId)]);
     if (!cams.some((c) => c.id === camionId)) return err(errorApp('NO_ENCONTRADO', 'El camión no existe.'));
     if (!config?.deposito) return err(errorApp('VALIDACION', 'Primero configura el depósito (de dónde salen los camiones).', { codigo: 'SIN_DEPOSITO' }));

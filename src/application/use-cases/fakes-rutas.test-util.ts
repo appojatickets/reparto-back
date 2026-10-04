@@ -58,6 +58,7 @@ export const fakeCamionesRuta = () =>
 export const fakeFacturasRuta = () =>
   ({
     crear: vi.fn<FacturaRepository['crear']>(),
+    obtener: vi.fn<FacturaRepository['obtener']>(),
     listar: vi.fn<FacturaRepository['listar']>(),
     actualizar: vi.fn<FacturaRepository['actualizar']>(() => Promise.resolve(ok(facturaDe()))),
   }) satisfies FacturaRepository;

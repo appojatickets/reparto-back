@@ -6,6 +6,7 @@ import { crearActualizarFactura, crearListarFacturas, crearRegistrarFactura } fr
 import { crearGuardarConfigEmpresa, crearObtenerConfigEmpresa } from './application/use-cases/config-empresa.js';
 import { crearServiciosDeRuta } from './application/use-cases/rutas.js';
 import { crearGuardarHorario, crearObtenerHorario } from './application/use-cases/horarios.js';
+import { crearIniciarJornada, crearMiJornada, crearResolverCamion, crearTerminarJornada } from './application/use-cases/jornada.js';
 import { crearAutenticarUsuario } from './application/use-cases/autenticar-usuario.js';
 import { crearBuscarClientes } from './application/use-cases/buscar-clientes.js';
 import { crearCrearClienteNuevo } from './application/use-cases/crear-cliente-nuevo.js';
@@ -23,6 +24,7 @@ import { PostgresDatabaseHealth } from './adapters/out/postgres/database-health.
 import { PostgresEmpresaRepository } from './adapters/out/postgres/repositorio-empresa.js';
 import { PostgresRutaRepository } from './adapters/out/postgres/repositorio-rutas.js';
 import { PostgresHorarioRepository } from './adapters/out/postgres/repositorio-horarios.js';
+import { PostgresJornadaRepository } from './adapters/out/postgres/repositorio-jornadas.js';
 import { PostgresCamionRepository } from './adapters/out/postgres/repositorio-camiones.js';
 import { PostgresFacturaRepository } from './adapters/out/postgres/repositorio-facturas.js';
 import { PostgresClienteRepository } from './adapters/out/postgres/repositorio-clientes.js';
@@ -46,13 +48,15 @@ const facturas = new PostgresFacturaRepository(db);
 const empresas = new PostgresEmpresaRepository(db);
 const rutas = new PostgresRutaRepository(db);
 const horarios = new PostgresHorarioRepository(db);
+const jornadas = new PostgresJornadaRepository(db);
 const identidad = new IdentidadSupabase({ urlBase: env.SUPABASE_URL, claveServicio: env.SUPABASE_SERVICE_ROLE_KEY, clavePublica: env.SUPABASE_ANON_KEY });
 const almacen = new AlmacenSupabase({ urlBase: env.SUPABASE_URL, claveServicio: env.SUPABASE_SERVICE_ROLE_KEY });
 const dbHealth = new PostgresDatabaseHealth(db);
 const clock = relojDelSistema;
 
 // Casos de uso con sus puertos inyectados
-const serviciosDeRuta = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, clock });
+const resolverCamion = crearResolverCamion({ jornadas, clock });
+const serviciosDeRuta = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, clock, resolverCamion });
 const casos: CasosDeUso = {
   checkHealth: () => checkHealth({ db: dbHealth, clock }),
   autenticar: crearAutenticarUsuario({ identidad, usuarios, clock }),
@@ -76,12 +80,15 @@ const casos: CasosDeUso = {
   listarCamiones: crearListarCamiones({ camiones }),
   crearCamion: crearCrearCamion({ camiones }),
   actualizarCamion: crearActualizarCamion({ camiones }),
-  registrarFactura: crearRegistrarFactura({ facturas, clock }),
-  listarFacturas: crearListarFacturas({ facturas, clock }),
-  actualizarFactura: crearActualizarFactura({ facturas }),
+  registrarFactura: crearRegistrarFactura({ facturas, clock, resolverCamion }),
+  listarFacturas: crearListarFacturas({ facturas, clock, resolverCamion }),
+  actualizarFactura: crearActualizarFactura({ facturas, resolverCamion }),
   verRuta: serviciosDeRuta.ver,
   planificarRuta: serviciosDeRuta.planificar,
   operarRuta: serviciosDeRuta.operar,
+  miJornada: crearMiJornada({ jornadas, clock }),
+  iniciarJornada: crearIniciarJornada({ jornadas, clock }),
+  terminarJornada: crearTerminarJornada({ jornadas, clock }),
   obtenerHorario: crearObtenerHorario({ horarios }),
   guardarHorario: crearGuardarHorario({ horarios }),
   obtenerConfigEmpresa: crearObtenerConfigEmpresa({ empresas }),

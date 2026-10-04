@@ -6,6 +6,7 @@ import type { crearActualizarFactura, crearListarFacturas, crearRegistrarFactura
 import type { crearGuardarConfigEmpresa, crearObtenerConfigEmpresa } from '../../../application/use-cases/config-empresa.js';
 import type { crearServiciosDeRuta } from '../../../application/use-cases/rutas.js';
 import type { crearGuardarHorario, crearObtenerHorario } from '../../../application/use-cases/horarios.js';
+import type { crearIniciarJornada, crearMiJornada, crearTerminarJornada } from '../../../application/use-cases/jornada.js';
 import type { crearAutenticarUsuario } from '../../../application/use-cases/autenticar-usuario.js';
 import type { crearBuscarClientes } from '../../../application/use-cases/buscar-clientes.js';
 import type { crearCrearClienteNuevo } from '../../../application/use-cases/crear-cliente-nuevo.js';
@@ -47,6 +48,9 @@ export type CasosDeUso = {
   readonly verRuta: ReturnType<typeof crearServiciosDeRuta>['ver'];
   readonly planificarRuta: ReturnType<typeof crearServiciosDeRuta>['planificar'];
   readonly operarRuta: ReturnType<typeof crearServiciosDeRuta>['operar'];
+  readonly miJornada: ReturnType<typeof crearMiJornada>;
+  readonly iniciarJornada: ReturnType<typeof crearIniciarJornada>;
+  readonly terminarJornada: ReturnType<typeof crearTerminarJornada>;
   readonly obtenerHorario: ReturnType<typeof crearObtenerHorario>;
   readonly guardarHorario: ReturnType<typeof crearGuardarHorario>;
   readonly obtenerConfigEmpresa: ReturnType<typeof crearObtenerConfigEmpresa>;

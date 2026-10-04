@@ -3,8 +3,11 @@ import { PostgresCamionRepository } from '../../src/adapters/out/postgres/reposi
 import { PostgresClienteRepository } from '../../src/adapters/out/postgres/repositorio-clientes.js';
 import { PostgresEmpresaRepository } from '../../src/adapters/out/postgres/repositorio-empresa.js';
 import { PostgresFacturaRepository } from '../../src/adapters/out/postgres/repositorio-facturas.js';
+import { PostgresJornadaRepository } from '../../src/adapters/out/postgres/repositorio-jornadas.js';
 import { PostgresHorarioRepository } from '../../src/adapters/out/postgres/repositorio-horarios.js';
 import { PostgresRutaRepository } from '../../src/adapters/out/postgres/repositorio-rutas.js';
+import { crearRegistrarFactura, crearListarFacturas } from '../../src/application/use-cases/facturas.js';
+import { crearResolverCamion } from '../../src/application/use-cases/jornada.js';
 import { crearServiciosDeRuta } from '../../src/application/use-cases/rutas.js';
 import { abrirDb, crearEmpresa, crearUsuario } from './utils.js';
 
@@ -17,6 +20,7 @@ const empresas = new PostgresEmpresaRepository(db);
 afterAll(() => db.destroy());
 
 const FECHA = '2026-10-05'; // lunes
+const pasarCamion = (_a: unknown, c: string | undefined) => Promise.resolve({ ok: true as const, value: c });
 
 const sembrar = async () => {
   const empresa = await crearEmpresa(db);
@@ -93,7 +97,7 @@ describe('rutas en Postgres', () => {
     await factura(s, '3', 'Kiosko C');
     await factura(s, '4', 'Sin Pin D');
     const reloj = { now: () => new Date('2026-10-05T12:00:00Z') };
-    const servicios = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, clock: reloj });
+    const servicios = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, clock: reloj, resolverCamion: pasarCamion });
     const usuario = { id: s.usuario, empresaId: s.empresa, rol: 'despachador' as const, username: 'd', nombre: 'D', activo: true };
 
     const p = await servicios.planificar(usuario, { camionId: s.camion, fecha: FECHA });
@@ -149,10 +153,64 @@ describe('horario manual en Postgres', () => {
     await empresas.guardarConfig(s.empresa, { deposito: { lat: -33.5, lng: -70.7 }, salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260 });
     await factura(s, '1', 'Almacén A');
     await factura(s, '2', 'Bazar B');
-    const servicios = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, clock: { now: () => new Date('2026-10-05T12:00:00Z') } });
+    const servicios = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, clock: { now: () => new Date('2026-10-05T12:00:00Z') }, resolverCamion: pasarCamion });
     const usuario = { id: s.usuario, empresaId: s.empresa, rol: 'despachador' as const, username: 'd', nombre: 'D', activo: true };
     const p = await servicios.planificar(usuario, { camionId: s.camion, fecha: FECHA }); // 2026-10-05 es lunes: Almacén A está cerrado
     expect(p.ok && p.value.paradas.map((x) => x.cliente)).toEqual(['Bazar B']);
     expect(p.ok && p.value.noAtendidas.map((x) => x.cliente)).toEqual(['Almacén A']);
+  });
+});
+
+describe('jornada en Postgres', () => {
+  const jornadas = new PostgresJornadaRepository(db);
+  const ahora = new Date('2026-10-05T12:00:00Z');
+
+  it('una sola jornada abierta por usuario: al cambiar de camión se cierra la anterior', async () => {
+    const s = await sembrar();
+    const otro = await camiones.crear(s.empresa, { patente: 'WXYZ99', alias: 'El Blanco' });
+    if (!otro.ok) throw new Error('camión');
+    expect(await jornadas.activa(s.empresa, s.usuario, FECHA)).toBeUndefined();
+    const a = await jornadas.iniciar(s.empresa, s.usuario, s.camion, FECHA, ahora);
+    expect(a.ok && a.value.camion.patente).toBe('ABCD12');
+    expect((await jornadas.activa(s.empresa, s.usuario, FECHA))?.camion.id).toBe(s.camion);
+    const b = await jornadas.iniciar(s.empresa, s.usuario, otro.value.id, FECHA, new Date('2026-10-05T16:00:00Z'));
+    expect(b.ok && b.value.camion).toEqual({ id: otro.value.id, patente: 'WXYZ99', alias: 'El Blanco' });
+    expect((await jornadas.activa(s.empresa, s.usuario, FECHA))?.camion.id).toBe(otro.value.id);
+    const filas = await db.selectFrom('jornada').select(['camion_id', 'hasta']).where('usuario_id', '=', s.usuario).orderBy('desde').execute();
+    expect(filas.map((f) => f.hasta !== null)).toEqual([true, false]);
+  });
+
+  it('terminar cierra la jornada; una abierta de otro día no cuenta', async () => {
+    const s = await sembrar();
+    await jornadas.iniciar(s.empresa, s.usuario, s.camion, FECHA, ahora);
+    expect(await jornadas.activa(s.empresa, s.usuario, '2026-10-06')).toBeUndefined();
+    expect(await jornadas.terminar(s.empresa, s.usuario, ahora)).toBe(true);
+    expect(await jornadas.activa(s.empresa, s.usuario, FECHA)).toBeUndefined();
+    expect(await jornadas.terminar(s.empresa, s.usuario, ahora)).toBe(false);
+  });
+
+  it('rechaza camiones inactivos o de otra empresa', async () => {
+    const s = await sembrar();
+    const ajena = await sembrar();
+    expect(await jornadas.iniciar(s.empresa, s.usuario, ajena.camion, FECHA, ahora)).toEqual({ ok: false, error: 'CAMION_NO_DISPONIBLE' });
+    await camiones.actualizar(s.empresa, s.camion, { activo: false });
+    expect(await jornadas.iniciar(s.empresa, s.usuario, s.camion, FECHA, ahora)).toEqual({ ok: false, error: 'CAMION_NO_DISPONIBLE' });
+  });
+
+  it('de punta a punta: el chofer carga una factura y ve su ruta solo en el camión de su jornada', async () => {
+    const s = await sembrar();
+    const chofer = { id: s.usuario, empresaId: s.empresa, rol: 'chofer' as const, username: 'c', nombre: 'C', activo: true };
+    const reloj = { now: () => new Date('2026-10-05T12:00:00Z') };
+    const resolverCamion = crearResolverCamion({ jornadas, clock: reloj });
+    const registrar = crearRegistrarFactura({ facturas, clock: reloj, resolverCamion });
+    const sin = await registrar(chofer, { folio: '9001', localId: s.local('Almacén A') });
+    expect(!sin.ok && sin.error.detalle).toMatchObject({ codigo: 'SIN_JORNADA' });
+
+    await jornadas.iniciar(s.empresa, s.usuario, s.camion, FECHA, ahora);
+    const r = await registrar(chofer, { folio: '9001', localId: s.local('Almacén A') });
+    expect(r.ok && r.value.camion?.id).toBe(s.camion);
+    expect(r.ok && r.value.fecha).toBe(FECHA);
+    const lista = await crearListarFacturas({ facturas, clock: reloj, resolverCamion })(chofer, {});
+    expect(lista.ok && lista.value.map((f) => f.folio)).toEqual(['9001']);
   });
 });
