@@ -92,6 +92,14 @@ describe('planificar', () => {
   });
 });
 
+describe('coordenadas para navegar', () => {
+  it('cada parada trae el pin del local; las sin pin no traen coordenadas', async () => {
+    const s = montar({ pendientes: [paradaDe('A', { lat: -33.45, lng: -70.65 }), paradaDe('B')] });
+    const r = await s.planificar(despachador, entrada);
+    expect(r.ok && r.value.paradas[0]).toMatchObject({ lat: -33.45, lng: -70.65 });
+  });
+});
+
 describe('acomodar la ruta', () => {
   const planificada = async () => {
     const s = montar();

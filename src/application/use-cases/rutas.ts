@@ -24,6 +24,9 @@ export type ItemVista = {
   readonly cliente: string;
   readonly direccion: string;
   readonly comuna: string;
+  /** Pin del local, para abrir la navegación (Waze, Google Maps). */
+  readonly lat?: number;
+  readonly lng?: number;
   readonly urgente: boolean;
   readonly antesDeMin?: number;
   readonly nota?: string;
@@ -87,6 +90,7 @@ const itemDe = (f: FacturaParaRuta): ItemVista => ({
   cliente: f.razonSocial,
   direccion: f.direccion,
   comuna: f.comuna,
+  ...(f.lat !== undefined && f.lng !== undefined ? { lat: f.lat, lng: f.lng } : {}),
   urgente: f.urgente,
   ...(f.antesDeMin !== undefined ? { antesDeMin: f.antesDeMin } : {}),
   ...(f.nota !== undefined ? { nota: f.nota } : {}),

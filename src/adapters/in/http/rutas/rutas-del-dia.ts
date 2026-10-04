@@ -13,6 +13,8 @@ const item = z.object({
   cliente: z.string(),
   direccion: z.string(),
   comuna: z.string(),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
   urgente: z.boolean(),
   antesDeMin: z.number().optional(),
   nota: z.string().optional(),
