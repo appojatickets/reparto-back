@@ -5,7 +5,7 @@ API Fastify + TypeScript estricto en Render (Free). Dos repos independientes (re
 ## Acuerdo de trabajo con el dueño (Matías)
 - **Autorizado a subir directo a `main`** (sin PR, salvo que se pida uno). Objetivo: avanzar y usar el proyecto. `main` despliega solo (Render / Vercel), así que antes de subir debe pasar `npm run check` y el build.
 - Se avanza **paso a paso, una cosa a la vez**; el dueño hace los pasos en los paneles (Supabase, Render, Vercel) y pega el avance.
-- **Todo gratis.** Cualquier gasto, tarjeta o prueba con vencimiento: detenerse y preguntar.
+- **Todo gratis**, salvo una excepción autorizada por el dueño: Render Starter (~US$7/mes) para `reparto-back` (ADR 0006). Cualquier otro gasto, tarjeta o prueba con vencimiento: detenerse y preguntar.
 - Secretos solo en variables de entorno, nunca en el repo ni pegados en el chat. Mantener .env.example al día.
 - No tocar los proyectos ajenos de la cuenta (reencuentro-prod en Supabase, api-reencuentro y api ojatickets en Render).
 - Supabase del proyecto: ref azokshimfbitsncidgdt, región us-west-2. Conexión desde Render por el Session pooler (aws-0-us-west-2.pooler.supabase.com:5432); la directa es solo IPv6.

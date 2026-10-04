@@ -47,9 +47,10 @@ Sin esto, cualquiera con la clave publishable (que viaja en el navegador) podrí
 ### B1. Respaldos
 Supabase Free **no** incluye respaldos automáticos (a verificar en la fecha). Fase 7 los resuelve; mientras tanto no cargues datos que no puedas volver a importar.
 
-### B2. Cuota de horas de Render
-El plan gratis tiene 750 horas/mes **por workspace** y ya existe `api-reencuentro` en free. Si ambas pasan despiertas casi todo el mes, se agota.
-- [ ] Revisar en Render → **Billing / Usage** cuántas horas llevan, y avisarme si te acercas al límite.
+### B2. Subir Render a Starter (decisión tuya, ~US$7/mes)
+Con esto el servidor deja de dormirse (ver `docs/adr/0006-render-starter-pagado.md`). Es la única excepción a «todo gratis».
+- [ ] Render → servicio `reparto-back` → **Settings → Instance Type → Starter**. Pide tarjeta; lo haces tú en el panel.
+- [ ] Cuando lo cambies avísame: verifico en los logs que ya no se duerme.
 
 ### B3. Revisar el ping diario
 - [ ] GitHub → repo `reparto-back` → **Actions → Ping antes de la jornada**: comprobar que corre de lunes a sábado y anotar el tiempo de despertar que muestra el resumen ("Ping OK en Ns").
