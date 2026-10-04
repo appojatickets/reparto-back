@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: reparto-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/main.js
+    healthCheckPath: /v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: JOB_TOKEN
+        sync: false
+      - key: FRONT_ORIGIN
+        sync: false
+      - key: MAIL_API_KEY
+        sync: false

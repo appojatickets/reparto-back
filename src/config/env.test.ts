@@ -1,0 +1,27 @@
+import { describe, expect, it } from 'vitest';
+import { InvalidEnvError, loadEnv } from './env.js';
+
+const valid = {
+  DATABASE_URL: 'postgres://u:p@host:6543/db',
+  SUPABASE_URL: 'https://abc.supabase.co',
+  SUPABASE_SERVICE_ROLE_KEY: 'service-key',
+  JOB_TOKEN: 'a-very-long-job-token',
+  FRONT_ORIGIN: 'https://reparto.example.com',
+};
+
+describe('loadEnv', () => {
+  it('aplica valores por defecto', () => {
+    const env = loadEnv(valid);
+    expect(env.PORT).toBe(3000);
+    expect(env.NODE_ENV).toBe('development');
+  });
+
+  it('falla indicando las variables faltantes', () => {
+    expect(() => loadEnv({})).toThrow(InvalidEnvError);
+    try {
+      loadEnv({ ...valid, JOB_TOKEN: 'corto' });
+    } catch (e) {
+      expect((e as InvalidEnvError).issues.join()).toContain('JOB_TOKEN');
+    }
+  });
+});
