@@ -3,7 +3,7 @@
 Lista viva de lo que el agente **no puede** hacer (paneles, claves, decisiones de negocio, pruebas con personas).
 Marca cada casilla al terminar. Nunca pegues claves secretas en el chat: cárgalas directo en el panel.
 
-Última actualización: 2026-10-04 (Fase 3b: rutas sugeridas y acomodables en línea).
+Última actualización: 2026-10-04 (Fase 4a: el chofer elige camión, carga facturas y ve su ruta).
 
 ---
 
@@ -58,6 +58,17 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar.
 - [ ] Abrir un cliente (BUSCAR CLIENTE → tocar el cliente): ahí está **Ubicación del local (pin)** (pegar las coordenadas de Google Maps) y **Horario de atención**.
 - [ ] Probar el horario con botones: elegir días (LUN A VIE), «Abre a las 10:00», «Cierra a las 18:00», colación 13 a 14, domingo CERRADO, o OTRO HORARIO; luego GUARDAR HORARIO. Después calcular la ruta de un camión con ese cliente: un local cerrado ese día sale en «No se pueden atender».
 - [ ] Un día sin dato no tiene restricción (el sistema no inventa cierres); «cerrado» solo existe si tú lo marcas.
+
+### A8. Probar la app del chofer (Fase 4a) — en un celular
+Esperar ~2 min a que Render y Vercel terminen de desplegar.
+- [ ] Crear (o reutilizar) un usuario **chofer** desde USUARIOS y entrar con él en el celular (de verdad, no en el computador).
+- [ ] Al entrar pregunta «¿Qué camión manejas hoy?»: tocar un camión.
+- [ ] **CARGAR FACTURAS**: dictar con el micrófono del teclado algo como «mil doscientos treinta y cuatro minimarket rabet» o escribir «1234 minimarket rabet». Tocar el cliente correcto y comprobar que queda guardada. Probar con 5 o 6 facturas reales.
+- [ ] Anotar: ¿el dictado entiende bien el número y el nombre? ¿Qué pasa con nombres difíciles? ¿Qué te falta en la pantalla?
+- [ ] Probar CONDICIONES en una factura (antes de las 13:00, urgente, nota).
+- [ ] Tocar **CALCULAR MI RUTA** y revisar el orden y las horas. Probar SUBIR/BAJAR.
+- [ ] Probar CAMBIAR DE CAMIÓN y TERMINAR MI DÍA.
+- [ ] Si falta un cliente al buscarlo: anotar cuál (hoy el chofer no puede crear clientes; lo importa la oficina).
 
 ## B. Antes de usar el sistema con choferes reales
 
