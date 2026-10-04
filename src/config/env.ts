@@ -8,6 +8,10 @@ const schema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   JOB_TOKEN: z.string().min(16),
   FRONT_ORIGIN: z.url(),
+  /** Clave publishable/anon de Supabase: con ella se inicia sesión. Si falta, se usa la de servicio. */
+  SUPABASE_ANON_KEY: z.string().min(1).optional(),
+  /** Dominio de los correos sintéticos de las cuentas (`jperez@<dominio>`); nunca se envía un correo. */
+  AUTH_EMAIL_DOMAIN: z.string().min(3).regex(/^[a-z0-9.-]+$/).default('usuarios.reparto.test'),
   MAIL_API_KEY: z.string().optional(),
 });
 

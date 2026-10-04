@@ -14,6 +14,13 @@ describe('loadEnv', () => {
     const env = loadEnv(valid);
     expect(env.PORT).toBe(3000);
     expect(env.NODE_ENV).toBe('development');
+    expect(env.AUTH_EMAIL_DOMAIN).toBe('usuarios.reparto.test');
+    expect(env.SUPABASE_ANON_KEY).toBeUndefined();
+  });
+
+  it('rechaza un dominio de correo con caracteres inválidos', () => {
+    expect(() => loadEnv({ ...valid, AUTH_EMAIL_DOMAIN: 'Mal Dominio!' })).toThrow(InvalidEnvError);
+    expect(loadEnv({ ...valid, AUTH_EMAIL_DOMAIN: 'mi.empresa.cl' }).AUTH_EMAIL_DOMAIN).toBe('mi.empresa.cl');
   });
 
   it('falla indicando las variables faltantes', () => {

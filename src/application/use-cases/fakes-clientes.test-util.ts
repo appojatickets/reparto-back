@@ -1,0 +1,56 @@
+import { vi } from 'vitest';
+import { err, ok } from '../../domain/shared/result.js';
+import type { AlmacenArchivos } from '../ports/out/archivos.js';
+import type { ClienteRepository, CoincidenciaLocal, LocalDetalle, ResumenImportacion } from '../ports/out/clientes.js';
+import type { IdGenerator } from '../ports/out/id-generator.js';
+import type { PropuestaPinRepository } from '../ports/out/pines.js';
+
+export const fakeClientes = (locales: LocalDetalle[] = []) => {
+  const repo = {
+    buscar: vi.fn<ClienteRepository['buscar']>(() => Promise.resolve([])),
+    crearConLocal: vi.fn<ClienteRepository['crearConLocal']>(() => Promise.resolve(ok({ clienteId: 'c-1', localId: 'l-1' }))),
+    importar: vi.fn<ClienteRepository['importar']>(
+      (_e, clientes): Promise<ResumenImportacion> =>
+        Promise.resolve({ clientesCreados: clientes.length, clientesActualizados: 0, localesCreados: clientes.reduce((s, c) => s + c.locales.length, 0), localesActualizados: 0 }),
+    ),
+    obtenerLocal: vi.fn<ClienteRepository['obtenerLocal']>((empresaId, id) => Promise.resolve(empresaId === 'empresa-1' ? locales.find((l) => l.id === id) : undefined)),
+    actualizarLocal: vi.fn<ClienteRepository['actualizarLocal']>((empresaId, id) => Promise.resolve(empresaId === 'empresa-1' && locales.some((l) => l.id === id))),
+    coincidenciaDeDireccion: vi.fn<ClienteRepository['coincidenciaDeDireccion']>((): Promise<CoincidenciaLocal | undefined> => Promise.resolve(undefined)),
+  } satisfies ClienteRepository;
+  return repo;
+};
+
+export const localDe = (extra: Partial<LocalDetalle> = {}): LocalDetalle => ({
+  id: 'l-1',
+  clienteId: 'c-1',
+  razonSocial: 'Rabelo Mágica SpA',
+  direccion: 'Av. Providencia 1234',
+  comuna: 'Providencia',
+  pinEstado: 'pendiente',
+  ...extra,
+});
+
+export const fakePines = () =>
+  ({
+    crearLote: vi.fn<PropuestaPinRepository['crearLote']>((_e, _p, propuestas) => Promise.resolve(propuestas.length)),
+    listar: vi.fn<PropuestaPinRepository['listar']>(() => Promise.resolve([])),
+    resolver: vi.fn<PropuestaPinRepository['resolver']>(() => Promise.resolve(ok(undefined))),
+  }) satisfies PropuestaPinRepository;
+
+export const fakeAlmacen = () => {
+  const almacen = {
+    crearUrlSubida: vi.fn<AlmacenArchivos['crearUrlSubida']>((path) => Promise.resolve(ok({ url: `https://alm.test/subir/${path}?token=t` }))),
+    crearUrlLectura: vi.fn<AlmacenArchivos['crearUrlLectura']>((path) => Promise.resolve(ok({ url: `https://alm.test/leer/${path}?token=t` }))),
+  } satisfies AlmacenArchivos;
+  return almacen;
+};
+
+export const fallaAlmacen = (): AlmacenArchivos => ({
+  crearUrlSubida: () => Promise.resolve(err({ detalle: 'caído' })),
+  crearUrlLectura: () => Promise.resolve(err({ detalle: 'caído' })),
+});
+
+export const idsFijos = (...valores: string[]): IdGenerator => {
+  let i = 0;
+  return { uuid: () => valores[i++] ?? '00000000-0000-0000-0000-000000000000' };
+};

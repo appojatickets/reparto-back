@@ -1,0 +1,136 @@
+import { describe, expect, it } from 'vitest';
+import { crearActualizarLocal } from './actualizar-local.js';
+import { crearBuscarClientes } from './buscar-clientes.js';
+import { crearCrearClienteNuevo } from './crear-cliente-nuevo.js';
+import { crearImportarClientes } from './importar-clientes.js';
+import { usuarioDe } from './fakes.test-util.js';
+import { fakeClientes, localDe } from './fakes-clientes.test-util.js';
+
+const despachador = usuarioDe({ id: 'u-d', rol: 'despachador' });
+const admin = usuarioDe();
+
+describe('buscarClientes', () => {
+  it('normaliza el texto (tildes, mayúsculas) y filtra por la empresa del actor', async () => {
+    const clientes = fakeClientes();
+    await crearBuscarClientes({ clientes })(despachador, { q: '  RÁBE ' });
+    expect(clientes.buscar).toHaveBeenCalledWith('empresa-1', { texto: 'rabe', limite: 8 });
+  });
+
+  it('con menos de 2 letras no consulta la base', async () => {
+    const clientes = fakeClientes();
+    expect(await crearBuscarClientes({ clientes })(despachador, { q: ' a ' })).toEqual([]);
+    expect(clientes.buscar).not.toHaveBeenCalled();
+  });
+
+  it('acota el límite y resuelve la comuna ignorando tildes; una comuna inválida se ignora', async () => {
+    const clientes = fakeClientes();
+    const buscar = crearBuscarClientes({ clientes });
+    await buscar(despachador, { q: 'kiosko', comuna: 'nunoa', limite: 500 });
+    expect(clientes.buscar).toHaveBeenLastCalledWith('empresa-1', { texto: 'kiosko', comuna: 'Ñuñoa', limite: 20 });
+    await buscar(despachador, { q: 'kiosko', comuna: 'Valparaíso', limite: 0 });
+    expect(clientes.buscar).toHaveBeenLastCalledWith('empresa-1', { texto: 'kiosko', limite: 1 });
+  });
+});
+
+const datos = { rut: '12.345.678-5', razonSocial: 'Rabelo Mágica SpA', direccion: 'Av. Providencia 1234', comuna: 'Providencia' };
+
+describe('crearClienteNuevo', () => {
+  it('el despachador crea un cliente «nuevo»; el admin lo crea «activo»', async () => {
+    const clientes = fakeClientes();
+    const crear = crearCrearClienteNuevo({ clientes });
+    await crear(despachador, datos);
+    expect(clientes.crearConLocal.mock.calls[0]?.[1].estado).toBe('nuevo');
+    await crear(admin, datos);
+    expect(clientes.crearConLocal.mock.calls[1]?.[1].estado).toBe('activo');
+  });
+
+  it('con coordenadas el pin queda validado (manual); sin ellas, pendiente', async () => {
+    const clientes = fakeClientes();
+    const crear = crearCrearClienteNuevo({ clientes });
+    await crear(despachador, { ...datos, lat: -33.43, lng: -70.61 });
+    expect(clientes.crearConLocal.mock.calls[0]?.[1].local).toMatchObject({ pinEstado: 'validado', pinFuente: 'manual', lat: -33.43 });
+    await crear(despachador, datos);
+    expect(clientes.crearConLocal.mock.calls[1]?.[1].local.pinEstado).toBe('pendiente');
+  });
+
+  it('datos inválidos: VALIDACION con el detalle de cada error y sin tocar la base', async () => {
+    const clientes = fakeClientes();
+    const r = await crearCrearClienteNuevo({ clientes })(despachador, { ...datos, comuna: 'Valparaíso', rut: '1-8' });
+    expect(!r.ok && r.error.codigo).toBe('VALIDACION');
+    expect(clientes.crearConLocal).not.toHaveBeenCalled();
+  });
+
+  it('un duplicado es CONFLICTO', async () => {
+    const clientes = fakeClientes();
+    clientes.crearConLocal.mockResolvedValueOnce({ ok: false, error: 'DUPLICADO' });
+    const r = await crearCrearClienteNuevo({ clientes })(despachador, datos);
+    expect(!r.ok && r.error.codigo).toBe('CONFLICTO');
+  });
+});
+
+describe('importarClientes', () => {
+  const fila = (n: number) => ({ rut: '', razonSocial: `Cliente ${n}`, direccion: `Calle ${n}`, comuna: 'Maipú' });
+
+  it('importa las filas válidas y reporta las inválidas con su número', async () => {
+    const clientes = fakeClientes();
+    const r = await crearImportarClientes({ clientes })(admin, [fila(1), { ...fila(2), comuna: 'Marte' }, fila(3)]);
+    expect(r.ok && r.value).toMatchObject({ totalFilas: 3, validas: 2, resumen: { clientesCreados: 2 } });
+    expect(r.ok && r.value.errores).toEqual([{ fila: 2, errores: [expect.objectContaining({ codigo: 'COMUNA_INVALIDA' })] }]);
+  });
+
+  it('consolida duplicados dentro del lote antes de llegar al repositorio', async () => {
+    const clientes = fakeClientes();
+    await crearImportarClientes({ clientes })(admin, [fila(1), { ...fila(1), direccion: 'CALLE 1' }, fila(2)]);
+    expect(clientes.importar.mock.calls[0]?.[1]).toHaveLength(2);
+  });
+
+  it('un lote vacío o demasiado grande se rechaza', async () => {
+    const clientes = fakeClientes();
+    const importar = crearImportarClientes({ clientes });
+    const vacio = await importar(admin, []);
+    expect(!vacio.ok && vacio.error.codigo).toBe('VALIDACION');
+    const grande = await importar(admin, Array.from({ length: 1001 }, (_, i) => fila(i)));
+    expect(!grande.ok && grande.error.mensaje).toContain('1000');
+    expect(clientes.importar).not.toHaveBeenCalled();
+  });
+
+  it('si todas las filas son inválidas no llama al repositorio', async () => {
+    const clientes = fakeClientes();
+    const r = await crearImportarClientes({ clientes })(admin, [{ razonSocial: '', direccion: '', comuna: '' }]);
+    expect(r.ok && r.value.validas).toBe(0);
+    expect(clientes.importar).not.toHaveBeenCalled();
+  });
+});
+
+describe('actualizarLocal', () => {
+  const clientes = () => fakeClientes([localDe()]);
+
+  it('actualiza nota, rumbo y pin (el pin puesto a mano queda validado)', async () => {
+    const c = clientes();
+    const r = await crearActualizarLocal({ clientes: c })(despachador, 'l-1', { nota: ' portón   verde ', streetviewRumbo: 90, lat: -33.43, lng: -70.61 });
+    expect(r.ok).toBe(true);
+    expect(c.actualizarLocal).toHaveBeenCalledWith('empresa-1', 'l-1', {
+      nota: 'portón verde',
+      streetviewRumbo: 90,
+      pin: { lat: -33.43, lng: -70.61, estado: 'validado', fuente: 'manual' },
+    });
+  });
+
+  it.each([
+    [{}, 'nada que actualizar'],
+    [{ streetviewRumbo: 360 }, 'rumbo'],
+    [{ streetviewRumbo: 1.5 }, 'rumbo'],
+    [{ nota: 'x'.repeat(501) }, 'nota'],
+    [{ lat: -33.4 }, 'longitud'],
+    [{ lat: -41.4, lng: -72.9 }, 'Región Metropolitana'],
+  ])('rechaza %j', async (entrada, texto) => {
+    const r = await crearActualizarLocal({ clientes: clientes() })(despachador, 'l-1', entrada);
+    expect(!r.ok && r.error.codigo).toBe('VALIDACION');
+    expect(!r.ok && r.error.mensaje.toLowerCase()).toContain(texto.toLowerCase());
+  });
+
+  it('un local de otra empresa o inexistente es NO_ENCONTRADO', async () => {
+    const r = await crearActualizarLocal({ clientes: clientes() })(usuarioDe({ empresaId: 'otra' }), 'l-1', { nota: 'x' });
+    expect(!r.ok && r.error.codigo).toBe('NO_ENCONTRADO');
+  });
+});
