@@ -55,7 +55,9 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar.
 - [ ] **RUTAS DEL DÍA** → elegir día y camión → **CALCULAR RUTA SUGERIDA**. Mirar si el orden y las horas de llegada te parecen razonables.
 - [ ] Probar SUBIR / BAJAR, «MÁS» → IR PRIMERO / DEJAR PARA DESPUÉS / QUITAR DEL CAMIÓN, y agregar una factura nueva al camión y usar **INSERTAR NUEVAS**.
 - [ ] Anotar qué ruta te parece mala (qué camión, qué día y por qué): con eso calibro el motor (las velocidades hoy son estimadas, spike S1).
-- [ ] Los horarios de los locales aún no se pueden cargar desde la pantalla (viene en la siguiente entrega): por ahora ningún local tiene restricción de horario salvo el «antes de» de la factura.
+- [ ] Abrir un cliente (BUSCAR CLIENTE → tocar el cliente): ahí está **Ubicación del local (pin)** (pegar las coordenadas de Google Maps) y **Horario de atención**.
+- [ ] Probar el horario con botones: elegir días (LUN A VIE), «Abre a las 10:00», «Cierra a las 18:00», colación 13 a 14, domingo CERRADO, o OTRO HORARIO; luego GUARDAR HORARIO. Después calcular la ruta de un camión con ese cliente: un local cerrado ese día sale en «No se pueden atender».
+- [ ] Un día sin dato no tiene restricción (el sistema no inventa cierres); «cerrado» solo existe si tú lo marcas.
 
 ## B. Antes de usar el sistema con choferes reales
 
