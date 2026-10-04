@@ -3,7 +3,7 @@
 Lista viva de lo que el agente **no puede** hacer (paneles, claves, decisiones de negocio, pruebas con personas).
 Marca cada casilla al terminar. Nunca pegues claves secretas en el chat: cárgalas directo en el panel.
 
-Última actualización: 2026-10-04 (Fase 2: login real funcionando; faltan las pruebas con datos).
+Última actualización: 2026-10-04 (Fase 3a: facturas y camiones en línea).
 
 ---
 
@@ -41,6 +41,12 @@ Sin esto, cualquiera con la clave publishable (que viaja en el navegador) podrí
 - [ ] Crear un chofer de prueba desde la pantalla de usuarios y entrar con él en una ventana privada. Confirmar que **no** ve el menú de administración.
 
 ---
+
+### A6. Probar la Fase 3a (facturas y camiones)
+Esperar ~2 min a que Render y Vercel terminen de desplegar.
+- [ ] Entrar como admin → **CAMIONES** → agregar al menos 2 patentes reales (ej. `AB1234`, `BCDF12`) con un nombre corto.
+- [ ] **FACTURAS DEL DÍA** → ingresar 4–5 facturas con los clientes de ejemplo (camión, folio, «antes de» y urgente). Probar un folio repetido (debe avisar) y cambiar una factura de camión.
+- [ ] Cuéntame qué se siente lento o confuso: esta pantalla es la que más se usará cada día.
 
 ## B. Antes de usar el sistema con choferes reales
 
