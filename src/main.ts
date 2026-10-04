@@ -3,6 +3,8 @@ import { crearActualizarLocal } from './application/use-cases/actualizar-local.j
 import { crearObtenerUrlFoto, crearRegistrarFotoLocal, crearSolicitarUrlSubida } from './application/use-cases/archivos.js';
 import { crearActualizarCamion, crearCrearCamion, crearListarCamiones } from './application/use-cases/camiones.js';
 import { crearActualizarFactura, crearListarFacturas, crearRegistrarFactura } from './application/use-cases/facturas.js';
+import { crearGuardarConfigEmpresa, crearObtenerConfigEmpresa } from './application/use-cases/config-empresa.js';
+import { crearServiciosDeRuta } from './application/use-cases/rutas.js';
 import { crearAutenticarUsuario } from './application/use-cases/autenticar-usuario.js';
 import { crearBuscarClientes } from './application/use-cases/buscar-clientes.js';
 import { crearCrearClienteNuevo } from './application/use-cases/crear-cliente-nuevo.js';
@@ -17,6 +19,8 @@ import { buildServer } from './adapters/in/http/server.js';
 import type { CasosDeUso } from './adapters/in/http/casos-de-uso.js';
 import { createDb } from './adapters/out/postgres/client.js';
 import { PostgresDatabaseHealth } from './adapters/out/postgres/database-health.js';
+import { PostgresEmpresaRepository } from './adapters/out/postgres/repositorio-empresa.js';
+import { PostgresRutaRepository } from './adapters/out/postgres/repositorio-rutas.js';
 import { PostgresCamionRepository } from './adapters/out/postgres/repositorio-camiones.js';
 import { PostgresFacturaRepository } from './adapters/out/postgres/repositorio-facturas.js';
 import { PostgresClienteRepository } from './adapters/out/postgres/repositorio-clientes.js';
@@ -37,12 +41,15 @@ const intentos = new PostgresIntentosLoginRepository(db);
 const pines = new PostgresPropuestaPinRepository(db);
 const camiones = new PostgresCamionRepository(db);
 const facturas = new PostgresFacturaRepository(db);
+const empresas = new PostgresEmpresaRepository(db);
+const rutas = new PostgresRutaRepository(db);
 const identidad = new IdentidadSupabase({ urlBase: env.SUPABASE_URL, claveServicio: env.SUPABASE_SERVICE_ROLE_KEY, clavePublica: env.SUPABASE_ANON_KEY });
 const almacen = new AlmacenSupabase({ urlBase: env.SUPABASE_URL, claveServicio: env.SUPABASE_SERVICE_ROLE_KEY });
 const dbHealth = new PostgresDatabaseHealth(db);
 const clock = relojDelSistema;
 
 // Casos de uso con sus puertos inyectados
+const serviciosDeRuta = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, clock });
 const casos: CasosDeUso = {
   checkHealth: () => checkHealth({ db: dbHealth, clock }),
   autenticar: crearAutenticarUsuario({ identidad, usuarios, clock }),
@@ -69,6 +76,11 @@ const casos: CasosDeUso = {
   registrarFactura: crearRegistrarFactura({ facturas, clock }),
   listarFacturas: crearListarFacturas({ facturas, clock }),
   actualizarFactura: crearActualizarFactura({ facturas }),
+  verRuta: serviciosDeRuta.ver,
+  planificarRuta: serviciosDeRuta.planificar,
+  operarRuta: serviciosDeRuta.operar,
+  obtenerConfigEmpresa: crearObtenerConfigEmpresa({ empresas }),
+  guardarConfigEmpresa: crearGuardarConfigEmpresa({ empresas }),
 };
 
 const app = await buildServer({ frontOrigin: env.FRONT_ORIGIN, casos, logger: true });

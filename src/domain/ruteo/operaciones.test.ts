@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { agregarParada, moverAlFrente, ordenarPendientes, posponer, quitar, type EstadoRuta } from './operaciones.js';
+import { agregarParada, insertarNuevas, moverAlFrente, moverParada, ordenarPendientes, posponer, quitar, type EstadoRuta } from './operaciones.js';
 import { optimizar } from './optimizador.js';
 import { verificarInvariantes } from './invariantes.js';
 import { parada, problemaAleatorio, problemaPlano, tiemposFijos, v } from './problemas.test-util.js';
@@ -128,5 +128,61 @@ describe('ordenarPendientes (ORDENAR LO QUE QUEDA)', () => {
     expect(r.solucion.costo).toBeLessThanOrEqual(antes.costo + 1e-6);
     expect(r.solucion.orden[0]).toBe('p4');
     expect(verificarInvariantes(r.problema, r.solucion)).toEqual([]);
+  });
+});
+
+describe('moverParada (SUBIR / BAJAR)', () => {
+  const fijo = (): EstadoRuta => {
+    const problema = problemaPlano([parada('A'), parada('B'), parada('C'), parada('D')]);
+    return { problema, orden: ['A', 'B', 'C', 'D'] };
+  };
+
+  it('sube y baja una posición exactamente, sin reordenar el resto', () => {
+    const arriba = moverParada(fijo(), 'C', -1);
+    expect(arriba.ok && arriba.value.solucion.orden).toEqual(['A', 'C', 'B', 'D']);
+    const abajo = moverParada(fijo(), 'A', 1);
+    expect(abajo.ok && abajo.value.solucion.orden).toEqual(['B', 'A', 'C', 'D']);
+  });
+
+  it('en los extremos no cambia nada', () => {
+    const a = moverParada(fijo(), 'A', -1);
+    const d = moverParada(fijo(), 'D', 1);
+    expect(a.ok && a.value.solucion.orden).toEqual(['A', 'B', 'C', 'D']);
+    expect(d.ok && d.value.solucion.orden).toEqual(['A', 'B', 'C', 'D']);
+  });
+
+  it('recalcula las horas con el nuevo orden y respeta las fijadas que siguen al frente', () => {
+    const e = { problema: { ...fijo().problema, fijas: ['A'] }, orden: ['A', 'B', 'C', 'D'] };
+    const r = moverParada(e, 'C', -1);
+    expect(r.ok && r.value.problema.fijas).toEqual(['A']);
+    const sube = moverParada(e, 'B', -1); // B pasa delante de A: A deja de ser prefijo, ya no está fijada
+    expect(sube.ok && sube.value.solucion.orden).toEqual(['B', 'A', 'C', 'D']);
+    expect(sube.ok && sube.value.problema.fijas).toEqual([]);
+    expect(r.ok && r.value.solucion.detalle.map((d) => d.llegada)).toEqual([490, 505, 520, 535]);
+  });
+
+  it('una parada desconocida es un error', () => {
+    const r = moverParada(fijo(), 'Z', 1);
+    expect(!r.ok && r.error.codigo).toBe('PARADA_NO_ENCONTRADA');
+  });
+});
+
+describe('insertarNuevas (solo insertar, sin reordenar lo que ya está)', () => {
+  it('mantiene el orden existente y coloca la nueva en su mejor lugar', () => {
+    const problema = problemaPlano([parada('A'), parada('B'), parada('C'), parada('N')]);
+    const r = insertarNuevas({ problema, orden: ['C', 'A', 'B'] });
+    expect(r.solucion.orden.filter((x) => x !== 'N')).toEqual(['C', 'A', 'B']);
+    expect(r.solucion.orden).toHaveLength(4);
+    expect(verificarInvariantes(r.problema, r.solucion)).toEqual([]);
+  });
+
+  it('sin paradas nuevas devuelve el mismo orden', () => {
+    const problema = problemaPlano([parada('A'), parada('B')]);
+    expect(insertarNuevas({ problema, orden: ['B', 'A'] }).solucion.orden).toEqual(['B', 'A']);
+  });
+
+  it('una nueva con ventana dura temprana entra al frente sin tocar el resto', () => {
+    const problema = problemaPlano([parada('A'), parada('B'), parada('N', { ventanas: [v(480, 495)] })]);
+    expect(insertarNuevas({ problema, orden: ['B', 'A'] }).solucion.orden).toEqual(['N', 'B', 'A']);
   });
 });

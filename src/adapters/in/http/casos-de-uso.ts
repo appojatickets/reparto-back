@@ -3,6 +3,8 @@ import type { crearActualizarLocal } from '../../../application/use-cases/actual
 import type { crearObtenerUrlFoto, crearRegistrarFotoLocal, crearSolicitarUrlSubida } from '../../../application/use-cases/archivos.js';
 import type { crearActualizarCamion, crearCrearCamion, crearListarCamiones } from '../../../application/use-cases/camiones.js';
 import type { crearActualizarFactura, crearListarFacturas, crearRegistrarFactura } from '../../../application/use-cases/facturas.js';
+import type { crearGuardarConfigEmpresa, crearObtenerConfigEmpresa } from '../../../application/use-cases/config-empresa.js';
+import type { crearServiciosDeRuta } from '../../../application/use-cases/rutas.js';
 import type { crearAutenticarUsuario } from '../../../application/use-cases/autenticar-usuario.js';
 import type { crearBuscarClientes } from '../../../application/use-cases/buscar-clientes.js';
 import type { crearCrearClienteNuevo } from '../../../application/use-cases/crear-cliente-nuevo.js';
@@ -41,4 +43,9 @@ export type CasosDeUso = {
   readonly registrarFactura: ReturnType<typeof crearRegistrarFactura>;
   readonly listarFacturas: ReturnType<typeof crearListarFacturas>;
   readonly actualizarFactura: ReturnType<typeof crearActualizarFactura>;
+  readonly verRuta: ReturnType<typeof crearServiciosDeRuta>['ver'];
+  readonly planificarRuta: ReturnType<typeof crearServiciosDeRuta>['planificar'];
+  readonly operarRuta: ReturnType<typeof crearServiciosDeRuta>['operar'];
+  readonly obtenerConfigEmpresa: ReturnType<typeof crearObtenerConfigEmpresa>;
+  readonly guardarConfigEmpresa: ReturnType<typeof crearGuardarConfigEmpresa>;
 };

@@ -63,3 +63,15 @@ export const evaluarOrden = (problema: ProblemaRuta, ordenIds: readonly string[]
   const orden = indicesDe(c, ordenIds).filter((i) => !vencidas.includes(i));
   return armarSolucion(c, orden, vencidas, fijas.length);
 };
+
+/**
+ * Inserta solo las paradas que faltan en el orden dado (inserción más barata) sin mover las que ya estaban:
+ * es el modo «solo insertar», para no deshacer el acomodo que hizo una persona.
+ */
+export const insertarFaltantes = (problema: ProblemaRuta, ordenActual: readonly string[]): Solucion => {
+  const { c, fijas, vencidas, base, restantes } = prepararBase(problema, ordenActual);
+  // Las fijadas que ya no encabezan la ruta no se protegen: solo cuenta el prefijo que sigue al frente.
+  const protegidas = fijas.length;
+  const orden = construir(c, base, restantes, protegidas);
+  return armarSolucion(c, orden, vencidas, protegidas);
+};

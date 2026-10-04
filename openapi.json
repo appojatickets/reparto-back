@@ -6963,6 +6963,2461 @@
           }
         }
       }
+    },
+    "/v1/empresa/config": {
+      "get": {
+        "summary": "Depósito, hora de salida y hora límite de regreso",
+        "tags": [
+          "empresa"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deposito": {
+                      "type": "object",
+                      "properties": {
+                        "lat": {
+                          "type": "number"
+                        },
+                        "lng": {
+                          "type": "number"
+                        },
+                        "nombre": {
+                          "type": "string",
+                          "maxLength": 80
+                        }
+                      },
+                      "required": [
+                        "lat",
+                        "lng"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "salidaPorDefectoMin": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1439
+                    },
+                    "horaLimiteRegresoMin": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1439
+                    }
+                  },
+                  "required": [
+                    "salidaPorDefectoMin",
+                    "horaLimiteRegresoMin"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Guardar la configuración de reparto",
+        "tags": [
+          "empresa"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "deposito": {
+                    "type": "object",
+                    "properties": {
+                      "lat": {
+                        "type": "number"
+                      },
+                      "lng": {
+                        "type": "number"
+                      },
+                      "nombre": {
+                        "type": "string",
+                        "maxLength": 80
+                      }
+                    },
+                    "required": [
+                      "lat",
+                      "lng"
+                    ]
+                  },
+                  "salidaPorDefectoMin": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1439
+                  },
+                  "horaLimiteRegresoMin": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1439
+                  }
+                },
+                "required": [
+                  "salidaPorDefectoMin",
+                  "horaLimiteRegresoMin"
+                ]
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deposito": {
+                      "type": "object",
+                      "properties": {
+                        "lat": {
+                          "type": "number"
+                        },
+                        "lng": {
+                          "type": "number"
+                        },
+                        "nombre": {
+                          "type": "string",
+                          "maxLength": 80
+                        }
+                      },
+                      "required": [
+                        "lat",
+                        "lng"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "salidaPorDefectoMin": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1439
+                    },
+                    "horaLimiteRegresoMin": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1439
+                    }
+                  },
+                  "required": [
+                    "salidaPorDefectoMin",
+                    "horaLimiteRegresoMin"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/rutas": {
+      "get": {
+        "summary": "Ruta de un camión para un día: orden, horas estimadas de llegada, riesgos y facturas sin ubicar",
+        "tags": [
+          "rutas"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "query",
+            "name": "camionId",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "fecha",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "camionId": {
+                      "type": "string"
+                    },
+                    "fecha": {
+                      "type": "string"
+                    },
+                    "planificada": {
+                      "type": "boolean"
+                    },
+                    "modo": {
+                      "type": "string",
+                      "enum": [
+                        "sugerida",
+                        "manual"
+                      ]
+                    },
+                    "version": {
+                      "type": "number"
+                    },
+                    "salidaMin": {
+                      "type": "number"
+                    },
+                    "horaLimiteRegresoMin": {
+                      "type": "number"
+                    },
+                    "regreso": {
+                      "type": "number"
+                    },
+                    "regresoTardio": {
+                      "type": "boolean"
+                    },
+                    "paradas": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facturaId": {
+                            "type": "string"
+                          },
+                          "folio": {
+                            "type": "string"
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cliente": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "urgente": {
+                            "type": "boolean"
+                          },
+                          "antesDeMin": {
+                            "type": "number"
+                          },
+                          "nota": {
+                            "type": "string"
+                          },
+                          "posicion": {
+                            "type": "number"
+                          },
+                          "llegada": {
+                            "type": "number"
+                          },
+                          "inicioServicio": {
+                            "type": "number"
+                          },
+                          "salida": {
+                            "type": "number"
+                          },
+                          "espera": {
+                            "type": "number"
+                          },
+                          "atraso": {
+                            "type": "number"
+                          },
+                          "motivos": {
+                            "readOnly": true,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "VENTANA_DURA",
+                                "PRIORIDAD",
+                                "CERCANIA_COMUNA",
+                                "COLACION",
+                                "FIJADA_POR_CHOFER",
+                                "MENOR_DESVIO"
+                              ]
+                            }
+                          },
+                          "fijada": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "facturaId",
+                          "folio",
+                          "localId",
+                          "cliente",
+                          "direccion",
+                          "comuna",
+                          "urgente",
+                          "posicion",
+                          "llegada",
+                          "inicioServicio",
+                          "salida",
+                          "espera",
+                          "atraso",
+                          "motivos",
+                          "fijada"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "nuevas": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facturaId": {
+                            "type": "string"
+                          },
+                          "folio": {
+                            "type": "string"
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cliente": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "urgente": {
+                            "type": "boolean"
+                          },
+                          "antesDeMin": {
+                            "type": "number"
+                          },
+                          "nota": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "facturaId",
+                          "folio",
+                          "localId",
+                          "cliente",
+                          "direccion",
+                          "comuna",
+                          "urgente"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "sinPin": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facturaId": {
+                            "type": "string"
+                          },
+                          "folio": {
+                            "type": "string"
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cliente": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "urgente": {
+                            "type": "boolean"
+                          },
+                          "antesDeMin": {
+                            "type": "number"
+                          },
+                          "nota": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "facturaId",
+                          "folio",
+                          "localId",
+                          "cliente",
+                          "direccion",
+                          "comuna",
+                          "urgente"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "noAtendidas": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facturaId": {
+                            "type": "string"
+                          },
+                          "folio": {
+                            "type": "string"
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cliente": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "urgente": {
+                            "type": "boolean"
+                          },
+                          "antesDeMin": {
+                            "type": "number"
+                          },
+                          "nota": {
+                            "type": "string"
+                          },
+                          "conflictos": {
+                            "readOnly": true,
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "facturaId",
+                          "folio",
+                          "localId",
+                          "cliente",
+                          "direccion",
+                          "comuna",
+                          "urgente",
+                          "conflictos"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "enRiesgo": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facturaId": {
+                            "type": "string"
+                          },
+                          "folio": {
+                            "type": "string"
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cliente": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "urgente": {
+                            "type": "boolean"
+                          },
+                          "antesDeMin": {
+                            "type": "number"
+                          },
+                          "nota": {
+                            "type": "string"
+                          },
+                          "cierre": {
+                            "type": "number"
+                          },
+                          "conflictos": {
+                            "readOnly": true,
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "sugerencias": {
+                            "readOnly": true,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tipo": {
+                                  "type": "string",
+                                  "enum": [
+                                    "MOVER_AL_INICIO",
+                                    "SALIR_ANTES",
+                                    "OTRO_CAMION"
+                                  ]
+                                },
+                                "minutos": {
+                                  "type": "number"
+                                },
+                                "texto": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "tipo",
+                                "texto"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "facturaId",
+                          "folio",
+                          "localId",
+                          "cliente",
+                          "direccion",
+                          "comuna",
+                          "urgente",
+                          "cierre",
+                          "conflictos",
+                          "sugerencias"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "camionId",
+                    "fecha",
+                    "planificada",
+                    "salidaMin",
+                    "horaLimiteRegresoMin",
+                    "paradas",
+                    "nuevas",
+                    "sinPin",
+                    "noAtendidas",
+                    "enRiesgo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/rutas/planificar": {
+      "post": {
+        "summary": "Calcular la ruta sugerida desde cero (reemplaza la actual)",
+        "tags": [
+          "rutas"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "camionId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "fecha": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "salidaMin": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1439
+                  }
+                },
+                "required": [
+                  "camionId",
+                  "fecha"
+                ]
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "camionId": {
+                      "type": "string"
+                    },
+                    "fecha": {
+                      "type": "string"
+                    },
+                    "planificada": {
+                      "type": "boolean"
+                    },
+                    "modo": {
+                      "type": "string",
+                      "enum": [
+                        "sugerida",
+                        "manual"
+                      ]
+                    },
+                    "version": {
+                      "type": "number"
+                    },
+                    "salidaMin": {
+                      "type": "number"
+                    },
+                    "horaLimiteRegresoMin": {
+                      "type": "number"
+                    },
+                    "regreso": {
+                      "type": "number"
+                    },
+                    "regresoTardio": {
+                      "type": "boolean"
+                    },
+                    "paradas": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facturaId": {
+                            "type": "string"
+                          },
+                          "folio": {
+                            "type": "string"
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cliente": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "urgente": {
+                            "type": "boolean"
+                          },
+                          "antesDeMin": {
+                            "type": "number"
+                          },
+                          "nota": {
+                            "type": "string"
+                          },
+                          "posicion": {
+                            "type": "number"
+                          },
+                          "llegada": {
+                            "type": "number"
+                          },
+                          "inicioServicio": {
+                            "type": "number"
+                          },
+                          "salida": {
+                            "type": "number"
+                          },
+                          "espera": {
+                            "type": "number"
+                          },
+                          "atraso": {
+                            "type": "number"
+                          },
+                          "motivos": {
+                            "readOnly": true,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "VENTANA_DURA",
+                                "PRIORIDAD",
+                                "CERCANIA_COMUNA",
+                                "COLACION",
+                                "FIJADA_POR_CHOFER",
+                                "MENOR_DESVIO"
+                              ]
+                            }
+                          },
+                          "fijada": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "facturaId",
+                          "folio",
+                          "localId",
+                          "cliente",
+                          "direccion",
+                          "comuna",
+                          "urgente",
+                          "posicion",
+                          "llegada",
+                          "inicioServicio",
+                          "salida",
+                          "espera",
+                          "atraso",
+                          "motivos",
+                          "fijada"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "nuevas": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facturaId": {
+                            "type": "string"
+                          },
+                          "folio": {
+                            "type": "string"
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cliente": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "urgente": {
+                            "type": "boolean"
+                          },
+                          "antesDeMin": {
+                            "type": "number"
+                          },
+                          "nota": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "facturaId",
+                          "folio",
+                          "localId",
+                          "cliente",
+                          "direccion",
+                          "comuna",
+                          "urgente"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "sinPin": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facturaId": {
+                            "type": "string"
+                          },
+                          "folio": {
+                            "type": "string"
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cliente": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "urgente": {
+                            "type": "boolean"
+                          },
+                          "antesDeMin": {
+                            "type": "number"
+                          },
+                          "nota": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "facturaId",
+                          "folio",
+                          "localId",
+                          "cliente",
+                          "direccion",
+                          "comuna",
+                          "urgente"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "noAtendidas": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facturaId": {
+                            "type": "string"
+                          },
+                          "folio": {
+                            "type": "string"
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cliente": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "urgente": {
+                            "type": "boolean"
+                          },
+                          "antesDeMin": {
+                            "type": "number"
+                          },
+                          "nota": {
+                            "type": "string"
+                          },
+                          "conflictos": {
+                            "readOnly": true,
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "facturaId",
+                          "folio",
+                          "localId",
+                          "cliente",
+                          "direccion",
+                          "comuna",
+                          "urgente",
+                          "conflictos"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "enRiesgo": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facturaId": {
+                            "type": "string"
+                          },
+                          "folio": {
+                            "type": "string"
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cliente": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "urgente": {
+                            "type": "boolean"
+                          },
+                          "antesDeMin": {
+                            "type": "number"
+                          },
+                          "nota": {
+                            "type": "string"
+                          },
+                          "cierre": {
+                            "type": "number"
+                          },
+                          "conflictos": {
+                            "readOnly": true,
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "sugerencias": {
+                            "readOnly": true,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tipo": {
+                                  "type": "string",
+                                  "enum": [
+                                    "MOVER_AL_INICIO",
+                                    "SALIR_ANTES",
+                                    "OTRO_CAMION"
+                                  ]
+                                },
+                                "minutos": {
+                                  "type": "number"
+                                },
+                                "texto": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "tipo",
+                                "texto"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "facturaId",
+                          "folio",
+                          "localId",
+                          "cliente",
+                          "direccion",
+                          "comuna",
+                          "urgente",
+                          "cierre",
+                          "conflictos",
+                          "sugerencias"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "camionId",
+                    "fecha",
+                    "planificada",
+                    "salidaMin",
+                    "horaLimiteRegresoMin",
+                    "paradas",
+                    "nuevas",
+                    "sinPin",
+                    "noAtendidas",
+                    "enRiesgo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/rutas/operaciones": {
+      "post": {
+        "summary": "Acomodar la ruta: subir, bajar, ir primero, dejar para después, quitar, ordenar lo que queda, insertar nuevas o cambiar la salida",
+        "tags": [
+          "rutas"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "camionId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "fecha": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "operacion": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "subir",
+                              "bajar",
+                              "primero",
+                              "despues",
+                              "quitar"
+                            ]
+                          },
+                          "facturaId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          }
+                        },
+                        "required": [
+                          "tipo",
+                          "facturaId"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "ordenar",
+                              "insertar"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "tipo"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "salida"
+                            ]
+                          },
+                          "salidaMin": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 1439
+                          }
+                        },
+                        "required": [
+                          "tipo",
+                          "salidaMin"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "camionId",
+                  "fecha",
+                  "version",
+                  "operacion"
+                ]
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "camionId": {
+                      "type": "string"
+                    },
+                    "fecha": {
+                      "type": "string"
+                    },
+                    "planificada": {
+                      "type": "boolean"
+                    },
+                    "modo": {
+                      "type": "string",
+                      "enum": [
+                        "sugerida",
+                        "manual"
+                      ]
+                    },
+                    "version": {
+                      "type": "number"
+                    },
+                    "salidaMin": {
+                      "type": "number"
+                    },
+                    "horaLimiteRegresoMin": {
+                      "type": "number"
+                    },
+                    "regreso": {
+                      "type": "number"
+                    },
+                    "regresoTardio": {
+                      "type": "boolean"
+                    },
+                    "paradas": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facturaId": {
+                            "type": "string"
+                          },
+                          "folio": {
+                            "type": "string"
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cliente": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "urgente": {
+                            "type": "boolean"
+                          },
+                          "antesDeMin": {
+                            "type": "number"
+                          },
+                          "nota": {
+                            "type": "string"
+                          },
+                          "posicion": {
+                            "type": "number"
+                          },
+                          "llegada": {
+                            "type": "number"
+                          },
+                          "inicioServicio": {
+                            "type": "number"
+                          },
+                          "salida": {
+                            "type": "number"
+                          },
+                          "espera": {
+                            "type": "number"
+                          },
+                          "atraso": {
+                            "type": "number"
+                          },
+                          "motivos": {
+                            "readOnly": true,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "VENTANA_DURA",
+                                "PRIORIDAD",
+                                "CERCANIA_COMUNA",
+                                "COLACION",
+                                "FIJADA_POR_CHOFER",
+                                "MENOR_DESVIO"
+                              ]
+                            }
+                          },
+                          "fijada": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "facturaId",
+                          "folio",
+                          "localId",
+                          "cliente",
+                          "direccion",
+                          "comuna",
+                          "urgente",
+                          "posicion",
+                          "llegada",
+                          "inicioServicio",
+                          "salida",
+                          "espera",
+                          "atraso",
+                          "motivos",
+                          "fijada"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "nuevas": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facturaId": {
+                            "type": "string"
+                          },
+                          "folio": {
+                            "type": "string"
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cliente": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "urgente": {
+                            "type": "boolean"
+                          },
+                          "antesDeMin": {
+                            "type": "number"
+                          },
+                          "nota": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "facturaId",
+                          "folio",
+                          "localId",
+                          "cliente",
+                          "direccion",
+                          "comuna",
+                          "urgente"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "sinPin": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facturaId": {
+                            "type": "string"
+                          },
+                          "folio": {
+                            "type": "string"
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cliente": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "urgente": {
+                            "type": "boolean"
+                          },
+                          "antesDeMin": {
+                            "type": "number"
+                          },
+                          "nota": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "facturaId",
+                          "folio",
+                          "localId",
+                          "cliente",
+                          "direccion",
+                          "comuna",
+                          "urgente"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "noAtendidas": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facturaId": {
+                            "type": "string"
+                          },
+                          "folio": {
+                            "type": "string"
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cliente": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "urgente": {
+                            "type": "boolean"
+                          },
+                          "antesDeMin": {
+                            "type": "number"
+                          },
+                          "nota": {
+                            "type": "string"
+                          },
+                          "conflictos": {
+                            "readOnly": true,
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "facturaId",
+                          "folio",
+                          "localId",
+                          "cliente",
+                          "direccion",
+                          "comuna",
+                          "urgente",
+                          "conflictos"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "enRiesgo": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "facturaId": {
+                            "type": "string"
+                          },
+                          "folio": {
+                            "type": "string"
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cliente": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "urgente": {
+                            "type": "boolean"
+                          },
+                          "antesDeMin": {
+                            "type": "number"
+                          },
+                          "nota": {
+                            "type": "string"
+                          },
+                          "cierre": {
+                            "type": "number"
+                          },
+                          "conflictos": {
+                            "readOnly": true,
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "sugerencias": {
+                            "readOnly": true,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "tipo": {
+                                  "type": "string",
+                                  "enum": [
+                                    "MOVER_AL_INICIO",
+                                    "SALIR_ANTES",
+                                    "OTRO_CAMION"
+                                  ]
+                                },
+                                "minutos": {
+                                  "type": "number"
+                                },
+                                "texto": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "tipo",
+                                "texto"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "facturaId",
+                          "folio",
+                          "localId",
+                          "cliente",
+                          "direccion",
+                          "comuna",
+                          "urgente",
+                          "cierre",
+                          "conflictos",
+                          "sugerencias"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "camionId",
+                    "fecha",
+                    "planificada",
+                    "salidaMin",
+                    "horaLimiteRegresoMin",
+                    "paradas",
+                    "nuevas",
+                    "sinPin",
+                    "noAtendidas",
+                    "enRiesgo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

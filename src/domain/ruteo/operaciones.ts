@@ -2,7 +2,7 @@ import { err, ok, type Result } from '../shared/result.js';
 import { errorDominio, type ErrorDominio } from '../shared/errores.js';
 import { compilar } from './compilar.js';
 import { evaluar } from './evaluacion.js';
-import { evaluarOrden, optimizar } from './optimizador.js';
+import { evaluarOrden, insertarFaltantes, optimizar } from './optimizador.js';
 import type { TiemposViaje } from './tiempos.js';
 import type { OpcionesOptimizacion, ParadaRuta, ProblemaRuta, Solucion } from './tipos.js';
 
@@ -86,3 +86,33 @@ export const ordenarPendientes = (estado: EstadoRuta, opciones: OpcionesOptimiza
   const desdeActual = optimizar(estado.problema, { ...opciones, ordenInicial: estado.orden });
   return { problema: estado.problema, solucion: desdeActual.costo < desdeCero.costo ? desdeActual : desdeCero };
 };
+
+/** SUBIR / BAJAR: intercambia la parada con su vecina. Solo cambia ese par; el resto queda como estaba. */
+export const moverParada = (estado: EstadoRuta, id: string, delta: -1 | 1): Result<ResultadoOperacion, ErrorDominio> => {
+  const idx = estado.orden.indexOf(id);
+  if (idx < 0) return noExiste();
+  const destino = idx + delta;
+  const orden = [...estado.orden];
+  if (destino >= 0 && destino < orden.length) {
+    const otra = orden[destino];
+    const esta = orden[idx];
+    if (otra === undefined || esta === undefined) return noExiste();
+    orden[destino] = esta;
+    orden[idx] = otra;
+  }
+  // Una fijada solo sigue fijada mientras siga encabezando la ruta.
+  const fijadas = new Set(estado.problema.fijas);
+  const fijas: string[] = [];
+  for (const x of orden) {
+    if (!fijadas.has(x)) break;
+    fijas.push(x);
+  }
+  const problema: ProblemaRuta = { ...estado.problema, fijas };
+  return ok({ problema, solucion: evaluarOrden(problema, orden) });
+};
+
+/** Mete en la ruta las paradas del problema que aún no tienen lugar, sin reordenar las demás. */
+export const insertarNuevas = (estado: EstadoRuta): ResultadoOperacion => ({
+  problema: estado.problema,
+  solucion: insertarFaltantes(estado.problema, estado.orden),
+});

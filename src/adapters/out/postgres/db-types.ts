@@ -78,5 +78,18 @@ export type Tabla = {
     creado_en: Generated<Date>;
     actualizado_en: Generated<Date>;
   };
+  ruta: {
+    id: Generated<string>;
+    empresa_id: string;
+    camion_id: string;
+    fecha_reparto: string;
+    salida_min: number;
+    modo: Generated<'sugerida' | 'manual'>;
+    version: Generated<number>;
+    creado_por: string | null;
+    creado_en: Generated<Date>;
+    actualizado_en: Generated<Date>;
+  };
+  parada_ruta: { ruta_id: string; factura_id: string; orden: number; fijada: Generated<boolean> };
   login_intento: { usuario_id: string; intentos: Generated<number>; bloqueado_hasta: Date | null };
 };

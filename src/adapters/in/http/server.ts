@@ -10,6 +10,8 @@ import { rutasClientes } from './rutas/clientes.js';
 import { rutasPinesYArchivos } from './rutas/pines-y-archivos.js';
 import { rutasSesion } from './rutas/sesion.js';
 import { rutasCamionesYFacturas } from './rutas/camiones-y-facturas.js';
+import { rutasDelDia } from './rutas/rutas-del-dia.js';
+import { rutasEmpresa } from './rutas/empresa.js';
 import { rutasUsuarios } from './rutas/usuarios.js';
 
 export type HttpDeps = {
@@ -71,6 +73,8 @@ export const buildServer = async (deps: HttpDeps): Promise<FastifyInstance> => {
   rutasClientes(contexto);
   rutasPinesYArchivos(contexto);
   rutasCamionesYFacturas(contexto);
+  rutasEmpresa(contexto);
+  rutasDelDia(contexto);
 
   app.get('/openapi.json', { schema: { hide: true } }, () => app.swagger());
   return app;

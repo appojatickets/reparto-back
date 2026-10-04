@@ -54,6 +54,11 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'GET', url: '/v1/facturas', permiso: 'facturas:leer', caso: 'listarFacturas' },
   { metodo: 'POST', url: '/v1/facturas', body: { folio: '1001', localId: UUID }, permiso: 'facturas:escribir', caso: 'registrarFactura' },
   { metodo: 'PATCH', url: `/v1/facturas/${UUID}`, body: { urgente: true }, permiso: 'facturas:escribir', caso: 'actualizarFactura' },
+  { metodo: 'GET', url: '/v1/empresa/config', permiso: 'rutas:leer', caso: 'obtenerConfigEmpresa' },
+  { metodo: 'PUT', url: '/v1/empresa/config', body: { salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260 }, permiso: 'empresa:configurar', caso: 'guardarConfigEmpresa' },
+  { metodo: 'GET', url: `/v1/rutas?camionId=${UUID}&fecha=2026-10-05`, permiso: 'rutas:leer', caso: 'verRuta' },
+  { metodo: 'POST', url: '/v1/rutas/planificar', body: { camionId: UUID, fecha: '2026-10-05' }, permiso: 'rutas:escribir', caso: 'planificarRuta' },
+  { metodo: 'POST', url: '/v1/rutas/operaciones', body: { camionId: UUID, fecha: '2026-10-05', version: 1, operacion: { tipo: 'ordenar' } }, permiso: 'rutas:escribir', caso: 'operarRuta' },
 ];
 
 describe('permisos: cada ruta exige su permiso y no llega al caso de uso sin él', () => {
@@ -308,5 +313,51 @@ describe('camiones y facturas', () => {
     const l = await app.inject({ method: 'GET', url: '/v1/camiones', headers: auth('despachador') });
     expect(l.json()).toEqual({ camiones: [{ id: UUID, patente: 'AB1234', activo: true }] });
     expect(listarCamiones).toHaveBeenCalledWith(USUARIOS['t-desp'], { soloActivos: true });
+  });
+});
+
+describe('rutas del día', () => {
+  const auth = (rol: Rol) => ({ authorization: `Bearer ${ROLES[rol]}` });
+  const vista = { camionId: UUID, fecha: '2026-10-05', planificada: true, modo: 'sugerida' as const, version: 1, salidaMin: 480, horaLimiteRegresoMin: 1260, regreso: 700, regresoTardio: false, paradas: [], nuevas: [], sinPin: [], noAtendidas: [], enRiesgo: [] };
+
+  it('ver y planificar devuelven la vista; sin depósito responde 422 con el código', async () => {
+    const verRuta = vi.fn().mockResolvedValueOnce(ok(vista)).mockResolvedValueOnce(err(errorApp('VALIDACION', 'Primero configura el depósito.', { codigo: 'SIN_DEPOSITO' })));
+    const planificarRuta = vi.fn(() => Promise.resolve(ok(vista)));
+    const app = await construir({ verRuta, planificarRuta });
+    const url = `/v1/rutas?camionId=${UUID}&fecha=2026-10-05`;
+    const a = await app.inject({ method: 'GET', url, headers: auth('despachador') });
+    expect(a.statusCode).toBe(200);
+    expect(a.json()).toMatchObject({ planificada: true, version: 1 });
+    expect(verRuta).toHaveBeenCalledWith(USUARIOS['t-desp'], { camionId: UUID, fecha: '2026-10-05' });
+    const b = await app.inject({ method: 'GET', url, headers: auth('admin') });
+    expect(b.statusCode).toBe(422);
+    expect(b.json()).toMatchObject({ codigo: 'VALIDACION', detalle: { codigo: 'SIN_DEPOSITO' } });
+    const p = await app.inject({ method: 'POST', url: '/v1/rutas/planificar', headers: auth('despachador'), payload: { camionId: UUID, fecha: '2026-10-05', salidaMin: 450 } });
+    expect(p.statusCode).toBe(200);
+    expect(planificarRuta).toHaveBeenCalledWith(USUARIOS['t-desp'], { camionId: UUID, fecha: '2026-10-05', salidaMin: 450 });
+  });
+
+  it('operaciones: valida el cuerpo; versión vieja responde 409', async () => {
+    const operarRuta = vi.fn().mockResolvedValueOnce(ok(vista)).mockResolvedValueOnce(err(errorApp('CONFLICTO', 'Otra persona cambió esta ruta.', { codigo: 'RUTA_DESACTUALIZADA' })));
+    const app = await construir({ operarRuta });
+    const llamar = (operacion: object, version = 1) => app.inject({ method: 'POST', url: '/v1/rutas/operaciones', headers: auth('despachador'), payload: { camionId: UUID, fecha: '2026-10-05', version, operacion } });
+    expect((await llamar({ tipo: 'subir', facturaId: UUID })).statusCode).toBe(200);
+    expect(operarRuta).toHaveBeenCalledWith(USUARIOS['t-desp'], { camionId: UUID, fecha: '2026-10-05', version: 1, operacion: { tipo: 'subir', facturaId: UUID } });
+    const conflicto = await llamar({ tipo: 'ordenar' }, 1);
+    expect(conflicto.statusCode).toBe(409);
+    expect(conflicto.json()).toMatchObject({ detalle: { codigo: 'RUTA_DESACTUALIZADA' } });
+    expect((await llamar({ tipo: 'subir' })).statusCode).toBe(400); // falta la factura
+    expect((await llamar({ tipo: 'volar' })).statusCode).toBe(400);
+    expect((await llamar({ tipo: 'salida', salidaMin: 2000 })).statusCode).toBe(400);
+    expect(operarRuta).toHaveBeenCalledTimes(2);
+  });
+
+  it('configuración: el despachador la lee pero no la cambia', async () => {
+    const obtenerConfigEmpresa = vi.fn(() => Promise.resolve(ok({ deposito: { lat: -33.5, lng: -70.7, nombre: 'Bodega' }, salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260 })));
+    const app = await construir({ obtenerConfigEmpresa });
+    const g = await app.inject({ method: 'GET', url: '/v1/empresa/config', headers: auth('despachador') });
+    expect(g.json()).toEqual({ deposito: { lat: -33.5, lng: -70.7, nombre: 'Bodega' }, salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260 });
+    const p = await app.inject({ method: 'PUT', url: '/v1/empresa/config', headers: auth('despachador'), payload: { salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260 } });
+    expect(p.statusCode).toBe(403);
   });
 });

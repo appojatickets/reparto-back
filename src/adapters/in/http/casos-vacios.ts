@@ -36,5 +36,10 @@ export const casosVacios = (): CasosDeUso => {
     registrarFactura: sinImplementar,
     listarFacturas: sinImplementar,
     actualizarFactura: sinImplementar,
+    verRuta: sinImplementar,
+    planificarRuta: sinImplementar,
+    operarRuta: sinImplementar,
+    obtenerConfigEmpresa: sinImplementar,
+    guardarConfigEmpresa: sinImplementar,
   } as CasosDeUso;
 };
