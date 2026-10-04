@@ -94,7 +94,7 @@ La ley rige desde el 1-dic-2026 (hay un proyecto para aplazarla, aún en trámit
 - [ ] **O-08:** línea base actual: km, horas de ruta, hora de regreso y rechazos por local cerrado, en un día normal por camión.
 - [ ] **O-09:** marca, modelo y tamaño de pantalla de los celulares de los choferes.
 - [x] **Camión y chofer:** los choferes rotan y a veces cambian a mitad del día por pana (decidido, ADR 0010). Pendiente: lista de las patentes de los 12 camiones (se cargan desde la pantalla CAMIONES).
-- [ ] **O-06:** ¿quién reparte las facturas entre los 12 camiones y con qué criterio? (V1: manual).
+- [x] **O-06:** el chofer recibe su montón de facturas impresas de la oficina y las carga él mismo por voz o texto (ADR 0012). Pendiente: ¿la oficina decide qué facturas lleva cada camión, o el chofer saca las que le tocan de un montón común?
 
 ---
 
