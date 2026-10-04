@@ -74,6 +74,7 @@ La ley rige desde el 1-dic-2026 (hay un proyecto para aplazarla, aún en trámit
 - [ ] **O-05/O-07:** ¿puedes exportar los clientes del sistema de facturación (aunque sea una planilla) para sembrar la base?
 - [ ] **O-08:** línea base actual: km, horas de ruta, hora de regreso y rechazos por local cerrado, en un día normal por camión.
 - [ ] **O-09:** marca, modelo y tamaño de pantalla de los celulares de los choferes.
+- [ ] **Camión y chofer:** ¿cada chofer maneja siempre el mismo camión o rotan? Con eso se define si la elección del camión al empezar el día es obligatoria o se asigna sola (ver `docs/adr/0005-identidad-del-chofer-y-camion.md`). Además: lista de las patentes de los 12 camiones.
 - [ ] **O-06:** ¿quién reparte las facturas entre los 12 camiones y con qué criterio? (V1: manual).
 
 ---
