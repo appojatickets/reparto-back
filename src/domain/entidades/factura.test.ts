@@ -17,8 +17,13 @@ describe('validarFactura', () => {
 
   it('junta todos los errores', () => {
     expect(codigos({ folio: '', fecha: '2026-02-30', total: -5, antesDeMin: 1440, nota: 'x'.repeat(301) })).toEqual([
-      'FOLIO_REQUERIDO', 'FECHA_INVALIDA', 'TOTAL_INVALIDO', 'HORA_LIMITE_INVALIDA', 'NOTA_LARGA',
+      'FECHA_INVALIDA', 'TOTAL_INVALIDO', 'HORA_LIMITE_INVALIDA', 'NOTA_LARGA',
     ]);
+  });
+
+  it('el folio es opcional: sin folio (o vacío) la entrega es válida y no lleva folio', () => {
+    expect(validarFactura({})).toEqual({ ok: true, value: { urgente: false } });
+    expect(validarFactura({ folio: '   ' })).toEqual({ ok: true, value: { urgente: false } });
   });
 
   it.each(['12/34', 'a'.repeat(21), 'ñandú', '12.5'])('rechaza el folio %s', (folio) => {

@@ -9,7 +9,7 @@ const camionResumen = z.object({ id: z.string(), patente: z.string(), alias: z.s
 
 const facturaSchema = z.object({
   id: z.string(),
-  folio: z.string(),
+  folio: z.string().optional(),
   fecha: z.string(),
   estado: z.enum(['pendiente', 'anulada']),
   total: z.number().optional(),
@@ -107,10 +107,10 @@ export const rutasCamionesYFacturas = ({ app, casos, guard }: ContextoRutas): vo
       preHandler: guard('facturas:escribir'),
       schema: {
         tags: ['facturas'],
-        summary: 'Ingresar una factura: folio, cliente (local), camión opcional y condiciones de entrega',
+        summary: 'Ingresar una entrega: cliente (local), camión opcional, condiciones y, si se quiere, el folio de la factura',
         security: SEGURIDAD,
         body: z.object({
-          folio: z.string().max(40),
+          folio: z.string().max(40).optional(),
           localId: z.uuid(),
           camionId: z.uuid().optional(),
           fecha: fecha.optional(),

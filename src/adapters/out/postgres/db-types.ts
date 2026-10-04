@@ -66,7 +66,7 @@ export type Tabla = {
   factura: {
     id: Generated<string>;
     empresa_id: string;
-    folio: string;
+    folio: string | null;
     local_id: string;
     camion_id: string | null;
     fecha_reparto: string;

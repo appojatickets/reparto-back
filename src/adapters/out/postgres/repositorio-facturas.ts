@@ -7,14 +7,14 @@ import type { Tabla } from './db-types.js';
 const esDuplicado = (e: unknown): boolean => typeof e === 'object' && e !== null && (e as { code?: string }).code === '23505';
 
 type FilaDetallada = {
-  id: string; folio: string; fecha: string; estado: 'pendiente' | 'anulada'; total: number | null; antes_de_min: number | null;
+  id: string; folio: string | null; fecha: string; estado: 'pendiente' | 'anulada'; total: number | null; antes_de_min: number | null;
   urgente: boolean; nota: string | null; camion_id: string | null; patente: string | null; camion_alias: string | null;
   local_id: string; razon_social: string; direccion: string; comuna: string; tiene_pin: boolean;
 };
 
 const aFactura = (f: FilaDetallada): FacturaDetallada => ({
   id: f.id,
-  folio: f.folio,
+  ...(f.folio !== null ? { folio: f.folio } : {}),
   fecha: f.fecha,
   estado: f.estado,
   ...(f.total !== null ? { total: f.total } : {}),
@@ -60,7 +60,7 @@ export class PostgresFacturaRepository implements FacturaRepository {
       const { id } = await this.db
         .insertInto('factura')
         .values({
-          empresa_id: empresaId, folio: n.folio, local_id: n.localId, camion_id: n.camionId ?? null, fecha_reparto: n.fecha, total: n.total ?? null,
+          empresa_id: empresaId, folio: n.folio ?? null, local_id: n.localId, camion_id: n.camionId ?? null, fecha_reparto: n.fecha, total: n.total ?? null,
           antes_de_min: n.antesDeMin ?? null, urgente: n.urgente, nota: n.nota ?? null, creado_por: n.creadoPor,
         })
         .returning('id')
@@ -83,7 +83,7 @@ export class PostgresFacturaRepository implements FacturaRepository {
     if (!filtro.incluirAnuladas) q = q.where('f.estado', '=', 'pendiente');
     if (filtro.camionId !== undefined) q = q.where('f.camion_id', '=', filtro.camionId);
     if (filtro.sinCamion) q = q.where('f.camion_id', 'is', null);
-    return (await q.orderBy('f.creado_en').orderBy('f.folio').execute()).map(aFactura);
+    return (await q.orderBy('f.creado_en').orderBy('f.id').execute()).map(aFactura);
   }
 
   async actualizar(empresaId: string, id: string, c: CambiosFactura): Promise<Result<FacturaDetallada, 'NO_ENCONTRADA' | 'CAMION_NO_DISPONIBLE'>> {

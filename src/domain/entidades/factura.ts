@@ -12,7 +12,7 @@ export type FacturaCruda = {
 };
 
 export type DatosFactura = {
-  readonly folio: string;
+  readonly folio?: string;
   readonly fecha?: Fecha;
   readonly total?: number;
   readonly antesDeMin?: number;
@@ -28,12 +28,11 @@ export const validarTotal = (total: number): boolean => Number.isSafeInteger(tot
 export const validarAntesDe = (min: number): boolean => Number.isInteger(min) && min >= 0 && min <= 1439;
 export const validarNota = (nota: string): boolean => nota.trim().length <= 300;
 
-/** Valida lo que el despachador escribe al ingresar una factura. Junta todos los errores. */
+/** Valida lo que se escribe al ingresar una entrega. El folio es opcional: si viene, debe ser válido. Junta todos los errores. */
 export const validarFactura = (f: FacturaCruda): Result<DatosFactura, ErrorDominio[]> => {
   const errores: ErrorDominio[] = [];
   const folio = normalizarFolio(f.folio ?? '');
-  if (folio === '') errores.push(errorDominio('FOLIO_REQUERIDO', 'Falta el folio.'));
-  else if (!FOLIO.test(folio)) errores.push(errorDominio('FOLIO_INVALIDO', 'El folio solo puede tener letras, números y guiones (máximo 20).'));
+  if (folio !== '' && !FOLIO.test(folio)) errores.push(errorDominio('FOLIO_INVALIDO', 'El folio solo puede tener letras, números y guiones (máximo 20).'));
   if (f.fecha !== undefined && !esFechaValida(f.fecha)) errores.push(errorDominio('FECHA_INVALIDA', 'La fecha de reparto no es válida.'));
   if (f.total !== undefined && !validarTotal(f.total)) errores.push(errorDominio('TOTAL_INVALIDO', 'El total debe ser un número entero de pesos.'));
   if (f.antesDeMin !== undefined && !validarAntesDe(f.antesDeMin)) errores.push(errorDominio('HORA_LIMITE_INVALIDA', 'La hora límite no es válida.'));
@@ -41,7 +40,7 @@ export const validarFactura = (f: FacturaCruda): Result<DatosFactura, ErrorDomin
   if (!validarNota(nota)) errores.push(errorDominio('NOTA_LARGA', 'La nota supera 300 caracteres.'));
   if (errores.length > 0) return err(errores);
   return ok({
-    folio,
+    ...(folio !== '' ? { folio } : {}),
     ...(f.fecha !== undefined ? { fecha: f.fecha } : {}),
     ...(f.total !== undefined ? { total: f.total } : {}),
     ...(f.antesDeMin !== undefined ? { antesDeMin: f.antesDeMin } : {}),

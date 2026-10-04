@@ -66,9 +66,10 @@ describe('registrarFactura', () => {
 
   it('datos inválidos: VALIDACION con todos los mensajes y sin tocar la base', async () => {
     const facturas = fakeFacturas();
-    const r = await crearRegistrarFactura({ facturas, clock, resolverCamion: resolverDePrueba() })(despachador, { folio: '', localId: LOCAL, antesDeMin: 9999 });
+    const r = await crearRegistrarFactura({ facturas, clock, resolverCamion: resolverDePrueba() })(despachador, { folio: 'a/b', localId: LOCAL, antesDeMin: 9999 });
     expect(!r.ok && r.error.codigo).toBe('VALIDACION');
-    expect(!r.ok && r.error.mensaje).toContain('Falta el folio.');
+    expect(!r.ok && r.error.mensaje).toContain('El folio solo puede tener');
+    expect(!r.ok && r.error.mensaje).toContain('La hora límite no es válida.');
     expect(facturas.crear).not.toHaveBeenCalled();
   });
 
@@ -134,5 +135,15 @@ describe('actualizarFactura', () => {
     const actualizar = crearActualizarFactura({ facturas, resolverCamion: resolverDePrueba() });
     expect((await actualizar(despachador, 'f', { urgente: true }))).toMatchObject({ ok: false, error: { codigo: 'NO_ENCONTRADO', mensaje: 'La factura no existe.' } });
     expect((await actualizar(despachador, 'f', { camionId: 'x' }))).toMatchObject({ ok: false, error: { mensaje: 'El camión no existe o está desactivado.' } });
+  });
+});
+
+describe('entrega sin folio (ADR 0014)', () => {
+  it('se puede registrar solo con el cliente: no manda folio al repositorio', async () => {
+    const facturas = fakeFacturas();
+    const { clock } = crearReloj();
+    const r = await crearRegistrarFactura({ facturas, clock, resolverCamion: resolverDePrueba() })(despachador, { localId: LOCAL });
+    expect(r.ok).toBe(true);
+    expect(facturas.crear.mock.calls[0]?.[1]).not.toHaveProperty('folio');
   });
 });

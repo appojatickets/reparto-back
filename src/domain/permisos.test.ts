@@ -14,7 +14,7 @@ describe('permisos por rol', () => {
   });
 
   it('el chofer carga sus facturas, ve su ruta, busca clientes y elige su camión del día', () => {
-    for (const p of ['facturas:leer', 'facturas:escribir', 'rutas:leer', 'rutas:escribir', 'clientes:leer', 'jornada:gestionar'] as const) expect(puede('chofer', p)).toBe(true);
+    for (const p of ['facturas:leer', 'facturas:escribir', 'rutas:leer', 'rutas:escribir', 'clientes:leer', 'clientes:crear', 'jornada:gestionar'] as const) expect(puede('chofer', p)).toBe(true);
   });
 
   it('solo el chofer y el admin tienen jornada', () => {

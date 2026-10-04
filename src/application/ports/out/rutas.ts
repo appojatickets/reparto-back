@@ -19,7 +19,7 @@ export type RutaGuardada = {
 
 export type FacturaParaRuta = {
   readonly facturaId: string;
-  readonly folio: string;
+  readonly folio?: string;
   readonly localId: string;
   readonly razonSocial: string;
   readonly direccion: string;

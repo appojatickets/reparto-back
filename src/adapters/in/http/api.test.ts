@@ -38,7 +38,7 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'POST', url: `/v1/usuarios/${UUID}/pin`, body: { pin: '482915' }, permiso: 'usuarios:gestionar', caso: 'resetearPin' },
   { metodo: 'PATCH', url: `/v1/usuarios/${UUID}`, body: { activo: false }, permiso: 'usuarios:gestionar', caso: 'cambiarEstadoUsuario' },
   { metodo: 'GET', url: '/v1/clientes/buscar?q=rabe', permiso: 'clientes:leer', caso: 'buscarClientes' },
-  { metodo: 'POST', url: '/v1/clientes', body: filaCliente, permiso: 'clientes:escribir', caso: 'crearClienteNuevo' },
+  { metodo: 'POST', url: '/v1/clientes', body: filaCliente, permiso: 'clientes:crear', caso: 'crearClienteNuevo' },
   { metodo: 'POST', url: '/v1/clientes/importaciones', body: { filas: [filaCliente] }, permiso: 'clientes:importar', caso: 'importarClientes' },
   { metodo: 'GET', url: `/v1/locales/${UUID}`, permiso: 'clientes:leer', caso: 'obtenerLocal' },
   { metodo: 'PATCH', url: `/v1/locales/${UUID}`, body: { nota: 'portón verde' }, permiso: 'clientes:escribir', caso: 'actualizarLocal' },

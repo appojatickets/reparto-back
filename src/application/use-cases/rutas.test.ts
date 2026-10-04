@@ -54,8 +54,8 @@ describe('planificar', () => {
   });
 
   it('las facturas sin pin salen aparte y no entran a la ruta', async () => {
-    const { facturaId, folio, localId, razonSocial, direccion, comuna, urgente, horarios } = paradaDe('Z');
-    const sinCoord = { facturaId, folio, localId, razonSocial, direccion, comuna, urgente, horarios };
+    const { facturaId, localId, razonSocial, direccion, comuna, urgente, horarios } = paradaDe('Z');
+    const sinCoord = { facturaId, localId, razonSocial, direccion, comuna, urgente, horarios };
     const s = montar({ pendientes: [paradaDe('A'), sinCoord] });
     const r = await s.planificar(despachador, entrada);
     expect(r.ok && ids(r.value)).toEqual(['f-A']);

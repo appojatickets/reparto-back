@@ -135,3 +135,17 @@ describe('facturas', () => {
     expect(Array.isArray(r)).toBe(true);
   });
 });
+
+describe('entrega sin folio', () => {
+  it('varias entregas sin folio conviven; los folios indicados siguen siendo únicos por empresa', async () => {
+    const s = await sembrar();
+    const a = await facturas.crear(s.empresa, { localId: s.rabelo, fecha: '2026-10-05', urgente: false, creadoPor: s.usuario });
+    const b = await facturas.crear(s.empresa, { localId: s.rabelo, fecha: '2026-10-05', urgente: false, creadoPor: s.usuario });
+    expect(a.ok && a.value).not.toHaveProperty('folio');
+    expect(b.ok).toBe(true);
+    const c = await facturas.crear(s.empresa, { folio: '500', localId: s.rabelo, fecha: '2026-10-05', urgente: false, creadoPor: s.usuario });
+    expect(c.ok && c.value.folio).toBe('500');
+    expect(await facturas.crear(s.empresa, { folio: '500', localId: s.kiosko, fecha: '2026-10-05', urgente: false, creadoPor: s.usuario })).toEqual({ ok: false, error: 'FOLIO_DUPLICADO' });
+    expect((await facturas.listar(s.empresa, { fecha: '2026-10-05' })).length).toBe(3);
+  });
+});

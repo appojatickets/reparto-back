@@ -20,7 +20,7 @@ export const crearRegistrarFactura = ({ facturas, clock, resolverCamion }: { fac
     const camion = await resolverCamion(actor, entrada.camionId);
     if (!camion.ok) return camion;
     const r = await facturas.crear(actor.empresaId, {
-      folio: v.value.folio,
+      ...(v.value.folio !== undefined ? { folio: v.value.folio } : {}),
       localId: entrada.localId,
       fecha: v.value.fecha ?? fechaEnChile(clock.now()),
       ...(camion.value !== undefined ? { camionId: camion.value } : {}),
@@ -33,7 +33,7 @@ export const crearRegistrarFactura = ({ facturas, clock, resolverCamion }: { fac
     if (r.ok) return ok(r.value);
     switch (r.error) {
       case 'FOLIO_DUPLICADO':
-        return err(errorApp('CONFLICTO', `Ya existe una factura con el folio ${v.value.folio}.`, { folio: v.value.folio }));
+        return err(errorApp('CONFLICTO', `Ya existe una factura con el folio ${v.value.folio ?? ''}.`, { folio: v.value.folio }));
       case 'LOCAL_NO_EXISTE':
         return err(errorApp('NO_ENCONTRADO', 'El cliente no existe.'));
       case 'CAMION_NO_DISPONIBLE':

@@ -6035,7 +6035,6 @@
                         },
                         "required": [
                           "id",
-                          "folio",
                           "fecha",
                           "estado",
                           "urgente",
@@ -6248,7 +6247,7 @@
         }
       },
       "post": {
-        "summary": "Ingresar una factura: folio, cliente (local), camión opcional y condiciones de entrega",
+        "summary": "Ingresar una entrega: cliente (local), camión opcional, condiciones y, si se quiere, el folio de la factura",
         "tags": [
           "facturas"
         ],
@@ -6296,7 +6295,6 @@
                   }
                 },
                 "required": [
-                  "folio",
                   "localId"
                 ]
               }
@@ -6394,7 +6392,6 @@
                   },
                   "required": [
                     "id",
-                    "folio",
                     "fecha",
                     "estado",
                     "urgente",
@@ -6758,7 +6755,6 @@
                   },
                   "required": [
                     "id",
-                    "folio",
                     "fecha",
                     "estado",
                     "urgente",
@@ -7610,6 +7606,12 @@
                           "comuna": {
                             "type": "string"
                           },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -7658,7 +7660,6 @@
                         },
                         "required": [
                           "facturaId",
-                          "folio",
                           "localId",
                           "cliente",
                           "direccion",
@@ -7700,6 +7701,12 @@
                           "comuna": {
                             "type": "string"
                           },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -7712,7 +7719,6 @@
                         },
                         "required": [
                           "facturaId",
-                          "folio",
                           "localId",
                           "cliente",
                           "direccion",
@@ -7746,6 +7752,12 @@
                           "comuna": {
                             "type": "string"
                           },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -7758,7 +7770,6 @@
                         },
                         "required": [
                           "facturaId",
-                          "folio",
                           "localId",
                           "cliente",
                           "direccion",
@@ -7792,6 +7803,12 @@
                           "comuna": {
                             "type": "string"
                           },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -7811,7 +7828,6 @@
                         },
                         "required": [
                           "facturaId",
-                          "folio",
                           "localId",
                           "cliente",
                           "direccion",
@@ -7845,6 +7861,12 @@
                           },
                           "comuna": {
                             "type": "string"
+                          },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
                           },
                           "urgente": {
                             "type": "boolean"
@@ -7896,7 +7918,6 @@
                         },
                         "required": [
                           "facturaId",
-                          "folio",
                           "localId",
                           "cliente",
                           "direccion",
@@ -8226,6 +8247,12 @@
                           "comuna": {
                             "type": "string"
                           },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -8274,7 +8301,6 @@
                         },
                         "required": [
                           "facturaId",
-                          "folio",
                           "localId",
                           "cliente",
                           "direccion",
@@ -8316,6 +8342,12 @@
                           "comuna": {
                             "type": "string"
                           },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -8328,7 +8360,6 @@
                         },
                         "required": [
                           "facturaId",
-                          "folio",
                           "localId",
                           "cliente",
                           "direccion",
@@ -8362,6 +8393,12 @@
                           "comuna": {
                             "type": "string"
                           },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -8374,7 +8411,6 @@
                         },
                         "required": [
                           "facturaId",
-                          "folio",
                           "localId",
                           "cliente",
                           "direccion",
@@ -8408,6 +8444,12 @@
                           "comuna": {
                             "type": "string"
                           },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -8427,7 +8469,6 @@
                         },
                         "required": [
                           "facturaId",
-                          "folio",
                           "localId",
                           "cliente",
                           "direccion",
@@ -8461,6 +8502,12 @@
                           },
                           "comuna": {
                             "type": "string"
+                          },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
                           },
                           "urgente": {
                             "type": "boolean"
@@ -8512,7 +8559,6 @@
                         },
                         "required": [
                           "facturaId",
-                          "folio",
                           "localId",
                           "cliente",
                           "direccion",
@@ -8907,6 +8953,12 @@
                           "comuna": {
                             "type": "string"
                           },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -8955,7 +9007,6 @@
                         },
                         "required": [
                           "facturaId",
-                          "folio",
                           "localId",
                           "cliente",
                           "direccion",
@@ -8997,6 +9048,12 @@
                           "comuna": {
                             "type": "string"
                           },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -9009,7 +9066,6 @@
                         },
                         "required": [
                           "facturaId",
-                          "folio",
                           "localId",
                           "cliente",
                           "direccion",
@@ -9043,6 +9099,12 @@
                           "comuna": {
                             "type": "string"
                           },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -9055,7 +9117,6 @@
                         },
                         "required": [
                           "facturaId",
-                          "folio",
                           "localId",
                           "cliente",
                           "direccion",
@@ -9089,6 +9150,12 @@
                           "comuna": {
                             "type": "string"
                           },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -9108,7 +9175,6 @@
                         },
                         "required": [
                           "facturaId",
-                          "folio",
                           "localId",
                           "cliente",
                           "direccion",
@@ -9142,6 +9208,12 @@
                           },
                           "comuna": {
                             "type": "string"
+                          },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
                           },
                           "urgente": {
                             "type": "boolean"
@@ -9193,7 +9265,6 @@
                         },
                         "required": [
                           "facturaId",
-                          "folio",
                           "localId",
                           "cliente",
                           "direccion",

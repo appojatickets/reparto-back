@@ -8,7 +8,7 @@ const minuto = z.number().int().min(0).max(1439);
 
 const item = z.object({
   facturaId: z.string(),
-  folio: z.string(),
+  folio: z.string().optional(),
   localId: z.string(),
   cliente: z.string(),
   direccion: z.string(),

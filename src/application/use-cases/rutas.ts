@@ -19,7 +19,7 @@ const LIMITE_OPTIMIZACION_MS = 2500;
 
 export type ItemVista = {
   readonly facturaId: string;
-  readonly folio: string;
+  readonly folio?: string;
   readonly localId: string;
   readonly cliente: string;
   readonly direccion: string;
@@ -85,7 +85,7 @@ type Contexto = {
 
 const itemDe = (f: FacturaParaRuta): ItemVista => ({
   facturaId: f.facturaId,
-  folio: f.folio,
+  ...(f.folio !== undefined ? { folio: f.folio } : {}),
   localId: f.localId,
   cliente: f.razonSocial,
   direccion: f.direccion,
@@ -134,7 +134,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, cloc
     const porId = new Map(ctx.items.map((f) => [f.facturaId, f]));
     const item = (id: string): ItemVista => {
       const f = porId.get(id);
-      return f ? itemDe(f) : { facturaId: id, folio: '', localId: '', cliente: '', direccion: '', comuna: '', urgente: false };
+      return f ? itemDe(f) : { facturaId: id, localId: '', cliente: '', direccion: '', comuna: '', urgente: false };
     };
     const sinPinIds = new Set(sinPin.map((e) => e.id));
     const enLaRuta = new Set(plan?.solucion.orden ?? []);

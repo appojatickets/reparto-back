@@ -65,7 +65,7 @@ export class PostgresRutaRepository implements RutaRepository {
     }
     return filas.map((f) => ({
       facturaId: f.id,
-      folio: f.folio,
+      ...(f.folio !== null ? { folio: f.folio } : {}),
       localId: f.local_id,
       razonSocial: f.razon_social,
       direccion: f.direccion,

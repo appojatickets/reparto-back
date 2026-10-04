@@ -3,6 +3,7 @@ export type Rol = 'admin' | 'despachador' | 'chofer';
 export const TODOS_LOS_PERMISOS = [
   'clientes:leer',
   'clientes:escribir',
+  'clientes:crear',
   'clientes:importar',
   'pines:proponer',
   'pines:revisar',
@@ -27,8 +28,8 @@ export type Permiso = (typeof TODOS_LOS_PERMISOS)[number];
  */
 const PERMISOS_POR_ROL: Readonly<Record<Rol, readonly Permiso[]>> = {
   admin: TODOS_LOS_PERMISOS,
-  despachador: ['clientes:leer', 'clientes:escribir', 'pines:proponer', 'pines:revisar', 'archivos:subir', 'facturas:leer', 'facturas:escribir', 'rutas:leer', 'rutas:escribir'],
-  chofer: ['clientes:leer', 'pines:proponer', 'archivos:subir', 'facturas:leer', 'facturas:escribir', 'rutas:leer', 'rutas:escribir', 'jornada:gestionar'],
+  despachador: ['clientes:leer', 'clientes:escribir', 'clientes:crear', 'pines:proponer', 'pines:revisar', 'archivos:subir', 'facturas:leer', 'facturas:escribir', 'rutas:leer', 'rutas:escribir'],
+  chofer: ['clientes:leer', 'clientes:crear', 'pines:proponer', 'archivos:subir', 'facturas:leer', 'facturas:escribir', 'rutas:leer', 'rutas:escribir', 'jornada:gestionar'],
 };
 
 export const puede = (rol: Rol, permiso: Permiso): boolean => PERMISOS_POR_ROL[rol].includes(permiso);

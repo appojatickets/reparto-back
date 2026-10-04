@@ -4,7 +4,7 @@ export type EstadoFactura = 'pendiente' | 'anulada';
 
 export type FacturaDetallada = {
   readonly id: string;
-  readonly folio: string;
+  readonly folio?: string;
   readonly fecha: string;
   readonly estado: EstadoFactura;
   readonly total?: number;
@@ -16,7 +16,7 @@ export type FacturaDetallada = {
 };
 
 export type NuevaFactura = {
-  readonly folio: string;
+  readonly folio?: string;
   readonly localId: string;
   readonly fecha: string;
   readonly camionId?: string;

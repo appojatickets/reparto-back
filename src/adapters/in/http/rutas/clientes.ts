@@ -54,7 +54,7 @@ export const rutasClientes = ({ app, casos, guard }: ContextoRutas): void => {
   a.post(
     '/v1/clientes',
     {
-      preHandler: guard('clientes:escribir'),
+      preHandler: guard('clientes:crear'),
       schema: {
         tags: ['clientes'],
         summary: 'Cliente nuevo con su primer local',
