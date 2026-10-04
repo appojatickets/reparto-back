@@ -5,6 +5,7 @@ import { crearActualizarCamion, crearCrearCamion, crearListarCamiones } from './
 import { crearActualizarFactura, crearListarFacturas, crearRegistrarFactura } from './application/use-cases/facturas.js';
 import { crearGuardarConfigEmpresa, crearObtenerConfigEmpresa } from './application/use-cases/config-empresa.js';
 import { crearServiciosDeRuta } from './application/use-cases/rutas.js';
+import { crearGuardarHorario, crearObtenerHorario } from './application/use-cases/horarios.js';
 import { crearAutenticarUsuario } from './application/use-cases/autenticar-usuario.js';
 import { crearBuscarClientes } from './application/use-cases/buscar-clientes.js';
 import { crearCrearClienteNuevo } from './application/use-cases/crear-cliente-nuevo.js';
@@ -21,6 +22,7 @@ import { createDb } from './adapters/out/postgres/client.js';
 import { PostgresDatabaseHealth } from './adapters/out/postgres/database-health.js';
 import { PostgresEmpresaRepository } from './adapters/out/postgres/repositorio-empresa.js';
 import { PostgresRutaRepository } from './adapters/out/postgres/repositorio-rutas.js';
+import { PostgresHorarioRepository } from './adapters/out/postgres/repositorio-horarios.js';
 import { PostgresCamionRepository } from './adapters/out/postgres/repositorio-camiones.js';
 import { PostgresFacturaRepository } from './adapters/out/postgres/repositorio-facturas.js';
 import { PostgresClienteRepository } from './adapters/out/postgres/repositorio-clientes.js';
@@ -43,6 +45,7 @@ const camiones = new PostgresCamionRepository(db);
 const facturas = new PostgresFacturaRepository(db);
 const empresas = new PostgresEmpresaRepository(db);
 const rutas = new PostgresRutaRepository(db);
+const horarios = new PostgresHorarioRepository(db);
 const identidad = new IdentidadSupabase({ urlBase: env.SUPABASE_URL, claveServicio: env.SUPABASE_SERVICE_ROLE_KEY, clavePublica: env.SUPABASE_ANON_KEY });
 const almacen = new AlmacenSupabase({ urlBase: env.SUPABASE_URL, claveServicio: env.SUPABASE_SERVICE_ROLE_KEY });
 const dbHealth = new PostgresDatabaseHealth(db);
@@ -79,6 +82,8 @@ const casos: CasosDeUso = {
   verRuta: serviciosDeRuta.ver,
   planificarRuta: serviciosDeRuta.planificar,
   operarRuta: serviciosDeRuta.operar,
+  obtenerHorario: crearObtenerHorario({ horarios }),
+  guardarHorario: crearGuardarHorario({ horarios }),
   obtenerConfigEmpresa: crearObtenerConfigEmpresa({ empresas }),
   guardarConfigEmpresa: crearGuardarConfigEmpresa({ empresas }),
 };

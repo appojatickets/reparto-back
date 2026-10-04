@@ -57,7 +57,7 @@ export class PostgresRutaRepository implements RutaRepository {
       const lista = porLocal.get(h.local_id) ?? [];
       lista.push({
         dias: h.dias as DiaSemana[],
-        tramos: [{ apertura: minutosDeHora(h.desde), cierre: minutosDeHora(h.hasta) }],
+        tramos: h.desde !== null && h.hasta !== null ? [{ apertura: minutosDeHora(h.desde), cierre: minutosDeHora(h.hasta) }] : [],
         fuente: h.fuente,
         confianza: h.confianza,
       });

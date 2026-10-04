@@ -39,6 +39,8 @@ export const casosVacios = (): CasosDeUso => {
     verRuta: sinImplementar,
     planificarRuta: sinImplementar,
     operarRuta: sinImplementar,
+    obtenerHorario: sinImplementar,
+    guardarHorario: sinImplementar,
     obtenerConfigEmpresa: sinImplementar,
     guardarConfigEmpresa: sinImplementar,
   } as CasosDeUso;

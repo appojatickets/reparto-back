@@ -46,9 +46,20 @@ describe('resolverHorario · precedencia de datos', () => {
     expect(resolverHorario(horarios, LUN)).toMatchObject({ fuente: 'giro' });
   });
 
-  it('con datos para otros días pero no para éste, el local está cerrado ese día', () => {
+  it('un día sin dato no tiene restricción (no se inventan cierres), aunque haya datos de otros días', () => {
     const horarios = [h('confirmado', semana, [v(480, 1200)])];
+    expect(resolverHorario(horarios, DOM)).toEqual({ tipo: 'sin_restriccion' });
+  });
+
+  it('«cerrado» explícito (fila sin tramos) hace imposible ese día, y manda sobre lo aprendido', () => {
+    const horarios = [h('confirmado', [DOM], []), h('aprendido', [DOM], [v(600, 900)])];
     expect(resolverHorario(horarios, DOM)).toEqual({ tipo: 'imposible', motivo: 'CERRADO_ESE_DIA' });
+    expect(resolverHorario(horarios, LUN)).toEqual({ tipo: 'sin_restriccion' });
+  });
+
+  it('cerrado explícito también impide la condición «antes de»', () => {
+    const horarios = [h('confirmado', [DOM], [])];
+    expect(resolverHorario(horarios, DOM, { antesDeMin: 720 })).toEqual({ tipo: 'imposible', motivo: 'CERRADO_ESE_DIA' });
   });
 });
 

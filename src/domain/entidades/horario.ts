@@ -36,11 +36,11 @@ export const resolverHorario = (
   const delDia = horarios.filter((h) => h.dias.includes(dia));
   const fuente = PRECEDENCIA.find((f) => delDia.some((h) => h.fuente === f));
 
+  // Un día sin dato es un día sin restricción: no se inventan cierres. «Cerrado» es un dato explícito: una fila sin tramos.
   let ventanas: readonly VentanaHoraria[] | undefined;
   if (fuente) {
     ventanas = normalizarTramos(delDia.filter((h) => h.fuente === fuente).flatMap((h) => h.tramos));
-  } else if (horarios.length > 0) {
-    return { tipo: 'imposible', motivo: 'CERRADO_ESE_DIA' };
+    if (ventanas.length === 0) return { tipo: 'imposible', motivo: 'CERRADO_ESE_DIA' };
   }
 
   const limite = condicion?.antesDeMin;

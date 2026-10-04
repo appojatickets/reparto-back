@@ -9418,6 +9418,630 @@
           }
         }
       }
+    },
+    "/v1/locales/{id}/horario": {
+      "get": {
+        "summary": "Horario de atención declarado a mano (0 = domingo … 6 = sábado). Los días que no aparecen no tienen dato.",
+        "tags": [
+          "clientes"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dias": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "readOnly": true,
+                        "type": "object",
+                        "properties": {
+                          "dia": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 6
+                          },
+                          "cerrado": {
+                            "type": "boolean"
+                          },
+                          "tramos": {
+                            "readOnly": true,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "desde": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 1439
+                                },
+                                "hasta": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 1439
+                                }
+                              },
+                              "required": [
+                                "desde",
+                                "hasta"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "dia",
+                          "cerrado",
+                          "tramos"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "dias"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Guardar el horario manual del local (reemplaza el anterior). «Cerrado» es un día con cerrado=true y sin tramos.",
+        "tags": [
+          "clientes"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "dias": {
+                    "maxItems": 7,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "dia": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 6
+                        },
+                        "cerrado": {
+                          "type": "boolean"
+                        },
+                        "tramos": {
+                          "maxItems": 3,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "desde": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 1439
+                              },
+                              "hasta": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 1439
+                              }
+                            },
+                            "required": [
+                              "desde",
+                              "hasta"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "dia",
+                        "cerrado",
+                        "tramos"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "dias"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dias": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "readOnly": true,
+                        "type": "object",
+                        "properties": {
+                          "dia": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 6
+                          },
+                          "cerrado": {
+                            "type": "boolean"
+                          },
+                          "tramos": {
+                            "readOnly": true,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "desde": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 1439
+                                },
+                                "hasta": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 1439
+                                }
+                              },
+                              "required": [
+                                "desde",
+                                "hasta"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "dia",
+                          "cerrado",
+                          "tramos"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "dias"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

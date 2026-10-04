@@ -59,6 +59,8 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'GET', url: `/v1/rutas?camionId=${UUID}&fecha=2026-10-05`, permiso: 'rutas:leer', caso: 'verRuta' },
   { metodo: 'POST', url: '/v1/rutas/planificar', body: { camionId: UUID, fecha: '2026-10-05' }, permiso: 'rutas:escribir', caso: 'planificarRuta' },
   { metodo: 'POST', url: '/v1/rutas/operaciones', body: { camionId: UUID, fecha: '2026-10-05', version: 1, operacion: { tipo: 'ordenar' } }, permiso: 'rutas:escribir', caso: 'operarRuta' },
+  { metodo: 'GET', url: `/v1/locales/${UUID}/horario`, permiso: 'clientes:leer', caso: 'obtenerHorario' },
+  { metodo: 'PUT', url: `/v1/locales/${UUID}/horario`, body: { dias: [{ dia: 1, cerrado: false, tramos: [{ desde: 600, hasta: 1080 }] }] }, permiso: 'clientes:escribir', caso: 'guardarHorario' },
 ];
 
 describe('permisos: cada ruta exige su permiso y no llega al caso de uso sin él', () => {
@@ -359,5 +361,31 @@ describe('rutas del día', () => {
     expect(g.json()).toEqual({ deposito: { lat: -33.5, lng: -70.7, nombre: 'Bodega' }, salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260 });
     const p = await app.inject({ method: 'PUT', url: '/v1/empresa/config', headers: auth('despachador'), payload: { salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260 } });
     expect(p.statusCode).toBe(403);
+  });
+});
+
+describe('horario del local', () => {
+  const auth = (rol: Rol) => ({ authorization: `Bearer ${ROLES[rol]}` });
+  it('guardar valida el cuerpo y devuelve el horario; errores del caso de uso salen con su código', async () => {
+    const guardarHorario = vi.fn()
+      .mockResolvedValueOnce(ok([{ dia: 1, cerrado: false, tramos: [{ desde: 600, hasta: 1080 }] }, { dia: 0, cerrado: true, tramos: [] }]))
+      .mockResolvedValueOnce(err(errorApp('VALIDACION', 'El lunes: los tramos se solapan.')));
+    const app = await construir({ guardarHorario });
+    const url = `/v1/locales/${UUID}/horario`;
+    const dias = [{ dia: 1, cerrado: false, tramos: [{ desde: 600, hasta: 1080 }] }, { dia: 0, cerrado: true, tramos: [] }];
+    const a = await app.inject({ method: 'PUT', url, headers: auth('despachador'), payload: { dias } });
+    expect(a.statusCode).toBe(200);
+    expect(a.json()).toEqual({ dias });
+    expect(guardarHorario).toHaveBeenCalledWith(USUARIOS['t-desp'], UUID, dias);
+    expect((await app.inject({ method: 'PUT', url, headers: auth('admin'), payload: { dias } })).statusCode).toBe(422);
+    expect((await app.inject({ method: 'PUT', url, headers: auth('admin'), payload: { dias: [{ dia: 9, cerrado: true, tramos: [] }] } })).statusCode).toBe(400);
+    expect((await app.inject({ method: 'PUT', url, headers: auth('admin'), payload: { dias: [{ dia: 1, cerrado: false, tramos: [{ desde: 600, hasta: 2000 }] }] } })).statusCode).toBe(400);
+    expect(guardarHorario).toHaveBeenCalledTimes(2);
+  });
+
+  it('leer devuelve los días declarados', async () => {
+    const obtenerHorario = vi.fn(() => Promise.resolve(ok([{ dia: 6 as const, cerrado: true, tramos: [] }])));
+    const r = await (await construir({ obtenerHorario })).inject({ method: 'GET', url: `/v1/locales/${UUID}/horario`, headers: auth('despachador') });
+    expect(r.json()).toEqual({ dias: [{ dia: 6, cerrado: true, tramos: [] }] });
   });
 });

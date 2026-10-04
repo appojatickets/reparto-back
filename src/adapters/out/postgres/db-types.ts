@@ -39,8 +39,9 @@ export type Tabla = {
     empresa_id: string;
     local_id: string;
     dias: number[];
-    desde: string;
-    hasta: string;
+    desde: string | null;
+    hasta: string | null;
+    cerrado: Generated<boolean>;
     fuente: 'confirmado' | 'aprendido' | 'sugerido' | 'giro';
     confianza: Generated<number>;
     observado_en: Fecha;

@@ -3,6 +3,7 @@ import { PostgresCamionRepository } from '../../src/adapters/out/postgres/reposi
 import { PostgresClienteRepository } from '../../src/adapters/out/postgres/repositorio-clientes.js';
 import { PostgresEmpresaRepository } from '../../src/adapters/out/postgres/repositorio-empresa.js';
 import { PostgresFacturaRepository } from '../../src/adapters/out/postgres/repositorio-facturas.js';
+import { PostgresHorarioRepository } from '../../src/adapters/out/postgres/repositorio-horarios.js';
 import { PostgresRutaRepository } from '../../src/adapters/out/postgres/repositorio-rutas.js';
 import { crearServiciosDeRuta } from '../../src/application/use-cases/rutas.js';
 import { abrirDb, crearEmpresa, crearUsuario } from './utils.js';
@@ -109,5 +110,49 @@ describe('rutas en Postgres', () => {
     const q = await servicios.operar(usuario, { camionId: s.camion, fecha: FECHA, version: 2, operacion: { tipo: 'quitar', facturaId: orden[0] ?? '' } });
     expect(q.ok && q.value.paradas).toHaveLength(2);
     expect((await facturas.listar(s.empresa, { fecha: FECHA, sinCamion: true })).map((f) => f.id)).toEqual([orden[0]]);
+  });
+});
+
+describe('horario manual en Postgres', () => {
+  const horarios = new PostgresHorarioRepository(db);
+  const dias = [
+    { dia: 1 as const, cerrado: false, tramos: [{ desde: 600, hasta: 1080 }] },
+    { dia: 2 as const, cerrado: false, tramos: [{ desde: 600, hasta: 1080 }] },
+    { dia: 3 as const, cerrado: false, tramos: [{ desde: 600, hasta: 780 }, { desde: 840, hasta: 1080 }] },
+    { dia: 0 as const, cerrado: true, tramos: [] },
+  ];
+
+  it('guarda con colación y cerrado, lee igual, reemplaza y aísla por empresa', async () => {
+    const s = await sembrar();
+    const local = s.local('Almacén A');
+    expect(await horarios.obtenerManual(s.empresa, local)).toEqual([]);
+    expect(await horarios.reemplazarManual(s.empresa, local, dias)).toBe(true);
+    expect((await horarios.obtenerManual(s.empresa, local))?.map((d) => d.dia)).toEqual([0, 1, 2, 3]);
+    expect((await horarios.obtenerManual(s.empresa, local))?.find((d) => d.dia === 3)?.tramos).toEqual([{ desde: 600, hasta: 780 }, { desde: 840, hasta: 1080 }]);
+    expect((await horarios.obtenerManual(s.empresa, local))?.find((d) => d.dia === 0)).toMatchObject({ cerrado: true, tramos: [] });
+
+    await horarios.reemplazarManual(s.empresa, local, [{ dia: 5, cerrado: true, tramos: [] }]);
+    expect(await horarios.obtenerManual(s.empresa, local)).toEqual([{ dia: 5, cerrado: true, tramos: [] }]);
+
+    const otra = await sembrar();
+    expect(await horarios.obtenerManual(otra.empresa, local)).toBeUndefined();
+    expect(await horarios.reemplazarManual(otra.empresa, local, dias)).toBe(false);
+    expect(await horarios.obtenerManual(s.empresa, '00000000-0000-4000-8000-000000000000')).toBeUndefined();
+  });
+
+  it('no toca los horarios aprendidos y el cerrado manual saca la parada de la ruta', async () => {
+    const s = await sembrar();
+    await db.insertInto('horario_local').values({ empresa_id: s.empresa, local_id: s.local('Almacén A'), dias: [1], desde: '09:00', hasta: '20:00', fuente: 'aprendido' }).execute();
+    await horarios.reemplazarManual(s.empresa, s.local('Almacén A'), [{ dia: 1, cerrado: true, tramos: [] }]);
+    expect(await db.selectFrom('horario_local').select('fuente').where('local_id', '=', s.local('Almacén A')).orderBy('fuente').execute()).toEqual([{ fuente: 'aprendido' }, { fuente: 'confirmado' }]);
+
+    await empresas.guardarConfig(s.empresa, { deposito: { lat: -33.5, lng: -70.7 }, salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260 });
+    await factura(s, '1', 'Almacén A');
+    await factura(s, '2', 'Bazar B');
+    const servicios = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, clock: { now: () => new Date('2026-10-05T12:00:00Z') } });
+    const usuario = { id: s.usuario, empresaId: s.empresa, rol: 'despachador' as const, username: 'd', nombre: 'D', activo: true };
+    const p = await servicios.planificar(usuario, { camionId: s.camion, fecha: FECHA }); // 2026-10-05 es lunes: Almacén A está cerrado
+    expect(p.ok && p.value.paradas.map((x) => x.cliente)).toEqual(['Bazar B']);
+    expect(p.ok && p.value.noAtendidas.map((x) => x.cliente)).toEqual(['Almacén A']);
   });
 });

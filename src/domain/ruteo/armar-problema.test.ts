@@ -25,7 +25,8 @@ describe('armarProblema', () => {
   });
 
   it('un local que no abre ese día queda como ventana vencida (el motor lo informa como no atendida)', () => {
-    const r = armarProblema({ ...base, fecha: '2026-10-10', entradas: [e('A', { horarios: [abierto(540, 1080)] })] });
+    const cerradoSabado: HorarioLocal = { dias: [6], tramos: [], fuente: 'confirmado', confianza: 1 };
+    const r = armarProblema({ ...base, fecha: '2026-10-10', entradas: [e('A', { horarios: [abierto(540, 1080), cerradoSabado] })] });
     const s = optimizar(r.problema);
     expect(s.noAtendidas.map((x) => x.paradaId)).toEqual(['A']);
   });

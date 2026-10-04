@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { err } from '../../domain/shared/result.js';
-import { v } from '../../domain/ruteo/problemas.test-util.js';
 import { crearReloj, usuarioDe } from './fakes.test-util.js';
 import { CAMION_ID, FECHA, fakeCamionesRuta, fakeEmpresas, fakeFacturasRuta, fakeRutas, paradaDe } from './fakes-rutas.test-util.js';
 import { crearServiciosDeRuta } from './rutas.js';
@@ -63,7 +62,7 @@ describe('planificar', () => {
   });
 
   it('un local cerrado ese día queda «no atendido» con su explicación y el «antes de» muestra riesgo', async () => {
-    const cerrado = paradaDe('X', { horarios: [{ dias: [2], tramos: [v(540, 1080)], fuente: 'confirmado', confianza: 1 }] }); // solo martes; la fecha es lunes
+    const cerrado = paradaDe('X', { horarios: [{ dias: [1], tramos: [], fuente: 'confirmado', confianza: 1 }] }); // cerrado los lunes (la fecha es lunes)
     const s = montar({ pendientes: [paradaDe('A'), cerrado] });
     const r = await s.planificar(despachador, entrada);
     expect(r.ok && r.value.noAtendidas.map((n) => n.facturaId)).toEqual(['f-X']);
