@@ -1,4 +1,4 @@
-import type { Result } from '../../../domain/result.js';
+import type { Result } from '../../../domain/shared/result.js';
 
 export type DatabaseUnavailable = { readonly kind: 'DATABASE_UNAVAILABLE'; readonly detail: string };
 

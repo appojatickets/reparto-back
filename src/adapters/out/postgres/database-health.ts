@@ -1,5 +1,5 @@
 import { sql, type Kysely } from 'kysely';
-import { err, ok, type Result } from '../../../domain/result.js';
+import { err, ok, type Result } from '../../../domain/shared/result.js';
 import type { DatabaseHealth, DatabaseUnavailable } from '../../../application/ports/out/database-health.js';
 
 export class PostgresDatabaseHealth implements DatabaseHealth {

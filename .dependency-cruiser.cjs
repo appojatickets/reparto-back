@@ -66,7 +66,7 @@ module.exports = {
   options: {
     tsConfig: { fileName: 'tsconfig.json' },
     doNotFollow: { path: 'node_modules' },
-    exclude: { path: '\\.test\\.ts$' },
+    exclude: { path: '\\.test(-util)?\\.ts$' },
     moduleSystems: ['es6', 'cjs'],
   },
 };

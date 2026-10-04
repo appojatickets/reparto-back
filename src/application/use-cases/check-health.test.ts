@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { err, ok } from '../../domain/result.js';
+import { err, ok } from '../../domain/shared/result.js';
 import type { Clock } from '../ports/out/clock.js';
 import type { DatabaseHealth } from '../ports/out/database-health.js';
 import { checkHealth } from './check-health.js';
