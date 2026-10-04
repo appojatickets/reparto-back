@@ -3,7 +3,8 @@ services:
     name: reparto-api
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build
+    region: oregon
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: node dist/main.js
     healthCheckPath: /v1/health
     envVars:
