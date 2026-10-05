@@ -10,6 +10,8 @@ export const TODOS_LOS_PERMISOS = [
   'archivos:subir',
   'usuarios:gestionar',
   'camiones:gestionar',
+  'vendedores:leer',
+  'vendedores:gestionar',
   'facturas:leer',
   'facturas:escribir',
   'rutas:leer',
@@ -27,11 +29,11 @@ export type Permiso = (typeof TODOS_LOS_PERMISOS)[number];
  * cargarlas, propone pines y sube fotos; la API limita facturas y rutas al camión de su jornada. Sin métricas, usuarios ni edición de clientes. Despachador: clientes y pines. Admin: todo.
  * Supuesto de negocio a confirmar: quién revisa los pines propuestos por los choferes (hoy admin y despachador).
  */
-const PERMISOS_DE_CAMION: readonly Permiso[] = ['clientes:leer', 'clientes:crear', 'pines:proponer', 'archivos:subir', 'facturas:leer', 'facturas:escribir', 'rutas:leer', 'rutas:escribir', 'jornada:gestionar', 'entregas:registrar'];
+const PERMISOS_DE_CAMION: readonly Permiso[] = ['clientes:leer', 'clientes:crear', 'pines:proponer', 'archivos:subir', 'facturas:leer', 'facturas:escribir', 'rutas:leer', 'rutas:escribir', 'jornada:gestionar', 'entregas:registrar', 'vendedores:leer'];
 
 const PERMISOS_POR_ROL: Readonly<Record<Rol, readonly Permiso[]>> = {
   admin: TODOS_LOS_PERMISOS,
-  despachador: ['clientes:leer', 'clientes:escribir', 'clientes:crear', 'pines:proponer', 'pines:revisar', 'archivos:subir', 'facturas:leer', 'facturas:escribir', 'rutas:leer', 'rutas:escribir', 'entregas:registrar'],
+  despachador: ['clientes:leer', 'clientes:escribir', 'clientes:crear', 'pines:proponer', 'pines:revisar', 'archivos:subir', 'facturas:leer', 'facturas:escribir', 'rutas:leer', 'rutas:escribir', 'entregas:registrar', 'vendedores:leer'],
   chofer: PERMISOS_DE_CAMION,
   ayudante: PERMISOS_DE_CAMION,
 };

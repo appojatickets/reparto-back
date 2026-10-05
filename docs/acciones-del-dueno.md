@@ -70,6 +70,12 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar.
 - [ ] Probar CAMBIAR DE CAMIÓN y TERMINAR MI DÍA.
 - [ ] Si falta un cliente al buscarlo: anotar cuál (hoy el chofer no puede crear clientes; lo importa la oficina).
 
+### A9. Probar vendedores y el aviso de local cerrado
+Esperar ~2 min a que Render y Vercel terminen de desplegar.
+- [ ] Admin → **VENDEDORES** → agregar V01…V16 con nombre y, si lo tienes, celular (9 dígitos). Probar un código repetido (debe avisar) y cambiar o borrar un celular.
+- [ ] En el celular, como chofer: en una parada tocar **ESTÁ CERRADO**. Debe haber un botón de WhatsApp por cada vendedor con celular; tocar uno y comprobar que abre ese chat con el mensaje armado.
+- [ ] Responder (me sirve saber): ¿el aviso va al vendedor dueño de cada cliente o a cualquiera del camión? ¿Existe esa asignación cliente → vendedor en tu sistema? ¿Cómo es la planilla de la mañana (chofer, ayudante, camión, vendedores)?
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos

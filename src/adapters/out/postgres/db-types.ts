@@ -63,6 +63,7 @@ export type Tabla = {
     resuelto_en: Date | null;
   };
   camion: { id: Generated<string>; empresa_id: string; patente: string; alias: string | null; activo: Generated<boolean>; creado_en: Generated<Date> };
+  vendedor: { id: Generated<string>; empresa_id: string; codigo: string; nombre: string; celular: string | null; activo: Generated<boolean>; creado_en: Generated<Date> };
   factura: {
     id: Generated<string>;
     empresa_id: string;

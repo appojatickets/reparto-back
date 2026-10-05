@@ -27,6 +27,8 @@ import { PostgresRutaRepository } from './adapters/out/postgres/repositorio-ruta
 import { PostgresHorarioRepository } from './adapters/out/postgres/repositorio-horarios.js';
 import { PostgresJornadaRepository } from './adapters/out/postgres/repositorio-jornadas.js';
 import { PostgresEntregaRepository } from './adapters/out/postgres/repositorio-entregas.js';
+import { crearActualizarVendedor, crearCrearVendedor, crearListarVendedores } from './application/use-cases/vendedores.js';
+import { PostgresVendedorRepository } from './adapters/out/postgres/repositorio-vendedores.js';
 import { PostgresCamionRepository } from './adapters/out/postgres/repositorio-camiones.js';
 import { PostgresFacturaRepository } from './adapters/out/postgres/repositorio-facturas.js';
 import { PostgresClienteRepository } from './adapters/out/postgres/repositorio-clientes.js';
@@ -46,6 +48,7 @@ const usuarios = new PostgresUsuarioRepository(db);
 const intentos = new PostgresIntentosLoginRepository(db);
 const pines = new PostgresPropuestaPinRepository(db);
 const camiones = new PostgresCamionRepository(db);
+const vendedores = new PostgresVendedorRepository(db);
 const facturas = new PostgresFacturaRepository(db);
 const empresas = new PostgresEmpresaRepository(db);
 const rutas = new PostgresRutaRepository(db);
@@ -83,6 +86,9 @@ const casos: CasosDeUso = {
   listarCamiones: crearListarCamiones({ camiones }),
   crearCamion: crearCrearCamion({ camiones }),
   actualizarCamion: crearActualizarCamion({ camiones }),
+  listarVendedores: crearListarVendedores({ vendedores }),
+  crearVendedor: crearCrearVendedor({ vendedores }),
+  actualizarVendedor: crearActualizarVendedor({ vendedores }),
   registrarFactura: crearRegistrarFactura({ facturas, clock, resolverCamion }),
   listarFacturas: crearListarFacturas({ facturas, clock, resolverCamion }),
   actualizarFactura: crearActualizarFactura({ facturas, resolverCamion }),
