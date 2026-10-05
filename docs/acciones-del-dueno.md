@@ -112,6 +112,12 @@ Esperar ~2 min a que Render termine de desplegar.
 - [ ] Carga 3 o 4 entregas más con la ruta ya calculada: deben ordenarse solas (sin botón). Mueve una con ⬆ ⬇ y carga otra: se inserta sin deshacer lo que moviste. Elige **Primera entrega** y comprueba que el resto se reordena desde ahí.
 - [ ] La ruta ya no muestra horas ni tiempos estimados (no eran confiables); cuéntame si falta algún dato para decidir.
 
+### A16. Probar el fin de la ruta (celular del chofer, ADR 0020)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces (comprobar la versión al final de IMPORTAR CLIENTES).
+- [ ] Con una ruta con entregas: marca una como ENTREGADO y baja hasta el final de la lista: debe estar **TERMINAR RUTA**. Tócalo con entregas pendientes: pide confirmar y dice cuántas quedan; con «NO, SEGUIR» no pasa nada.
+- [ ] Termina la ruta: muestra el resumen (entregadas, no entregadas, sin hacer) y VOLVER AL INICIO. Al elegir camión de nuevo la lista parte limpia (las pendientes quedan en su día).
+- [ ] Llegada al depósito: con la pantalla abierta y al menos una entrega hecha, acércate a menos de 150 m del depósito «Ibiza»: debe preguntar «¿Terminaste la ruta?» (o terminar sola si no queda nada). Si tu teléfono no da el aviso, avísame con el modelo.
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos
