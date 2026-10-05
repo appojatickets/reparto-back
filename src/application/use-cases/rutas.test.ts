@@ -70,9 +70,9 @@ describe('planificar', () => {
   it('la parada avisa si el local tiene foto de la fachada', async () => {
     const s = montar({ pendientes: [paradaDe('A', { tieneFoto: true }), paradaDe('B')] });
     const r = await s.planificar(despachador, entrada);
-    const porId = r.ok ? new Map(r.value.paradas.map((p) => [p.facturaId, p])) : new Map();
-    expect(porId.get('f-A')?.tieneFoto).toBe(true);
-    expect(porId.get('f-B')?.tieneFoto).toBeUndefined();
+    const paradas = r.ok ? r.value.paradas : [];
+    expect(paradas.find((p) => p.facturaId === 'f-A')?.tieneFoto).toBe(true);
+    expect(paradas.find((p) => p.facturaId === 'f-B')?.tieneFoto).toBeUndefined();
   });
 
   it('solo si ni siquiera se sabe la comuna queda en «sin ubicación»', async () => {
