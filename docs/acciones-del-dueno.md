@@ -100,6 +100,18 @@ Esperar ~2 min a que Render termine de desplegar.
 - [ ] Esperar uno o dos minutos y recalcular: las direcciones que el mapa encontró ya tienen pin. Las rurales («Parcela 7») suelen no encontrarse; esas se afinan con el GPS de la entrega o pegando el enlace del vendedor.
 - [ ] Como admin, pedir la búsqueda para toda la base (botón en IMPORTAR CLIENTES): tarda ~1 segundo por local.
 
+### A13. Cargar listas de «dirección + enlace de Google Maps» (ADR 0010 del front)
+- [ ] Entra a **Importar clientes** y pega la lista (dirección con comuna al final, y debajo su enlace `maps.app.goo.gl` o de búsqueda). Toca **IMPORTAR N DIRECCIONES**: crea los clientes y fija el pin exacto con los enlaces cortos.
+- [ ] Para los de enlace de búsqueda (sin lugar) y para los **495 locales que hoy no tienen pin** (441 tienen número de calle, así que se pueden buscar), toca **BUSCAR LOS PINES POR DIRECCIÓN** al final de la misma pantalla (A12). Hoy ninguno se ha buscado todavía; tarda unos 9 minutos (1 por segundo).
+
+### A14. Exportar datos y manejar fotos (ADR 0009 del front)
+- [ ] Menú del admin → **EXPORTAR DATOS**: elige comunas y filtros, marca las columnas (razón social, RUT, dirección, comuna, pin, foto…), mira cuántos son y descarga el CSV (se abre bien en Excel).
+- [ ] Toma una foto de una fachada desde la ruta (o desde la ficha del local) y comprueba que se ve para todos; en la ficha, **QUITAR FOTO** la borra del almacén.
+
+### A15. Probar la ruta con entregas nuevas (celular del chofer)
+- [ ] Carga 3 o 4 entregas más con la ruta ya calculada: deben ordenarse solas (sin botón). Mueve una con ⬆ ⬇ y carga otra: se inserta sin deshacer lo que moviste. Elige **Primera entrega** y comprueba que el resto se reordena desde ahí.
+- [ ] La ruta ya no muestra horas ni tiempos estimados (no eran confiables); cuéntame si falta algún dato para decidir.
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos
