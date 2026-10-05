@@ -52,6 +52,7 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'GET', url: '/v1/camiones', permiso: 'facturas:leer', caso: 'listarCamiones' },
   { metodo: 'POST', url: '/v1/camiones', body: { patente: 'AB1234' }, permiso: 'camiones:gestionar', caso: 'crearCamion' },
   { metodo: 'PATCH', url: `/v1/camiones/${UUID}`, body: { activo: false }, permiso: 'camiones:gestionar', caso: 'actualizarCamion' },
+  { metodo: 'POST', url: `/v1/locales/${UUID}/pin-desde-enlace`, body: { enlace: 'https://maps.google.com/?q=-33.5,-70.7' }, permiso: 'pines:proponer', caso: 'fijarPinDesdeEnlace' },
   { metodo: 'GET', url: '/v1/vendedores', permiso: 'vendedores:leer', caso: 'listarVendedores' },
   { metodo: 'POST', url: '/v1/vendedores', body: { codigo: 'V01', nombre: 'Ana' }, permiso: 'vendedores:gestionar', caso: 'crearVendedor' },
   { metodo: 'PATCH', url: `/v1/vendedores/${UUID}`, body: { activo: false }, permiso: 'vendedores:gestionar', caso: 'actualizarVendedor' },

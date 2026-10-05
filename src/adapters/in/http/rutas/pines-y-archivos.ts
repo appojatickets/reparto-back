@@ -112,4 +112,23 @@ export const rutasPinesYArchivos = ({ app, casos, guard }: ContextoRutas): void 
       return r.ok ? reply.send(r.value) : enviarError(reply, r.error);
     },
   );
+
+  a.post(
+    '/v1/locales/:id/pin-desde-enlace',
+    {
+      preHandler: guard('pines:proponer'),
+      schema: {
+        tags: ['pines'],
+        summary: 'Fijar el pin del local con la ubicación que mandó el vendedor (enlace de Google Maps o Waze, corto o largo, o coordenadas). Un pin validado por una persona no se pisa: queda como propuesta.',
+        security: SEGURIDAD,
+        params: idParam,
+        body: z.object({ enlace: z.string().min(1).max(2000) }),
+        response: { 200: z.object({ resultado: z.enum(['fijado', 'propuesto']), lat: z.number(), lng: z.number() }), ...RESPUESTAS_ERROR },
+      },
+    },
+    async (req, reply) => {
+      const r = await casos.fijarPinDesdeEnlace(actor(req), req.params.id, req.body.enlace);
+      return r.ok ? reply.send(r.value) : enviarError(reply, r.error);
+    },
+  );
 };

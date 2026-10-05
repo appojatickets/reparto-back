@@ -246,7 +246,7 @@ export class PostgresClienteRepository implements ClienteRepository {
     const f = await this.db
       .selectFrom('local as l')
       .innerJoin('cliente as c', 'c.id', 'l.cliente_id')
-      .select(['l.id', 'l.cliente_id', 'c.razon_social', 'c.rut', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng', 'l.pin_estado', 'l.foto_path', 'l.streetview_rumbo', 'l.nota'])
+      .select(['l.id', 'l.cliente_id', 'c.razon_social', 'c.rut', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng', 'l.pin_estado', 'l.pin_fuente', 'l.foto_path', 'l.streetview_rumbo', 'l.nota'])
       .where('l.id', '=', localId)
       .where('l.empresa_id', '=', empresaId)
       .executeTakeFirst();
@@ -260,6 +260,7 @@ export class PostgresClienteRepository implements ClienteRepository {
       comuna: f.comuna,
       ...(f.lat !== null && f.lng !== null ? { lat: f.lat, lng: f.lng } : {}),
       pinEstado: f.pin_estado,
+      ...(f.pin_fuente !== null ? { pinFuente: f.pin_fuente } : {}),
       ...(f.foto_path !== null ? { fotoPath: f.foto_path } : {}),
       ...(f.streetview_rumbo !== null ? { streetviewRumbo: f.streetview_rumbo } : {}),
       ...(f.nota !== null ? { nota: f.nota } : {}),

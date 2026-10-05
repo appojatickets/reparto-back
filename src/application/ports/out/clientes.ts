@@ -2,7 +2,7 @@ import type { ClienteImportable } from '../../../domain/importacion/fila-cliente
 import type { Result } from '../../../domain/shared/result.js';
 
 export type EstadoPin = 'pendiente' | 'sugerido' | 'validado';
-export type FuentePin = 'geocodificador' | 'manual' | 'importado' | 'aprendido' | 'chofer';
+export type FuentePin = 'geocodificador' | 'manual' | 'importado' | 'aprendido' | 'chofer' | 'enlace';
 
 export type ResultadoBusqueda = {
   readonly localId: string;
@@ -55,6 +55,7 @@ export type LocalDetalle = {
   readonly lat?: number;
   readonly lng?: number;
   readonly pinEstado: EstadoPin;
+  readonly pinFuente?: FuentePin;
   readonly fotoPath?: string;
   readonly streetviewRumbo?: number;
   readonly nota?: string;

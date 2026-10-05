@@ -33,6 +33,7 @@ export const casosVacios = (): CasosDeUso => {
     listarCamiones: sinImplementar,
     crearCamion: sinImplementar,
     actualizarCamion: sinImplementar,
+    fijarPinDesdeEnlace: sinImplementar,
     listarVendedores: sinImplementar,
     crearVendedor: sinImplementar,
     actualizarVendedor: sinImplementar,

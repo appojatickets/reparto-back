@@ -28,6 +28,8 @@ import { PostgresHorarioRepository } from './adapters/out/postgres/repositorio-h
 import { PostgresJornadaRepository } from './adapters/out/postgres/repositorio-jornadas.js';
 import { PostgresEntregaRepository } from './adapters/out/postgres/repositorio-entregas.js';
 import { crearActualizarVendedor, crearCrearVendedor, crearListarVendedores } from './application/use-cases/vendedores.js';
+import { crearFijarPinDesdeEnlace } from './application/use-cases/pin-desde-enlace.js';
+import { crearResolvedorEnlacesHttp } from './adapters/out/red/resolvedor-enlaces-http.js';
 import { PostgresVendedorRepository } from './adapters/out/postgres/repositorio-vendedores.js';
 import { PostgresCamionRepository } from './adapters/out/postgres/repositorio-camiones.js';
 import { PostgresFacturaRepository } from './adapters/out/postgres/repositorio-facturas.js';
@@ -86,6 +88,7 @@ const casos: CasosDeUso = {
   listarCamiones: crearListarCamiones({ camiones }),
   crearCamion: crearCrearCamion({ camiones }),
   actualizarCamion: crearActualizarCamion({ camiones }),
+  fijarPinDesdeEnlace: crearFijarPinDesdeEnlace({ clientes, pines, resolvedor: crearResolvedorEnlacesHttp() }),
   listarVendedores: crearListarVendedores({ vendedores }),
   crearVendedor: crearCrearVendedor({ vendedores }),
   actualizarVendedor: crearActualizarVendedor({ vendedores }),

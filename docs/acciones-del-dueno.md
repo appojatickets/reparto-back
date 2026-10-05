@@ -76,6 +76,14 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar.
 - [ ] En el celular, como chofer: en una parada tocar **ESTÁ CERRADO**. Debe haber un botón de WhatsApp por cada vendedor con celular; tocar uno y comprobar que abre ese chat con el mensaje armado.
 - [ ] Responder (me sirve saber): ¿el aviso va al vendedor dueño de cada cliente o a cualquiera del camión? ¿Existe esa asignación cliente → vendedor en tu sistema? ¿Cómo es la planilla de la mañana (chofer, ayudante, camión, vendedores)?
 
+### A10. Probar el pin colaborativo (ADR 0018) — en un celular
+Esperar ~2 min a que Render y Vercel terminen de desplegar.
+- [ ] Como chofer: en una parada de un local **sin pin**, tocar **ENTREGADO** (con el GPS permitido). Después, en CLIENTES, abrir ese local: debe tener pin «sugerido».
+- [ ] En una parada, tocar **UBICACIÓN DEL VENDEDOR** y pegar un enlace de Google Maps (de «Compartir» → copiar enlace) y otro de Waze. Probar uno corto (`maps.app.goo.gl/…`): ese se abre desde el servidor y no pude probarlo desde mi entorno, avísame si falla.
+- [ ] Pegar un enlace en un local que tú ya fijaste a mano: debe decir que quedó **propuesta** y aparecer en PINES DE LOCALES.
+- [ ] En ESTÁ CERRADO escribir el nombre de la guía y comprobar el mensaje de WhatsApp.
+- [ ] Probar el **modo oscuro** desde la cabecera.
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos
