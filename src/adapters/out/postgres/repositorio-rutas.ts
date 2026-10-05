@@ -40,7 +40,7 @@ export class PostgresRutaRepository implements RutaRepository {
       .selectFrom('factura as f')
       .innerJoin('local as l', 'l.id', 'f.local_id')
       .innerJoin('cliente as c', 'c.id', 'l.cliente_id')
-      .select(['f.id', 'f.folio', 'f.antes_de_min', 'f.urgente', 'f.nota', 'f.total', 'l.id as local_id', 'c.razon_social', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng', 'l.pin_fuente', 'l.pin_confianza'])
+      .select(['f.id', 'f.folio', 'f.antes_de_min', 'f.urgente', 'f.nota', 'f.total', 'l.id as local_id', 'c.razon_social', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng', 'l.pin_fuente', 'l.pin_confianza', 'l.foto_path'])
       .where('f.empresa_id', '=', empresaId)
       .where('f.camion_id', '=', camionId)
       .where('f.fecha_reparto', '=', fecha)
@@ -72,6 +72,7 @@ export class PostgresRutaRepository implements RutaRepository {
       comuna: f.comuna,
       ...(f.lat !== null && f.lng !== null ? { lat: f.lat, lng: f.lng } : {}),
       ...(f.lat !== null && f.pin_fuente === 'geocodificador' && (f.pin_confianza ?? 0) < 0.7 ? { pinAproximado: true } : {}),
+      ...(f.foto_path !== null ? { tieneFoto: true } : {}),
       ...(f.antes_de_min !== null ? { antesDeMin: f.antes_de_min } : {}),
       urgente: f.urgente,
       ...(f.nota !== null ? { nota: f.nota } : {}),

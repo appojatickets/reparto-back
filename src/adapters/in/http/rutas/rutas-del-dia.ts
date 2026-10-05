@@ -16,6 +16,7 @@ const item = z.object({
   lat: z.number().optional(),
   lng: z.number().optional(),
   ubicacionAproximada: z.boolean().optional(),
+  tieneFoto: z.boolean().optional(),
   urgente: z.boolean(),
   antesDeMin: z.number().optional(),
   nota: z.string().optional(),

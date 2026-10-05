@@ -67,6 +67,14 @@ describe('planificar', () => {
     expect(a?.ubicacionAproximada).toBeUndefined();
   });
 
+  it('la parada avisa si el local tiene foto de la fachada', async () => {
+    const s = montar({ pendientes: [paradaDe('A', { tieneFoto: true }), paradaDe('B')] });
+    const r = await s.planificar(despachador, entrada);
+    const porId = r.ok ? new Map(r.value.paradas.map((p) => [p.facturaId, p])) : new Map();
+    expect(porId.get('f-A')?.tieneFoto).toBe(true);
+    expect(porId.get('f-B')?.tieneFoto).toBeUndefined();
+  });
+
   it('solo si ni siquiera se sabe la comuna queda en «sin ubicación»', async () => {
     const { facturaId, localId, razonSocial, direccion, urgente, horarios } = paradaDe('Z');
     const s = montar({ pendientes: [paradaDe('A'), { facturaId, localId, razonSocial, direccion, comuna: 'Valparaíso', urgente, horarios }] });

@@ -28,6 +28,8 @@ export type FacturaParaRuta = {
   readonly lng?: number;
   /** El pin lo halló el buscador por la dirección con poca precisión (calle, no número): sirve para ordenar, pero es aproximado. */
   readonly pinAproximado?: boolean;
+  /** El local tiene foto de la fachada (la subió alguien del equipo). */
+  readonly tieneFoto?: boolean;
   readonly antesDeMin?: number;
   readonly urgente: boolean;
   readonly nota?: string;

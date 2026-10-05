@@ -9192,6 +9192,9 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "tieneFoto": {
+                            "type": "boolean"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -9290,6 +9293,9 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "tieneFoto": {
+                            "type": "boolean"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -9342,6 +9348,9 @@
                             "type": "number"
                           },
                           "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
+                          "tieneFoto": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -9406,6 +9415,9 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "tieneFoto": {
+                            "type": "boolean"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -9458,6 +9470,9 @@
                             "type": "number"
                           },
                           "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
+                          "tieneFoto": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -9520,6 +9535,9 @@
                             "type": "number"
                           },
                           "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
+                          "tieneFoto": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -9914,6 +9932,9 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "tieneFoto": {
+                            "type": "boolean"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -10012,6 +10033,9 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "tieneFoto": {
+                            "type": "boolean"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -10064,6 +10088,9 @@
                             "type": "number"
                           },
                           "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
+                          "tieneFoto": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -10128,6 +10155,9 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "tieneFoto": {
+                            "type": "boolean"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -10180,6 +10210,9 @@
                             "type": "number"
                           },
                           "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
+                          "tieneFoto": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -10242,6 +10275,9 @@
                             "type": "number"
                           },
                           "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
+                          "tieneFoto": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -10701,6 +10737,9 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "tieneFoto": {
+                            "type": "boolean"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -10799,6 +10838,9 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "tieneFoto": {
+                            "type": "boolean"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -10851,6 +10893,9 @@
                             "type": "number"
                           },
                           "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
+                          "tieneFoto": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -10915,6 +10960,9 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "tieneFoto": {
+                            "type": "boolean"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -10967,6 +11015,9 @@
                             "type": "number"
                           },
                           "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
+                          "tieneFoto": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -11029,6 +11080,9 @@
                             "type": "number"
                           },
                           "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
+                          "tieneFoto": {
                             "type": "boolean"
                           },
                           "urgente": {

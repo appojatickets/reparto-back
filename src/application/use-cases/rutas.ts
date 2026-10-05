@@ -32,6 +32,8 @@ export type ItemVista = {
   readonly lng?: number;
   /** El local no tiene pin todavía: la ruta lo ubica por el centro de su comuna (se afina al fijar el pin o con la primera entrega). */
   readonly ubicacionAproximada?: boolean;
+  /** El local tiene foto de la fachada (se pide aparte, con URL firmada). */
+  readonly tieneFoto?: boolean;
   readonly urgente: boolean;
   readonly antesDeMin?: number;
   readonly nota?: string;
@@ -107,6 +109,7 @@ const itemDe = (f: FacturaParaRuta): ItemVista => ({
   direccion: f.direccion,
   comuna: f.comuna,
   ...(f.lat !== undefined && f.lng !== undefined ? { lat: f.lat, lng: f.lng, ...(f.pinAproximado ? { ubicacionAproximada: true } : {}) } : centroDeComuna(f.comuna) !== undefined ? { ubicacionAproximada: true } : {}),
+  ...(f.tieneFoto ? { tieneFoto: true } : {}),
   urgente: f.urgente,
   ...(f.antesDeMin !== undefined ? { antesDeMin: f.antesDeMin } : {}),
   ...(f.nota !== undefined ? { nota: f.nota } : {}),
