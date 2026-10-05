@@ -74,7 +74,11 @@ export type LocalSinPin = { readonly id: string; readonly direccion: string; rea
 
 export interface ClienteRepository {
   buscar(empresaId: string, consulta: ConsultaBusqueda): Promise<readonly ResultadoBusqueda[]>;
-  crearConLocal(empresaId: string, datos: NuevoClienteConLocal): Promise<Result<{ clienteId: string; localId: string }, 'DUPLICADO'>>;
+  /**
+   * Crea el cliente con su local. Si ya existe el mismo cliente con esa dirección (por ejemplo cargado antes e incompleto), NO se rechaza:
+   * se completa con lo que le faltaba (RUT, giro, nota, pin) sin pisar lo que ya tiene, y se devuelve el existente (`existente: true`).
+   */
+  crearConLocal(empresaId: string, datos: NuevoClienteConLocal): Promise<Result<{ clienteId: string; localId: string; existente: boolean }, 'DUPLICADO'>>;
   /** Cada cliente y cada local del lote vienen una sola vez (el caso de uso los consolida antes). */
   importar(empresaId: string, clientes: readonly ClienteImportable[]): Promise<ResumenImportacion>;
   obtenerLocal(empresaId: string, localId: string): Promise<LocalDetalle | undefined>;

@@ -8,7 +8,7 @@ import type { PropuestaPinRepository } from '../ports/out/pines.js';
 export const fakeClientes = (locales: LocalDetalle[] = []) => {
   const repo = {
     buscar: vi.fn<ClienteRepository['buscar']>(() => Promise.resolve([])),
-    crearConLocal: vi.fn<ClienteRepository['crearConLocal']>(() => Promise.resolve(ok({ clienteId: 'c-1', localId: 'l-1' }))),
+    crearConLocal: vi.fn<ClienteRepository['crearConLocal']>(() => Promise.resolve(ok({ clienteId: 'c-1', localId: 'l-1', existente: false }))),
     importar: vi.fn<ClienteRepository['importar']>(
       (_e, clientes): Promise<ResumenImportacion> =>
         Promise.resolve({ clientesCreados: clientes.length, clientesActualizados: 0, localesCreados: clientes.reduce((s, c) => s + c.locales.length, 0), localesActualizados: 0 }),

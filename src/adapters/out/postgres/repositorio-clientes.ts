@@ -74,22 +74,51 @@ export class PostgresClienteRepository implements ClienteRepository {
     }));
   }
 
-  async crearConLocal(empresaId: string, d: NuevoClienteConLocal): Promise<Result<{ clienteId: string; localId: string }, 'DUPLICADO'>> {
+  async crearConLocal(empresaId: string, d: NuevoClienteConLocal): Promise<Result<{ clienteId: string; localId: string; existente: boolean }, 'DUPLICADO'>> {
     const direccionNorm = normalizarTexto(d.local.direccion);
     try {
       return await this.db.transaction().execute(async (trx) => {
-        // Con RUT el cliente es único: se reutiliza y solo se agrega la dirección nueva. Sin RUT se crea siempre uno nuevo.
+        /** El cliente ya estaba con esa dirección: se completa lo que le faltaba (sin pisar nada) y se devuelve el existente. */
+        const completar = async (clienteId: string, localId: string) => {
+          await trx
+            .updateTable('cliente')
+            .set({ rut: sql`coalesce(rut, ${d.rut ?? null})`, giro: sql`coalesce(giro, ${d.giro ?? null})` })
+            .where('id', '=', clienteId)
+            .execute();
+          const l = d.local;
+          const conPin = l.lat !== undefined && l.lng !== undefined;
+          await trx
+            .updateTable('local')
+            .set({
+              nota: sql`coalesce(nota, ${l.nota ?? null})`,
+              ...(conPin
+                ? {
+                    lat: sql`coalesce(lat, ${l.lat ?? null})`,
+                    lng: sql`coalesce(lng, ${l.lng ?? null})`,
+                    pin_estado: sql`case when lat is null then ${l.pinEstado} else pin_estado end`,
+                    pin_fuente: sql`case when lat is null then ${l.pinFuente ?? null} else pin_fuente end`,
+                  }
+                : {}),
+            })
+            .where('id', '=', localId)
+            .where('empresa_id', '=', empresaId)
+            .execute();
+          return ok({ clienteId, localId, existente: true });
+        };
+
+        // Con RUT el cliente es único: se reutiliza y solo se agrega la dirección nueva. Sin RUT se busca el mismo nombre con la misma dirección.
         let clienteId =
           d.rut === undefined
             ? undefined
             : (await trx.selectFrom('cliente').select('id').where('empresa_id', '=', empresaId).where('rut', '=', d.rut).executeTakeFirst())?.id;
 
         if (clienteId === undefined) {
-          const igual = await sql`
-            select 1 from cliente c join "local" l on l.cliente_id = c.id
-            where c.empresa_id = ${empresaId} and c.rut is null and c.razon_social_norm = ${normalizarTexto(d.razonSocial)} and l.direccion_norm = ${direccionNorm}
+          const igual = await sql<{ cliente_id: string; local_id: string }>`
+            select c.id as cliente_id, l.id as local_id from cliente c join "local" l on l.cliente_id = c.id
+            where c.empresa_id = ${empresaId} and ${d.rut === undefined ? sql`true` : sql`c.rut is null`} and c.razon_social_norm = ${normalizarTexto(d.razonSocial)} and l.direccion_norm = ${direccionNorm}
             limit 1`.execute(trx);
-          if (igual.rows.length > 0) return err('DUPLICADO' as const);
+          const existente = igual.rows[0];
+          if (existente) return completar(existente.cliente_id, existente.local_id);
           clienteId = (
             await trx
               .insertInto('cliente')
@@ -99,7 +128,7 @@ export class PostgresClienteRepository implements ClienteRepository {
           ).id;
         } else {
           const existe = await trx.selectFrom('local').select('id').where('cliente_id', '=', clienteId).where('direccion_norm', '=', direccionNorm).executeTakeFirst();
-          if (existe) return err('DUPLICADO' as const);
+          if (existe) return completar(clienteId, existe.id);
         }
 
         const l = d.local;
@@ -121,7 +150,7 @@ export class PostgresClienteRepository implements ClienteRepository {
           })
           .returning('id')
           .executeTakeFirstOrThrow();
-        return ok({ clienteId, localId: local.id });
+        return ok({ clienteId, localId: local.id, existente: false });
       });
     } catch (e) {
       if (esViolacionUnica(e)) return err('DUPLICADO');

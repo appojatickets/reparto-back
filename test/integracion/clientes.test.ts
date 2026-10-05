@@ -129,16 +129,36 @@ describe('importar', () => {
 describe('crearConLocal', () => {
   const datos = { razonSocial: 'Botillería El Sol', estado: 'nuevo' as const, local: { direccion: 'Calle Falsa 123', comuna: 'Maipú', pinEstado: 'pendiente' as const } };
 
-  it('crea cliente y local; el mismo cliente y dirección es DUPLICADO; con RUT reutiliza al cliente', async () => {
+  it('crea cliente y local; el mismo cliente y dirección devuelve el existente (completándolo); con RUT reutiliza al cliente', async () => {
     const e = await crearEmpresa(db);
     const a = await repo.crearConLocal(e, { ...datos, rut: '12345678-5' });
-    expect(a.ok).toBe(true);
-    expect(await repo.crearConLocal(e, { ...datos, rut: '12345678-5' })).toEqual({ ok: false, error: 'DUPLICADO' });
+    expect(a.ok && a.value.existente).toBe(false);
+    const repetida = await repo.crearConLocal(e, { ...datos, rut: '12345678-5' });
+    expect(repetida.ok && repetida.value.existente).toBe(true);
+    expect(a.ok && repetida.ok && repetida.value.localId === a.value.localId).toBe(true);
     const otraDir = await repo.crearConLocal(e, { ...datos, rut: '12345678-5', local: { ...datos.local, direccion: 'Otra 55' } });
     expect(a.ok && otraDir.ok && otraDir.value.clienteId === a.value.clienteId).toBe(true);
     const s1 = await repo.crearConLocal(e, datos);
-    expect(s1.ok).toBe(true);
-    expect(await repo.crearConLocal(e, datos)).toEqual({ ok: false, error: 'DUPLICADO' });
+    expect(s1.ok && s1.value.existente).toBe(false);
+    const s2 = await repo.crearConLocal(e, datos);
+    expect(s1.ok && s2.ok && s2.value.existente && s2.value.localId === s1.value.localId).toBe(true);
+  });
+
+  it('el existente incompleto se completa con lo que le faltaba (RUT, nota y pin) sin pisar lo que ya tenía', async () => {
+    const e = await crearEmpresa(db);
+    const a = await repo.crearConLocal(e, { ...datos, local: { ...datos.local, nota: 'portón verde' } });
+    expect(a.ok).toBe(true);
+    const b = await repo.crearConLocal(e, { ...datos, rut: '12345678-5', local: { ...datos.local, nota: 'otra nota', lat: -33.5, lng: -70.7, pinEstado: 'validado', pinFuente: 'manual' } });
+    expect(b.ok && b.value.existente).toBe(true);
+    const local = await db.selectFrom('local').select(['lat', 'lng', 'nota', 'pin_estado']).where('id', '=', b.ok ? b.value.localId : '').executeTakeFirstOrThrow();
+    expect(local).toMatchObject({ lat: -33.5, lng: -70.7, nota: 'portón verde', pin_estado: 'validado' });
+    const cliente = await db.selectFrom('cliente').select('rut').where('id', '=', b.ok ? b.value.clienteId : '').executeTakeFirstOrThrow();
+    expect(cliente.rut).toBe('12345678-5');
+    // Un pin que ya existía no se pisa.
+    const c = await repo.crearConLocal(e, { ...datos, local: { ...datos.local, lat: -33.9, lng: -70.1, pinEstado: 'validado', pinFuente: 'manual' } });
+    expect(c.ok && c.value.existente).toBe(true);
+    const igual = await db.selectFrom('local').select(['lat']).where('id', '=', c.ok ? c.value.localId : '').executeTakeFirstOrThrow();
+    expect(igual.lat).toBe(-33.5);
   });
 });
 

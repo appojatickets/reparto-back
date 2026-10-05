@@ -60,7 +60,7 @@ export const rutasClientes = ({ app, casos, guard }: ContextoRutas): void => {
         summary: 'Cliente nuevo con su primer local',
         security: SEGURIDAD,
         body: filaCliente,
-        response: { 201: z.object({ clienteId: z.string(), localId: z.string() }), ...RESPUESTAS_ERROR },
+        response: { 201: z.object({ clienteId: z.string(), localId: z.string(), existente: z.boolean() }), ...RESPUESTAS_ERROR },
       },
     },
     async (req, reply) => {

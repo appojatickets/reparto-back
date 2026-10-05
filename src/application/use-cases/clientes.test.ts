@@ -3,6 +3,7 @@ import { crearActualizarLocal } from './actualizar-local.js';
 import { crearBuscarClientes } from './buscar-clientes.js';
 import { crearCrearClienteNuevo } from './crear-cliente-nuevo.js';
 import { crearImportarClientes } from './importar-clientes.js';
+import { ok } from '../../domain/shared/result.js';
 import { usuarioDe } from './fakes.test-util.js';
 import { fakeClientes, localDe } from './fakes-clientes.test-util.js';
 
@@ -77,11 +78,19 @@ describe('crearClienteNuevo', () => {
     expect(clientes.crearConLocal).not.toHaveBeenCalled();
   });
 
-  it('un duplicado es CONFLICTO', async () => {
+  it('si el cliente ya existía (incompleto), no se rechaza: se completa y se devuelve el existente', async () => {
+    const clientes = fakeClientes();
+    clientes.crearConLocal.mockResolvedValueOnce(ok({ clienteId: 'c-7', localId: 'l-7', existente: true }));
+    const r = await crearCrearClienteNuevo({ clientes })(despachador, datos);
+    expect(r).toEqual({ ok: true, value: { clienteId: 'c-7', localId: 'l-7', existente: true } });
+  });
+
+  it('una carrera con otra persona que lo registró justo antes es CONFLICTO con un mensaje claro', async () => {
     const clientes = fakeClientes();
     clientes.crearConLocal.mockResolvedValueOnce({ ok: false, error: 'DUPLICADO' });
     const r = await crearCrearClienteNuevo({ clientes })(despachador, datos);
     expect(!r.ok && r.error.codigo).toBe('CONFLICTO');
+    expect(!r.ok && r.error.mensaje).toContain('Vuelve a buscarlo');
   });
 });
 

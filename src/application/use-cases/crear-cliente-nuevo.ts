@@ -5,11 +5,11 @@ import { errorApp, type ErrorApp } from '../errores.js';
 import type { ClienteRepository } from '../ports/out/clientes.js';
 
 /**
- * Alta de un cliente con su primer local. Quien lo crea lo deja con el pin validado (puso el pin él mismo);
+ * Alta de un cliente con su primer local. Si ya existía (incompleto), se completa con lo que le faltaba en vez de rechazarlo. Quien lo crea lo deja con el pin validado (puso el pin él mismo);
  * un cliente creado por un despachador queda «nuevo» hasta que el admin lo revise.
  */
 export const crearCrearClienteNuevo = ({ clientes }: { clientes: ClienteRepository }) =>
-  async (actor: Usuario, entrada: FilaClienteCruda): Promise<Result<{ clienteId: string; localId: string }, ErrorApp>> => {
+  async (actor: Usuario, entrada: FilaClienteCruda): Promise<Result<{ clienteId: string; localId: string; existente: boolean }, ErrorApp>> => {
     const fila = validarFilaCliente(entrada);
     if (!fila.ok) return err(errorApp('VALIDACION', 'Hay datos inválidos.', { errores: fila.error }));
     const v = fila.value;
@@ -28,5 +28,5 @@ export const crearCrearClienteNuevo = ({ clientes }: { clientes: ClienteReposito
         pinEstado: conPin ? 'validado' : 'pendiente',
       },
     });
-    return r.ok ? ok(r.value) : err(errorApp('CONFLICTO', 'Ya existe ese cliente con esa dirección.'));
+    return r.ok ? ok(r.value) : err(errorApp('CONFLICTO', 'Otra persona acaba de registrar ese cliente. Vuelve a buscarlo.'));
   };

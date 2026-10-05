@@ -2338,11 +2338,15 @@
                     },
                     "localId": {
                       "type": "string"
+                    },
+                    "existente": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
                     "clienteId",
-                    "localId"
+                    "localId",
+                    "existente"
                   ],
                   "additionalProperties": false
                 }
