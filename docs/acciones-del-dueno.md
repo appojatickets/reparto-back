@@ -84,6 +84,15 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar.
 - [ ] En ESTÁ CERRADO escribir el nombre de la guía y comprobar el mensaje de WhatsApp.
 - [ ] Probar el **modo oscuro** desde la cabecera.
 
+### A11. Cargar la lista de Google Maps (ADR 0006 del front)
+Esperar ~2 min a que Vercel termine de desplegar.
+- [ ] Admin → **IMPORTAR CLIENTES** → pegar la lista completa tal como se copió de Google Maps (no hace falta ordenarla). Debe decir «Lista de Google Maps: N lugares leídos» con cuántos están listos, cuántos tienen solo una referencia «Cerca de…» y cuántos hay que revisar.
+- [ ] Mirar **Para revisar**: completar el nombre, la dirección o la comuna que falte; al completarse pasan a «listos». Los que no completes no se importan (puedes pegar la lista de nuevo después, no se duplica nada).
+- [ ] Dejar marcada o no la casilla de las direcciones aproximadas (solo «Cerca de…»): si la dejas, entran con esa referencia como dirección.
+- [ ] Tocar **IMPORTAR** y abrir 3 o 4 clientes (BUSCAR CLIENTE) para comprobar nombre, dirección, comuna, pin y nota (horarios, teléfonos, nombre comercial).
+- [ ] Avísame qué quedó mal ordenado (qué nombre se leyó como dirección o al revés) y lo ajusto.
+- [ ] Para traer también las coordenadas de los lugares que dicen «Cerca de…», hay que exportar la lista con coordenadas (por ejemplo con Google Takeout); mándame ese archivo y lo adapto.
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos
