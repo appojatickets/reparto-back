@@ -32,6 +32,7 @@ export type Tabla = {
     foto_path: string | null;
     streetview_rumbo: number | null;
     nota: string | null;
+    geocod_intento_en: Date | null;
     creado_en: Generated<Date>;
   };
   horario_local: {

@@ -35,7 +35,7 @@ const detalle = (db: Kysely<Tabla>, empresaId: string) =>
     .select([
       'f.id', 'f.folio', sql<string>`to_char(f.fecha_reparto, 'YYYY-MM-DD')`.as('fecha'), 'f.estado', 'f.total', 'f.antes_de_min', 'f.urgente', 'f.nota',
       'f.camion_id', 'k.patente', 'k.alias as camion_alias', 'l.id as local_id', 'c.razon_social', 'l.direccion', 'l.comuna',
-      sql<boolean>`(l.lat is not null)`.as('tiene_pin'),
+      sql<boolean>`(l.lat is not null and not (l.pin_fuente = 'geocodificador' and coalesce(l.pin_confianza, 0) < 0.7))`.as('tiene_pin'),
     ])
     .where('f.empresa_id', '=', empresaId);
 

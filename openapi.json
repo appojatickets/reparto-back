@@ -5373,6 +5373,476 @@
         }
       }
     },
+    "/v1/locales/buscar-pines": {
+      "post": {
+        "summary": "Buscar en el mapa el pin de los locales que no tienen (por su dirección y comuna). Corre en segundo plano, de a una por segundo.",
+        "tags": [
+          "pines"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sinPin": {
+                      "type": "number"
+                    },
+                    "enCola": {
+                      "type": "number"
+                    },
+                    "enMarcha": {
+                      "type": "boolean"
+                    },
+                    "encolados": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "sinPin",
+                    "enCola",
+                    "enMarcha",
+                    "encolados"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Cuántos locales siguen sin pin y cuántos esperan en la cola de búsqueda",
+        "tags": [
+          "pines"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sinPin": {
+                      "type": "number"
+                    },
+                    "enCola": {
+                      "type": "number"
+                    },
+                    "enMarcha": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "sinPin",
+                    "enCola",
+                    "enMarcha"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/camiones": {
       "get": {
         "summary": "Camiones de la empresa (por defecto solo los activos)",
@@ -8719,6 +9189,9 @@
                           "lng": {
                             "type": "number"
                           },
+                          "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -8814,6 +9287,9 @@
                           "lng": {
                             "type": "number"
                           },
+                          "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -8864,6 +9340,9 @@
                           },
                           "lng": {
                             "type": "number"
+                          },
+                          "ubicacionAproximada": {
+                            "type": "boolean"
                           },
                           "urgente": {
                             "type": "boolean"
@@ -8924,6 +9403,9 @@
                           "lng": {
                             "type": "number"
                           },
+                          "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -8974,6 +9456,9 @@
                           },
                           "lng": {
                             "type": "number"
+                          },
+                          "ubicacionAproximada": {
+                            "type": "boolean"
                           },
                           "urgente": {
                             "type": "boolean"
@@ -9033,6 +9518,9 @@
                           },
                           "lng": {
                             "type": "number"
+                          },
+                          "ubicacionAproximada": {
+                            "type": "boolean"
                           },
                           "urgente": {
                             "type": "boolean"
@@ -9423,6 +9911,9 @@
                           "lng": {
                             "type": "number"
                           },
+                          "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -9518,6 +10009,9 @@
                           "lng": {
                             "type": "number"
                           },
+                          "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -9568,6 +10062,9 @@
                           },
                           "lng": {
                             "type": "number"
+                          },
+                          "ubicacionAproximada": {
+                            "type": "boolean"
                           },
                           "urgente": {
                             "type": "boolean"
@@ -9628,6 +10125,9 @@
                           "lng": {
                             "type": "number"
                           },
+                          "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -9678,6 +10178,9 @@
                           },
                           "lng": {
                             "type": "number"
+                          },
+                          "ubicacionAproximada": {
+                            "type": "boolean"
                           },
                           "urgente": {
                             "type": "boolean"
@@ -9737,6 +10240,9 @@
                           },
                           "lng": {
                             "type": "number"
+                          },
+                          "ubicacionAproximada": {
+                            "type": "boolean"
                           },
                           "urgente": {
                             "type": "boolean"
@@ -10192,6 +10698,9 @@
                           "lng": {
                             "type": "number"
                           },
+                          "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -10287,6 +10796,9 @@
                           "lng": {
                             "type": "number"
                           },
+                          "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -10337,6 +10849,9 @@
                           },
                           "lng": {
                             "type": "number"
+                          },
+                          "ubicacionAproximada": {
+                            "type": "boolean"
                           },
                           "urgente": {
                             "type": "boolean"
@@ -10397,6 +10912,9 @@
                           "lng": {
                             "type": "number"
                           },
+                          "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
                           "urgente": {
                             "type": "boolean"
                           },
@@ -10447,6 +10965,9 @@
                           },
                           "lng": {
                             "type": "number"
+                          },
+                          "ubicacionAproximada": {
+                            "type": "boolean"
                           },
                           "urgente": {
                             "type": "boolean"
@@ -10506,6 +11027,9 @@
                           },
                           "lng": {
                             "type": "number"
+                          },
+                          "ubicacionAproximada": {
+                            "type": "boolean"
                           },
                           "urgente": {
                             "type": "boolean"

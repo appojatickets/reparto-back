@@ -53,10 +53,23 @@ describe('planificar', () => {
     expect(s.rutas.repo.guardar.mock.calls[0]?.[1]).toMatchObject({ camionId: CAMION_ID, fecha: FECHA, usuarioId: 'u-d', modo: 'sugerida' });
   });
 
-  it('las facturas sin pin salen aparte y no entran a la ruta', async () => {
+  it('una factura sin pin NO bloquea la ruta: entra ubicada por el centro de su comuna y se marca como aproximada', async () => {
     const { facturaId, localId, razonSocial, direccion, comuna, urgente, horarios } = paradaDe('Z');
     const sinCoord = { facturaId, localId, razonSocial, direccion, comuna, urgente, horarios };
     const s = montar({ pendientes: [paradaDe('A'), sinCoord] });
+    const r = await s.planificar(despachador, entrada);
+    expect(r.ok && ids(r.value).sort()).toEqual(['f-A', 'f-Z']);
+    expect(r.ok && r.value.sinPin).toEqual([]);
+    const z = r.ok ? r.value.paradas.find((p) => p.facturaId === 'f-Z') : undefined;
+    expect(z).toMatchObject({ ubicacionAproximada: true });
+    expect(z?.lat).toBeUndefined();
+    const a = r.ok ? r.value.paradas.find((p) => p.facturaId === 'f-A') : undefined;
+    expect(a?.ubicacionAproximada).toBeUndefined();
+  });
+
+  it('solo si ni siquiera se sabe la comuna queda en «sin ubicación»', async () => {
+    const { facturaId, localId, razonSocial, direccion, urgente, horarios } = paradaDe('Z');
+    const s = montar({ pendientes: [paradaDe('A'), { facturaId, localId, razonSocial, direccion, comuna: 'Valparaíso', urgente, horarios }] });
     const r = await s.planificar(despachador, entrada);
     expect(r.ok && ids(r.value)).toEqual(['f-A']);
     expect(r.ok && r.value.sinPin.map((x) => x.facturaId)).toEqual(['f-Z']);

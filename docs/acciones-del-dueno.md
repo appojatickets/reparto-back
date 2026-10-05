@@ -93,6 +93,13 @@ Esperar ~2 min a que Vercel termine de desplegar.
 - [ ] Avísame qué quedó mal ordenado (qué nombre se leyó como dirección o al revés) y lo ajusto.
 - [ ] Para traer también las coordenadas de los lugares que dicen «Cerca de…», hay que exportar la lista con coordenadas (por ejemplo con Google Takeout); mándame ese archivo y lo adapto.
 
+### A12. Búsqueda automática del pin por la dirección (ADR 0019)
+Esperar ~2 min a que Render termine de desplegar.
+- [ ] (Opcional, recomendado) Render → `reparto-back` → **Environment** → agregar `GEOCODER_USER_AGENT` con algo como `reparto-api/1.0 (tu-correo@dominio.cl)`. El servicio gratuito de mapas pide identificar la aplicación; si no la defines, usa un valor por defecto.
+- [ ] Probar como chofer: cargar 2 o 3 facturas de clientes **sin pin** (los que importaste con «Cerca de…») y tocar **Mi ruta**. La ruta se calcula igual; las paradas sin pin salen marcadas «ubicación aproximada».
+- [ ] Esperar uno o dos minutos y recalcular: las direcciones que el mapa encontró ya tienen pin. Las rurales («Parcela 7») suelen no encontrarse; esas se afinan con el GPS de la entrega o pegando el enlace del vendedor.
+- [ ] Como admin, pedir la búsqueda para toda la base (botón en IMPORTAR CLIENTES): tarda ~1 segundo por local.
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos

@@ -9,6 +9,7 @@ import { evaluarOrden, optimizar } from '../../domain/ruteo/optimizador.js';
 import type { Motivo, ProblemaRuta, Solucion, Sugerencia } from '../../domain/ruteo/tipos.js';
 import { errorApp, type ErrorApp } from '../errores.js';
 import type { CamionRepository } from '../ports/out/camiones.js';
+import { centroDeComuna } from '../../domain/comunas.js';
 import type { Clock } from '../ports/out/clock.js';
 import type { EmpresaRepository } from '../ports/out/empresa.js';
 import type { EntregaRepository } from '../ports/out/entregas.js';
@@ -29,6 +30,8 @@ export type ItemVista = {
   /** Pin del local, para abrir la navegación (Waze, Google Maps). */
   readonly lat?: number;
   readonly lng?: number;
+  /** El local no tiene pin todavía: la ruta lo ubica por el centro de su comuna (se afina al fijar el pin o con la primera entrega). */
+  readonly ubicacionAproximada?: boolean;
   readonly urgente: boolean;
   readonly antesDeMin?: number;
   readonly nota?: string;
@@ -81,6 +84,8 @@ type Dependencias = {
   readonly entregas: EntregaRepository;
   readonly clock: Clock;
   readonly resolverCamion: ResolverCamion;
+  /** Pide buscar el pin de estos locales por su dirección (en segundo plano; la ruta no espera). */
+  readonly programarPines?: (empresaId: string, localIds: readonly string[]) => void;
 };
 
 type Contexto = {
@@ -101,23 +106,27 @@ const itemDe = (f: FacturaParaRuta): ItemVista => ({
   cliente: f.razonSocial,
   direccion: f.direccion,
   comuna: f.comuna,
-  ...(f.lat !== undefined && f.lng !== undefined ? { lat: f.lat, lng: f.lng } : {}),
+  ...(f.lat !== undefined && f.lng !== undefined ? { lat: f.lat, lng: f.lng, ...(f.pinAproximado ? { ubicacionAproximada: true } : {}) } : centroDeComuna(f.comuna) !== undefined ? { ubicacionAproximada: true } : {}),
   urgente: f.urgente,
   ...(f.antesDeMin !== undefined ? { antesDeMin: f.antesDeMin } : {}),
   ...(f.nota !== undefined ? { nota: f.nota } : {}),
 });
 
-const entradaDe = (f: FacturaParaRuta): EntradaParada => ({
-  id: f.facturaId,
-  nombre: f.razonSocial,
-  comuna: f.comuna,
-  ...(f.lat !== undefined && f.lng !== undefined ? { coordenada: { lat: f.lat, lng: f.lng } } : {}),
-  horarios: f.horarios,
-  ...(f.antesDeMin !== undefined ? { antesDeMin: f.antesDeMin } : {}),
-  urgente: f.urgente,
-});
+const entradaDe = (f: FacturaParaRuta): EntradaParada => {
+  // Sin pin la ruta no se detiene: se ubica por el centro de la comuna hasta que haya un pin mejor.
+  const coordenada = f.lat !== undefined && f.lng !== undefined ? { lat: f.lat, lng: f.lng } : centroDeComuna(f.comuna);
+  return {
+    id: f.facturaId,
+    nombre: f.razonSocial,
+    comuna: f.comuna,
+    ...(coordenada ? { coordenada } : {}),
+    horarios: f.horarios,
+    ...(f.antesDeMin !== undefined ? { antesDeMin: f.antesDeMin } : {}),
+    urgente: f.urgente,
+  };
+};
 
-export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entregas, clock, resolverCamion }: Dependencias) => {
+export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entregas, clock, resolverCamion, programarPines }: Dependencias) => {
   const presupuesto = () => ({ reloj: () => clock.now().getTime(), limiteMs: LIMITE_OPTIMIZACION_MS });
 
   const cargar = async (actor: Usuario, camionId: string, fecha: string): Promise<Result<Contexto, ErrorApp>> => {
@@ -134,6 +143,8 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
       facturas.listar(actor.empresaId, { fecha, camionId, incluirHechas: true }),
       esHoy ? entregas.ultimaPosicion(actor.empresaId, camionId, fecha) : Promise.resolve(undefined),
     ]);
+    const sinPinIds = [...new Set(items.filter((f) => f.lat === undefined).map((f) => f.localId))];
+    if (sinPinIds.length > 0) programarPines?.(actor.empresaId, sinPinIds);
     const hechas = todas.flatMap((f) =>
       f.estado === 'entregada' || f.estado === 'no_entregada'
         ? [{ facturaId: f.id, ...(f.folio !== undefined ? { folio: f.folio } : {}), localId: f.local.id, cliente: f.local.razonSocial, direccion: f.local.direccion, comuna: f.local.comuna, urgente: f.urgente, estado: f.estado }]

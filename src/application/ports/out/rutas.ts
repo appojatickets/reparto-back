@@ -26,6 +26,8 @@ export type FacturaParaRuta = {
   readonly comuna: string;
   readonly lat?: number;
   readonly lng?: number;
+  /** El pin lo halló el buscador por la dirección con poca precisión (calle, no número): sirve para ordenar, pero es aproximado. */
+  readonly pinAproximado?: boolean;
   readonly antesDeMin?: number;
   readonly urgente: boolean;
   readonly nota?: string;

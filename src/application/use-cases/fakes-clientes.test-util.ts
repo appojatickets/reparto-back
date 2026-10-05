@@ -16,6 +16,10 @@ export const fakeClientes = (locales: LocalDetalle[] = []) => {
     obtenerLocal: vi.fn<ClienteRepository['obtenerLocal']>((empresaId, id) => Promise.resolve(empresaId === 'empresa-1' ? locales.find((l) => l.id === id) : undefined)),
     actualizarLocal: vi.fn<ClienteRepository['actualizarLocal']>((empresaId, id) => Promise.resolve(empresaId === 'empresa-1' && locales.some((l) => l.id === id))),
     fijarPinSiFalta: vi.fn<ClienteRepository['fijarPinSiFalta']>(() => Promise.resolve(true)),
+    localesSinPin: vi.fn<ClienteRepository['localesSinPin']>(() => Promise.resolve([])),
+    contarLocalesSinPin: vi.fn<ClienteRepository['contarLocalesSinPin']>(() => Promise.resolve(0)),
+    marcarIntentoGeocodificacion: vi.fn<ClienteRepository['marcarIntentoGeocodificacion']>(() => Promise.resolve()),
+    fijarPinGeocodificado: vi.fn<ClienteRepository['fijarPinGeocodificado']>(() => Promise.resolve(true)),
     coincidenciaDeDireccion: vi.fn<ClienteRepository['coincidenciaDeDireccion']>((): Promise<CoincidenciaLocal | undefined> => Promise.resolve(undefined)),
   } satisfies ClienteRepository;
   return repo;

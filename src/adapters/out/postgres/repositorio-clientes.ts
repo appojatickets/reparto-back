@@ -9,6 +9,7 @@ import type {
   ConsultaBusqueda,
   EstadoPin,
   LocalDetalle,
+  LocalSinPin,
   NuevoClienteConLocal,
   ResultadoBusqueda,
   ResumenImportacion,
@@ -286,9 +287,44 @@ export class PostgresClienteRepository implements ClienteRepository {
   }
 
   async fijarPinSiFalta(empresaId: string, localId: string, lat: number, lng: number): Promise<boolean> {
+    // Falta el pin, o el que hay lo halló el buscador por la dirección con poca precisión: el GPS del chofer lo mejora.
     const r = await this.db
       .updateTable('local')
-      .set({ lat, lng, pin_estado: 'sugerido', pin_fuente: 'chofer' })
+      .set({ lat, lng, pin_estado: 'sugerido', pin_fuente: 'chofer', pin_confianza: null })
+      .where('id', '=', localId)
+      .where('empresa_id', '=', empresaId)
+      .where((eb) => eb.or([eb('lat', 'is', null), eb.and([eb('pin_fuente', '=', 'geocodificador'), eb(sql<number>`coalesce(pin_confianza, 0)`, '<', 0.7)])]))
+      .executeTakeFirst();
+    return r.numUpdatedRows > 0n;
+  }
+
+  async localesSinPin(empresaId: string, limite: number, intentadosAntesDe: Date): Promise<readonly LocalSinPin[]> {
+    const filas = await this.db
+      .selectFrom('local')
+      .select(['id', 'direccion', 'comuna'])
+      .where('empresa_id', '=', empresaId)
+      .where('lat', 'is', null)
+      .where((eb) => eb.or([eb('geocod_intento_en', 'is', null), eb('geocod_intento_en', '<', intentadosAntesDe)]))
+      .orderBy('creado_en', 'desc')
+      .orderBy('id')
+      .limit(limite)
+      .execute();
+    return filas;
+  }
+
+  async contarLocalesSinPin(empresaId: string): Promise<number> {
+    const f = await this.db.selectFrom('local').select(sql<string>`count(*)`.as('n')).where('empresa_id', '=', empresaId).where('lat', 'is', null).executeTakeFirst();
+    return Number(f?.n ?? 0);
+  }
+
+  async marcarIntentoGeocodificacion(empresaId: string, localId: string, ahora: Date): Promise<void> {
+    await this.db.updateTable('local').set({ geocod_intento_en: ahora }).where('id', '=', localId).where('empresa_id', '=', empresaId).execute();
+  }
+
+  async fijarPinGeocodificado(empresaId: string, localId: string, lat: number, lng: number, confianza: number): Promise<boolean> {
+    const r = await this.db
+      .updateTable('local')
+      .set({ lat, lng, pin_estado: 'sugerido', pin_fuente: 'geocodificador', pin_confianza: confianza, geocod_intento_en: new Date() })
       .where('id', '=', localId)
       .where('empresa_id', '=', empresaId)
       .where('lat', 'is', null)

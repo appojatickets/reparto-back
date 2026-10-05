@@ -13,7 +13,7 @@ const sinCamion = () => errorApp('NO_ENCONTRADO', 'El camión no existe o está 
 export type EntradaFactura = FacturaCruda & { readonly localId: string; readonly camionId?: string | undefined };
 
 /** Ingreso de una factura. Sin fecha se reparte hoy (hora de Chile). Un folio repetido se informa, nunca se duplica. */
-export const crearRegistrarFactura = ({ facturas, clock, resolverCamion }: { facturas: FacturaRepository; clock: Clock; resolverCamion: ResolverCamion }) =>
+export const crearRegistrarFactura = ({ facturas, clock, resolverCamion, programarPines }: { facturas: FacturaRepository; clock: Clock; resolverCamion: ResolverCamion; programarPines?: (empresaId: string, localIds: readonly string[]) => void }) =>
   async (actor: Usuario, entrada: EntradaFactura): Promise<Result<FacturaDetallada, ErrorApp>> => {
     const v = validarFactura(entrada);
     if (!v.ok) return err(errorApp('VALIDACION', v.error.map((e) => e.mensaje).join(' '), { errores: v.error }));
@@ -31,7 +31,11 @@ export const crearRegistrarFactura = ({ facturas, clock, resolverCamion }: { fac
       ...(v.value.nota !== undefined ? { nota: v.value.nota } : {}),
       creadoPor: actor.id,
     });
-    if (r.ok) return ok(r.value);
+    if (r.ok) {
+      // La dirección que escribió el chofer se busca en el mapa para tener su pin cuando calcule la ruta (y para los días siguientes).
+      if (!r.value.local.tienePin) programarPines?.(actor.empresaId, [entrada.localId]);
+      return ok(r.value);
+    }
     switch (r.error) {
       case 'FOLIO_DUPLICADO':
         return err(errorApp('CONFLICTO', `Ya existe una factura con el folio ${v.value.folio ?? ''}.`, { folio: v.value.folio }));

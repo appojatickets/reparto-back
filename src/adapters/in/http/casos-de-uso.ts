@@ -2,6 +2,7 @@ import type { HealthReport } from '../../../application/use-cases/check-health.j
 import type { crearActualizarLocal } from '../../../application/use-cases/actualizar-local.js';
 import type { crearObtenerUrlFoto, crearRegistrarFotoLocal, crearSolicitarUrlSubida } from '../../../application/use-cases/archivos.js';
 import type { crearActualizarCamion, crearCrearCamion, crearListarCamiones } from '../../../application/use-cases/camiones.js';
+import type { crearBuscarPinesPendientes, crearEstadoBusquedaPines } from '../../../application/use-cases/buscar-pines.js';
 import type { crearFijarPinDesdeEnlace } from '../../../application/use-cases/pin-desde-enlace.js';
 import type { crearActualizarVendedor, crearCrearVendedor, crearListarVendedores } from '../../../application/use-cases/vendedores.js';
 import type { crearActualizarFactura, crearListarFacturas, crearRegistrarFactura } from '../../../application/use-cases/facturas.js';
@@ -45,6 +46,8 @@ export type CasosDeUso = {
   readonly listarCamiones: ReturnType<typeof crearListarCamiones>;
   readonly crearCamion: ReturnType<typeof crearCrearCamion>;
   readonly actualizarCamion: ReturnType<typeof crearActualizarCamion>;
+  readonly buscarPinesPendientes: ReturnType<typeof crearBuscarPinesPendientes>;
+  readonly estadoBusquedaPines: ReturnType<typeof crearEstadoBusquedaPines>;
   readonly fijarPinDesdeEnlace: ReturnType<typeof crearFijarPinDesdeEnlace>;
   readonly listarVendedores: ReturnType<typeof crearListarVendedores>;
   readonly crearVendedor: ReturnType<typeof crearCrearVendedor>;

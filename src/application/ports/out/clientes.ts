@@ -70,6 +70,8 @@ export type CambiosLocal = {
 
 export type CoincidenciaLocal = { readonly localId: string; readonly lat?: number; readonly lng?: number };
 
+export type LocalSinPin = { readonly id: string; readonly direccion: string; readonly comuna: string };
+
 export interface ClienteRepository {
   buscar(empresaId: string, consulta: ConsultaBusqueda): Promise<readonly ResultadoBusqueda[]>;
   crearConLocal(empresaId: string, datos: NuevoClienteConLocal): Promise<Result<{ clienteId: string; localId: string }, 'DUPLICADO'>>;
@@ -80,6 +82,13 @@ export interface ClienteRepository {
   actualizarLocal(empresaId: string, localId: string, cambios: CambiosLocal): Promise<boolean>;
   /** Colaborativo: fija el pin solo si el local todavía no tiene (como «sugerido», fuente chofer). Devuelve si lo fijó. */
   fijarPinSiFalta(empresaId: string, localId: string, lat: number, lng: number): Promise<boolean>;
+  /** Locales sin pin a los que todavía no se les buscó la dirección (o cuya última búsqueda fue antes de `intentadosAntesDe`). */
+  localesSinPin(empresaId: string, limite: number, intentadosAntesDe: Date): Promise<readonly LocalSinPin[]>;
+  contarLocalesSinPin(empresaId: string): Promise<number>;
+  /** Anota que se buscó la dirección de este local (con o sin éxito), para no repetir la búsqueda cada vez. */
+  marcarIntentoGeocodificacion(empresaId: string, localId: string, ahora: Date): Promise<void>;
+  /** Pin hallado por la dirección («sugerido», fuente geocodificador). Solo si el local no tiene un pin mejor. Devuelve si lo fijó. */
+  fijarPinGeocodificado(empresaId: string, localId: string, lat: number, lng: number, confianza: number): Promise<boolean>;
   /** Con RUT busca ese cliente; sin RUT solo hay coincidencia si la dirección identifica un único local. */
   coincidenciaDeDireccion(empresaId: string, rut: string | undefined, direccion: string): Promise<CoincidenciaLocal | undefined>;
 }

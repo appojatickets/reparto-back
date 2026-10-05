@@ -131,4 +131,29 @@ export const rutasPinesYArchivos = ({ app, casos, guard }: ContextoRutas): void 
       return r.ok ? reply.send(r.value) : enviarError(reply, r.error);
     },
   );
+
+  const estadoBusqueda = z.object({ sinPin: z.number(), enCola: z.number(), enMarcha: z.boolean() });
+
+  a.post(
+    '/v1/locales/buscar-pines',
+    {
+      preHandler: guard('pines:revisar'),
+      schema: {
+        tags: ['pines'],
+        summary: 'Buscar en el mapa el pin de los locales que no tienen (por su dirección y comuna). Corre en segundo plano, de a una por segundo.',
+        security: SEGURIDAD,
+        response: { 202: estadoBusqueda.extend({ encolados: z.number() }), ...RESPUESTAS_ERROR },
+      },
+    },
+    async (req, reply) => reply.code(202).send(await casos.buscarPinesPendientes(actor(req))),
+  );
+
+  a.get(
+    '/v1/locales/buscar-pines',
+    {
+      preHandler: guard('pines:revisar'),
+      schema: { tags: ['pines'], summary: 'Cuántos locales siguen sin pin y cuántos esperan en la cola de búsqueda', security: SEGURIDAD, response: { 200: estadoBusqueda, ...RESPUESTAS_ERROR } },
+    },
+    async (req, reply) => reply.send(await casos.estadoBusquedaPines(actor(req))),
+  );
 };

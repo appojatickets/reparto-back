@@ -13,6 +13,8 @@ const schema = z.object({
   /** Dominio de los correos sintéticos de las cuentas (`jperez@<dominio>`); nunca se envía un correo. */
   AUTH_EMAIL_DOMAIN: z.string().min(3).regex(/^[a-z0-9.-]+$/).default('usuarios.reparto.test'),
   MAIL_API_KEY: z.string().optional(),
+  /** Identifica a la aplicación ante el servicio gratuito de mapas (Nominatim lo exige). Conviene incluir un correo o la URL del sitio. */
+  GEOCODER_USER_AGENT: z.string().min(8).default('reparto-api/1.0 (+https://reparto-front.vercel.app)'),
 });
 
 export type Env = z.infer<typeof schema>;

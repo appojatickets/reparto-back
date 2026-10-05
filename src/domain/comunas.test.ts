@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { COMUNAS_RM, resolverComuna } from './comunas.js';
+import { centroDeComuna, COMUNAS_RM, resolverComuna } from './comunas.js';
+import { dentroDeRegionMetropolitana } from './valor/coordenada.js';
 
 describe('catálogo de comunas de la Región Metropolitana', () => {
   it('tiene las 52 comunas, sin repetidas', () => {
@@ -17,5 +18,20 @@ describe('catálogo de comunas de la Región Metropolitana', () => {
   it('una comuna que no es de la RM no se resuelve', () => {
     expect(resolverComuna('Valparaíso')).toBeUndefined();
     expect(resolverComuna('')).toBeUndefined();
+  });
+});
+
+describe('centro de cada comuna', () => {
+  it('las 52 comunas tienen un centro dentro de la Región Metropolitana', () => {
+    for (const c of COMUNAS_RM) {
+      const centro = centroDeComuna(c);
+      expect(centro, c).toBeDefined();
+      if (centro) expect(dentroDeRegionMetropolitana(centro), c).toBe(true);
+    }
+  });
+
+  it('acepta el nombre sin tildes y rechaza lo que no es una comuna de la RM', () => {
+    expect(centroDeComuna('penaflor')).toEqual({ lat: -33.61, lng: -70.88 });
+    expect(centroDeComuna('Valparaíso')).toBeUndefined();
   });
 });
