@@ -30,6 +30,8 @@ export type Tabla = {
     pin_fuente: 'geocodificador' | 'manual' | 'importado' | 'aprendido' | 'chofer' | 'enlace' | null;
     pin_confianza: number | null;
     foto_path: string | null;
+    foto_por: string | null;
+    foto_en: Date | null;
     streetview_rumbo: number | null;
     nota: string | null;
     geocod_intento_en: Date | null;
@@ -64,6 +66,19 @@ export type Tabla = {
     resuelto_en: Date | null;
   };
   camion: { id: Generated<string>; empresa_id: string; patente: string; alias: string | null; activo: Generated<boolean>; creado_en: Generated<Date> };
+  foto_reporte: {
+    id: Generated<string>;
+    empresa_id: string;
+    local_id: string;
+    foto_path: string;
+    motivo: 'no_es_la_fachada' | 'se_ven_personas' | 'borrosa' | 'otra';
+    detalle: string | null;
+    reportado_por: string | null;
+    creado_en: Generated<Date>;
+    resuelto_en: Date | null;
+    resuelto_por: string | null;
+    resolucion: 'eliminada' | 'descartada' | null;
+  };
   vendedor: { id: Generated<string>; empresa_id: string; codigo: string; nombre: string; celular: string | null; activo: Generated<boolean>; creado_en: Generated<Date> };
   factura: {
     id: Generated<string>;

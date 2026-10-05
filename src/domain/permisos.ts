@@ -21,6 +21,7 @@ export const TODOS_LOS_PERMISOS = [
   'entregas:registrar',
   'metricas:leer',
   'datos:exportar',
+  'fotos:revisar',
 ] as const;
 
 export type Permiso = (typeof TODOS_LOS_PERMISOS)[number];

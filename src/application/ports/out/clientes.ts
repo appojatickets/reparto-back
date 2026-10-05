@@ -65,6 +65,9 @@ export type CambiosLocal = {
   readonly nota?: string;
   readonly streetviewRumbo?: number;
   readonly fotoPath?: string;
+  /** Quién subió la foto y cuándo (para que el admin la revise). */
+  readonly fotoPor?: string;
+  readonly fotoEn?: Date;
   readonly pin?: { readonly lat: number; readonly lng: number; readonly estado: EstadoPin; readonly fuente: FuentePin };
 };
 

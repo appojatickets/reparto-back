@@ -2,6 +2,7 @@ import { vi } from 'vitest';
 import { err, ok } from '../../domain/shared/result.js';
 import type { AlmacenArchivos } from '../ports/out/archivos.js';
 import type { ClienteRepository, CoincidenciaLocal, LocalDetalle, ResumenImportacion } from '../ports/out/clientes.js';
+import type { FotoReporteRepository } from '../ports/out/fotos.js';
 import type { IdGenerator } from '../ports/out/id-generator.js';
 import type { PropuestaPinRepository } from '../ports/out/pines.js';
 
@@ -63,3 +64,13 @@ export const idsFijos = (...valores: string[]): IdGenerator => {
   let i = 0;
   return { uuid: () => valores[i++] ?? '00000000-0000-0000-0000-000000000000' };
 };
+
+export const fakeReportesFoto = () =>
+  ({
+    crear: vi.fn<FotoReporteRepository['crear']>(() => Promise.resolve()),
+    abiertos: vi.fn<FotoReporteRepository['abiertos']>(() => Promise.resolve([])),
+    recientes: vi.fn<FotoReporteRepository['recientes']>(() => Promise.resolve([])),
+    obtener: vi.fn<FotoReporteRepository['obtener']>(() => Promise.resolve({ id: 'r-1', localId: 'l-1', fotoPath: 'empresa-1/l-1/x.webp', abierto: true })),
+    resolver: vi.fn<FotoReporteRepository['resolver']>(() => Promise.resolve()),
+    resolverDeFoto: vi.fn<FotoReporteRepository['resolverDeFoto']>(() => Promise.resolve()),
+  }) satisfies FotoReporteRepository;

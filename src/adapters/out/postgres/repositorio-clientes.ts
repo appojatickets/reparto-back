@@ -304,6 +304,8 @@ export class PostgresClienteRepository implements ClienteRepository {
       nota: c.nota,
       streetview_rumbo: c.streetviewRumbo,
       foto_path: c.fotoPath,
+      foto_por: c.fotoPor,
+      foto_en: c.fotoEn,
       lat: c.pin?.lat,
       lng: c.pin?.lng,
       pin_estado: c.pin?.estado,

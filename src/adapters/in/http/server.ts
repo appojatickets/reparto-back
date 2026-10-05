@@ -11,6 +11,7 @@ import { rutasPinesYArchivos } from './rutas/pines-y-archivos.js';
 import { rutasSesion } from './rutas/sesion.js';
 import { rutasVendedores } from './rutas/vendedores.js';
 import { rutasExportaciones } from './rutas/exportaciones.js';
+import { rutasFotos } from './rutas/fotos.js';
 import { rutasCamionesYFacturas } from './rutas/camiones-y-facturas.js';
 import { rutasDelDia } from './rutas/rutas-del-dia.js';
 import { rutasEntregas } from './rutas/entregas.js';
@@ -80,6 +81,7 @@ export const buildServer = async (deps: HttpDeps): Promise<FastifyInstance> => {
   rutasCamionesYFacturas(contexto);
   rutasVendedores(contexto);
   rutasExportaciones(contexto);
+  rutasFotos(contexto);
   rutasEmpresa(contexto);
   rutasDelDia(contexto);
   rutasHorarios(contexto);

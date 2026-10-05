@@ -6,6 +6,7 @@ const roles: Rol[] = ['admin', 'despachador', 'chofer', 'ayudante'];
 describe('permisos por rol', () => {
   it('solo el admin exporta datos', () => {
     expect(roles.filter((r) => puede(r, 'datos:exportar'))).toEqual(['admin']);
+    expect(roles.filter((r) => puede(r, 'fotos:revisar'))).toEqual(['admin']);
   });
 
   it('el admin puede todo', () => {

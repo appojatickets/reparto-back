@@ -3,6 +3,7 @@ import { err, ok, type Result } from '../../domain/shared/result.js';
 import { errorApp, type ErrorApp } from '../errores.js';
 import type { AlmacenArchivos } from '../ports/out/archivos.js';
 import type { ClienteRepository } from '../ports/out/clientes.js';
+import type { Clock } from '../ports/out/clock.js';
 import type { IdGenerator } from '../ports/out/id-generator.js';
 
 export type TipoFoto = 'webp' | 'jpeg';
@@ -22,11 +23,11 @@ export const crearSolicitarUrlSubida = ({ clientes, almacen, ids }: { clientes: 
   };
 
 /** Después de subir, el cliente avisa el path; solo se acepta uno de este local y de esta empresa. */
-export const crearRegistrarFotoLocal = ({ clientes, almacen }: { clientes: ClienteRepository; almacen?: AlmacenArchivos }) =>
+export const crearRegistrarFotoLocal = ({ clientes, almacen, clock }: { clientes: ClienteRepository; almacen?: AlmacenArchivos; clock: Clock }) =>
   async (actor: Usuario, localId: string, path: string): Promise<Result<void, ErrorApp>> => {
     if (!patronPath(actor.empresaId, localId).test(path)) return err(errorApp('VALIDACION', 'La ruta de la foto no es válida.'));
     const anterior = (await clientes.obtenerLocal(actor.empresaId, localId))?.fotoPath;
-    const existe = await clientes.actualizarLocal(actor.empresaId, localId, { fotoPath: path });
+    const existe = await clientes.actualizarLocal(actor.empresaId, localId, { fotoPath: path, fotoPor: actor.id, fotoEn: clock.now() });
     if (!existe) return err(errorApp('NO_ENCONTRADO', 'El local no existe.'));
     // La foto reemplazada se borra del almacenamiento para no acumular archivos huérfanos (si falla, no importa: la nueva ya quedó).
     if (anterior !== undefined && anterior !== path) await almacen?.eliminar(anterior);

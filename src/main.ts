@@ -27,6 +27,7 @@ import { PostgresRutaRepository } from './adapters/out/postgres/repositorio-ruta
 import { PostgresHorarioRepository } from './adapters/out/postgres/repositorio-horarios.js';
 import { PostgresJornadaRepository } from './adapters/out/postgres/repositorio-jornadas.js';
 import { PostgresEntregaRepository } from './adapters/out/postgres/repositorio-entregas.js';
+import { crearFotosParaRevision, crearReportarFoto, crearResolverReporteFoto } from './application/use-cases/fotos-revision.js';
 import { crearActualizarVendedor, crearCrearVendedor, crearListarVendedores } from './application/use-cases/vendedores.js';
 import { crearExportarLocales } from './application/use-cases/exportar-locales.js';
 import { crearBuscarPinesPendientes, crearEstadoBusquedaPines } from './application/use-cases/buscar-pines.js';
@@ -35,6 +36,7 @@ import { crearGeocodificarLocal } from './application/use-cases/geocodificar-loc
 import { crearNominatimGeocodificador } from './adapters/out/red/nominatim-geocodificador.js';
 import { crearFijarPinDesdeEnlace } from './application/use-cases/pin-desde-enlace.js';
 import { crearResolvedorEnlacesHttp } from './adapters/out/red/resolvedor-enlaces-http.js';
+import { PostgresFotoReporteRepository } from './adapters/out/postgres/repositorio-fotos.js';
 import { PostgresVendedorRepository } from './adapters/out/postgres/repositorio-vendedores.js';
 import { PostgresCamionRepository } from './adapters/out/postgres/repositorio-camiones.js';
 import { PostgresFacturaRepository } from './adapters/out/postgres/repositorio-facturas.js';
@@ -56,6 +58,7 @@ const intentos = new PostgresIntentosLoginRepository(db);
 const pines = new PostgresPropuestaPinRepository(db);
 const camiones = new PostgresCamionRepository(db);
 const vendedores = new PostgresVendedorRepository(db);
+const reportesFoto = new PostgresFotoReporteRepository(db);
 const facturas = new PostgresFacturaRepository(db);
 const empresas = new PostgresEmpresaRepository(db);
 const rutas = new PostgresRutaRepository(db);
@@ -94,8 +97,11 @@ const casos: CasosDeUso = {
   listarPropuestasPin: crearListarPropuestasPin({ pines }),
   resolverPropuestaPin: crearResolverPropuestaPin({ pines, clock }),
   solicitarUrlSubida: crearSolicitarUrlSubida({ clientes, almacen, ids: generadorDeIds }),
-  registrarFotoLocal: crearRegistrarFotoLocal({ clientes, almacen }),
+  registrarFotoLocal: crearRegistrarFotoLocal({ clientes, almacen, clock }),
   quitarFotoLocal: crearQuitarFotoLocal({ clientes, almacen }),
+  reportarFoto: crearReportarFoto({ clientes, reportes: reportesFoto }),
+  fotosParaRevision: crearFotosParaRevision({ reportes: reportesFoto }),
+  resolverReporteFoto: crearResolverReporteFoto({ clientes, reportes: reportesFoto, almacen, clock }),
   exportarLocales: crearExportarLocales({ clientes }),
   obtenerUrlFoto: crearObtenerUrlFoto({ clientes, almacen }),
   listarCamiones: crearListarCamiones({ camiones }),

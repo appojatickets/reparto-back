@@ -73,6 +73,9 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'POST', url: '/v1/jornada', body: { camionId: UUID }, permiso: 'jornada:gestionar', caso: 'iniciarJornada' },
   { metodo: 'DELETE', url: '/v1/jornada', permiso: 'jornada:gestionar', caso: 'terminarJornada' },
   { metodo: 'POST', url: '/v1/jornada/terminar', permiso: 'jornada:gestionar', caso: 'terminarJornada' },
+  { metodo: 'POST', url: `/v1/locales/${UUID}/foto/reportar`, body: { motivo: 'borrosa' }, permiso: 'archivos:subir', caso: 'reportarFoto' },
+  { metodo: 'GET', url: '/v1/fotos/revision', permiso: 'fotos:revisar', caso: 'fotosParaRevision' },
+  { metodo: 'POST', url: `/v1/fotos/reportes/${UUID}/resolver`, body: { accion: 'eliminar' }, permiso: 'fotos:revisar', caso: 'resolverReporteFoto' },
   { metodo: 'GET', url: `/v1/locales/${UUID}/horario`, permiso: 'clientes:leer', caso: 'obtenerHorario' },
   { metodo: 'PUT', url: `/v1/locales/${UUID}/horario`, body: { dias: [{ dia: 1, cerrado: false, tramos: [{ desde: 600, hasta: 1080 }] }] }, permiso: 'clientes:escribir', caso: 'guardarHorario' },
 ];

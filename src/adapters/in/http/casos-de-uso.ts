@@ -17,6 +17,7 @@ import type { crearBuscarClientes } from '../../../application/use-cases/buscar-
 import type { crearCrearClienteNuevo } from '../../../application/use-cases/crear-cliente-nuevo.js';
 import type { crearCrearUsuario } from '../../../application/use-cases/crear-usuario.js';
 import type { crearCambiarEstadoUsuario, crearListarUsuarios, crearResetearPin } from '../../../application/use-cases/gestionar-usuarios.js';
+import type { crearFotosParaRevision, crearReportarFoto, crearResolverReporteFoto } from '../../../application/use-cases/fotos-revision.js';
 import type { crearImportarClientes } from '../../../application/use-cases/importar-clientes.js';
 import type { crearIniciarSesion } from '../../../application/use-cases/iniciar-sesion.js';
 import type { crearObtenerLocal } from '../../../application/use-cases/obtener-local.js';
@@ -44,6 +45,9 @@ export type CasosDeUso = {
   readonly solicitarUrlSubida: ReturnType<typeof crearSolicitarUrlSubida>;
   readonly registrarFotoLocal: ReturnType<typeof crearRegistrarFotoLocal>;
   readonly quitarFotoLocal: ReturnType<typeof crearQuitarFotoLocal>;
+  readonly reportarFoto: ReturnType<typeof crearReportarFoto>;
+  readonly fotosParaRevision: ReturnType<typeof crearFotosParaRevision>;
+  readonly resolverReporteFoto: ReturnType<typeof crearResolverReporteFoto>;
   readonly exportarLocales: ReturnType<typeof crearExportarLocales>;
   readonly obtenerUrlFoto: ReturnType<typeof crearObtenerUrlFoto>;
   readonly listarCamiones: ReturnType<typeof crearListarCamiones>;

@@ -5,6 +5,7 @@ import { crearReloj, usuarioDe } from './fakes.test-util.js';
 import { fakeAlmacen, fakeClientes, fakePines, fallaAlmacen, idsFijos, localDe } from './fakes-clientes.test-util.js';
 
 const chofer = usuarioDe({ id: 'u-ch', rol: 'chofer' });
+const { clock } = crearReloj();
 const admin = usuarioDe();
 const UUID = '123e4567-e89b-12d3-a456-426614174000';
 
@@ -101,9 +102,9 @@ describe('fotos de fachada (URL firmada)', () => {
 
   it('registrar la foto solo acepta un path de este local y empresa', async () => {
     const clientes = fakeClientes([localDe()]);
-    const registrar = crearRegistrarFotoLocal({ clientes });
+    const registrar = crearRegistrarFotoLocal({ clientes, clock });
     expect((await registrar(chofer, 'l-1', `empresa-1/l-1/${UUID}.webp`)).ok).toBe(true);
-    expect(clientes.actualizarLocal).toHaveBeenCalledWith('empresa-1', 'l-1', { fotoPath: `empresa-1/l-1/${UUID}.webp` });
+    expect(clientes.actualizarLocal).toHaveBeenCalledWith('empresa-1', 'l-1', { fotoPath: `empresa-1/l-1/${UUID}.webp`, fotoPor: 'u-ch', fotoEn: new Date('2026-10-05T12:00:00.000Z') });
     for (const malo of [`otra/l-1/${UUID}.webp`, `empresa-1/l-2/${UUID}.webp`, `empresa-1/l-1/${UUID}.png`, `empresa-1/l-1/../x/${UUID}.webp`, 'x']) {
       const r = await registrar(chofer, 'l-1', malo);
       expect(!r.ok && r.error.codigo).toBe('VALIDACION');
@@ -114,12 +115,12 @@ describe('fotos de fachada (URL firmada)', () => {
     const almacen = fakeAlmacen();
     const nueva = `empresa-1/l-1/${UUID}.webp`;
     const clientes = fakeClientes([localDe({ fotoPath: 'empresa-1/l-1/vieja.webp' })]);
-    expect((await crearRegistrarFotoLocal({ clientes, almacen })(chofer, 'l-1', nueva)).ok).toBe(true);
+    expect((await crearRegistrarFotoLocal({ clientes, almacen, clock })(chofer, 'l-1', nueva)).ok).toBe(true);
     expect(almacen.eliminar).toHaveBeenCalledWith('empresa-1/l-1/vieja.webp');
     const sinAnterior = fakeAlmacen();
-    await crearRegistrarFotoLocal({ clientes: fakeClientes([localDe()]), almacen: sinAnterior })(chofer, 'l-1', nueva);
+    await crearRegistrarFotoLocal({ clientes: fakeClientes([localDe()]), almacen: sinAnterior, clock })(chofer, 'l-1', nueva);
     expect(sinAnterior.eliminar).not.toHaveBeenCalled();
-    const r = await crearRegistrarFotoLocal({ clientes: fakeClientes([localDe({ fotoPath: 'x' })]), almacen: fallaAlmacen() })(chofer, 'l-1', nueva);
+    const r = await crearRegistrarFotoLocal({ clientes: fakeClientes([localDe({ fotoPath: 'x' })]), almacen: fallaAlmacen(), clock })(chofer, 'l-1', nueva);
     expect(r.ok).toBe(true);
   });
 
@@ -138,7 +139,7 @@ describe('fotos de fachada (URL firmada)', () => {
   });
 
   it('registrar en un local inexistente es NO_ENCONTRADO', async () => {
-    const r = await crearRegistrarFotoLocal({ clientes: fakeClientes([]) })(chofer, 'l-1', `empresa-1/l-1/${UUID}.webp`);
+    const r = await crearRegistrarFotoLocal({ clientes: fakeClientes([]), clock })(chofer, 'l-1', `empresa-1/l-1/${UUID}.webp`);
     expect(!r.ok && r.error.codigo).toBe('NO_ENCONTRADO');
   });
 
