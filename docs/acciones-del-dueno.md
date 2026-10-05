@@ -118,6 +118,12 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] Termina la ruta: muestra el resumen (entregadas, no entregadas, sin hacer) y VOLVER AL INICIO. Al elegir camión de nuevo la lista parte limpia (las pendientes quedan en su día).
 - [ ] Llegada al depósito: con la pantalla abierta y al menos una entrega hecha, acércate a menos de 150 m del depósito «Ibiza»: debe preguntar «¿Terminaste la ruta?» (o terminar sola si no queda nada). Si tu teléfono no da el aviso, avísame con el modelo.
 
+### A17. Horarios desde las notas y revisión de fotos (ADR 0011 y 0012 del front, ADR 0021)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces.
+- [ ] **Horarios:** Importar clientes → al final **REVISAR LAS NOTAS CON HORARIOS** → mira cuántos entendió y cómo quedarían → **APLICAR**. Abre la ficha de un cliente con horario y comprueba que quedó de lunes a sábado.
+- [ ] **Fotos:** como chofer, abre una parada con foto y toca **REPORTAR ESTA FOTO** (elige un motivo). Como admin, menú **REVISAR FOTOS**: debe aparecer el reporte con quién reportó y quién subió; prueba **LA FOTO ESTÁ BIEN** y **ELIMINAR LA FOTO**.
+- [ ] La foto de Av. Providencia 2500 que ya subiste no tiene quién/cuándo (es anterior a este cambio); aparece al final de «Subidas hace poco».
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos
