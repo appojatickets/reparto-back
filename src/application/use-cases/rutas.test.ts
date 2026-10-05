@@ -25,6 +25,11 @@ describe('ver ruta', () => {
     expect(r.ok && r.value.nuevas.map((n) => n.folio)).toEqual(['100A', '100B', '100C', '100D']);
   });
 
+  it('la vista trae el depósito: la app sabe adónde vuelve el camión para avisar que la ruta termina', async () => {
+    const r = await montar().ver(despachador, entrada);
+    expect(r.ok && r.value.deposito).toMatchObject({ lat: expect.any(Number) as number, lng: expect.any(Number) as number });
+  });
+
   it('exige el depósito configurado, un camión que exista y una fecha válida', async () => {
     const sinDeposito = await montar({ config: { salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260 } }).ver(despachador, entrada);
     expect(!sinDeposito.ok && sinDeposito.error).toMatchObject({ codigo: 'VALIDACION', detalle: { codigo: 'SIN_DEPOSITO' } });

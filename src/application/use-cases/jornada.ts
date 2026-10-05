@@ -4,6 +4,7 @@ import { fechaEnChile } from '../../domain/shared/fechas.js';
 import { err, ok, type Result } from '../../domain/shared/result.js';
 import { errorApp, type ErrorApp } from '../errores.js';
 import type { Clock } from '../ports/out/clock.js';
+import type { FacturaRepository } from '../ports/out/facturas.js';
 import type { Jornada, JornadaRepository } from '../ports/out/jornadas.js';
 
 type Deps = { readonly jornadas: JornadaRepository; readonly clock: Clock };
@@ -19,9 +20,31 @@ export const crearIniciarJornada = ({ jornadas, clock }: Deps) =>
 export const crearMiJornada = ({ jornadas, clock }: Deps) =>
   (actor: Usuario): Promise<Jornada | undefined> => jornadas.activa(actor.empresaId, actor.id, fechaEnChile(clock.now()));
 
-export const crearTerminarJornada = ({ jornadas, clock }: Deps) =>
-  async (actor: Usuario): Promise<void> => {
-    await jornadas.terminar(actor.empresaId, actor.id, clock.now());
+/** Lo que quedó del día de un camión al terminar la ruta: queda registrado con la hora de inicio y de término (para los cálculos internos). */
+export type ResumenJornada = {
+  readonly fecha: string;
+  readonly camionId: string;
+  readonly desde: Date;
+  readonly hasta: Date;
+  readonly entregadas: number;
+  readonly noEntregadas: number;
+  /** Las que no se alcanzaron a hacer: quedan en su día, no pasan solas al siguiente. */
+  readonly pendientes: number;
+};
+
+/**
+ * Termina la ruta de hoy: cierra la jornada (con la hora de término) y devuelve el resumen del día de ese camión.
+ * Si no había jornada de hoy, cierra lo que hubiera abierto y no devuelve resumen. Las entregas pendientes no se tocan.
+ */
+export const crearTerminarJornada = ({ jornadas, facturas, clock }: Deps & { readonly facturas: FacturaRepository }) =>
+  async (actor: Usuario): Promise<ResumenJornada | undefined> => {
+    const ahora = clock.now();
+    const j = await jornadas.activa(actor.empresaId, actor.id, fechaEnChile(ahora));
+    await jornadas.terminar(actor.empresaId, actor.id, ahora);
+    if (!j) return undefined;
+    const del = await facturas.listar(actor.empresaId, { fecha: j.fecha, camionId: j.camion.id, incluirHechas: true });
+    const contar = (estado: 'entregada' | 'no_entregada' | 'pendiente'): number => del.filter((f) => f.estado === estado).length;
+    return { fecha: j.fecha, camionId: j.camion.id, desde: j.desde, hasta: ahora, entregadas: contar('entregada'), noEntregadas: contar('no_entregada'), pendientes: contar('pendiente') };
   };
 
 /**

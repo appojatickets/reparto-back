@@ -72,6 +72,7 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'GET', url: '/v1/jornada', permiso: 'jornada:gestionar', caso: 'miJornada' },
   { metodo: 'POST', url: '/v1/jornada', body: { camionId: UUID }, permiso: 'jornada:gestionar', caso: 'iniciarJornada' },
   { metodo: 'DELETE', url: '/v1/jornada', permiso: 'jornada:gestionar', caso: 'terminarJornada' },
+  { metodo: 'POST', url: '/v1/jornada/terminar', permiso: 'jornada:gestionar', caso: 'terminarJornada' },
   { metodo: 'GET', url: `/v1/locales/${UUID}/horario`, permiso: 'clientes:leer', caso: 'obtenerHorario' },
   { metodo: 'PUT', url: `/v1/locales/${UUID}/horario`, body: { dias: [{ dia: 1, cerrado: false, tramos: [{ desde: 600, hasta: 1080 }] }] }, permiso: 'clientes:escribir', caso: 'guardarHorario' },
 ];
@@ -331,9 +332,24 @@ describe('camiones y facturas', () => {
   });
 });
 
+describe('terminar la ruta', () => {
+  it('devuelve el resumen del día con las horas en ISO; sin jornada devuelve null', async () => {
+    const terminarJornada = vi.fn()
+      .mockResolvedValueOnce({ fecha: '2026-10-05', camionId: UUID, desde: new Date('2026-10-05T11:00:00Z'), hasta: new Date('2026-10-05T20:30:00Z'), entregadas: 28, noEntregadas: 2, pendientes: 3 })
+      .mockResolvedValueOnce(undefined);
+    const app = await construir({ terminarJornada });
+    const headers = { authorization: `Bearer ${ROLES.chofer}` };
+    const a = await app.inject({ method: 'POST', url: '/v1/jornada/terminar', headers });
+    expect(a.statusCode).toBe(200);
+    expect(a.json()).toEqual({ resumen: { fecha: '2026-10-05', camionId: UUID, desde: '2026-10-05T11:00:00.000Z', hasta: '2026-10-05T20:30:00.000Z', entregadas: 28, noEntregadas: 2, pendientes: 3 } });
+    const b = await app.inject({ method: 'POST', url: '/v1/jornada/terminar', headers });
+    expect(b.json()).toEqual({ resumen: null });
+  });
+});
+
 describe('rutas del día', () => {
   const auth = (rol: Rol) => ({ authorization: `Bearer ${ROLES[rol]}` });
-  const vista = { camionId: UUID, fecha: '2026-10-05', planificada: true, modo: 'sugerida' as const, version: 1, salidaMin: 480, horaLimiteRegresoMin: 1260, regreso: 700, regresoTardio: false, paradas: [], nuevas: [], hechas: [], sinPin: [], noAtendidas: [], enRiesgo: [] };
+  const vista = { camionId: UUID, fecha: '2026-10-05', planificada: true, modo: 'sugerida' as const, version: 1, salidaMin: 480, horaLimiteRegresoMin: 1260, deposito: { lat: -33.5, lng: -70.7 }, regreso: 700, regresoTardio: false, paradas: [], nuevas: [], hechas: [], sinPin: [], noAtendidas: [], enRiesgo: [] };
 
   it('ver y planificar devuelven la vista; sin depósito responde 422 con el código', async () => {
     const verRuta = vi.fn().mockResolvedValueOnce(ok(vista)).mockResolvedValueOnce(err(errorApp('VALIDACION', 'Primero configura el depósito.', { codigo: 'SIN_DEPOSITO' })));

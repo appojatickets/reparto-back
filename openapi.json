@@ -9748,6 +9748,25 @@
                     "horaLimiteRegresoMin": {
                       "type": "number"
                     },
+                    "deposito": {
+                      "type": "object",
+                      "properties": {
+                        "lat": {
+                          "type": "number"
+                        },
+                        "lng": {
+                          "type": "number"
+                        },
+                        "nombre": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "lat",
+                        "lng"
+                      ],
+                      "additionalProperties": false
+                    },
                     "regreso": {
                       "type": "number"
                     },
@@ -10204,6 +10223,7 @@
                     "planificada",
                     "salidaMin",
                     "horaLimiteRegresoMin",
+                    "deposito",
                     "paradas",
                     "nuevas",
                     "hechas",
@@ -10488,6 +10508,25 @@
                     "horaLimiteRegresoMin": {
                       "type": "number"
                     },
+                    "deposito": {
+                      "type": "object",
+                      "properties": {
+                        "lat": {
+                          "type": "number"
+                        },
+                        "lng": {
+                          "type": "number"
+                        },
+                        "nombre": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "lat",
+                        "lng"
+                      ],
+                      "additionalProperties": false
+                    },
                     "regreso": {
                       "type": "number"
                     },
@@ -10944,6 +10983,7 @@
                     "planificada",
                     "salidaMin",
                     "horaLimiteRegresoMin",
+                    "deposito",
                     "paradas",
                     "nuevas",
                     "hechas",
@@ -11293,6 +11333,25 @@
                     "horaLimiteRegresoMin": {
                       "type": "number"
                     },
+                    "deposito": {
+                      "type": "object",
+                      "properties": {
+                        "lat": {
+                          "type": "number"
+                        },
+                        "lng": {
+                          "type": "number"
+                        },
+                        "nombre": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "lat",
+                        "lng"
+                      ],
+                      "additionalProperties": false
+                    },
                     "regreso": {
                       "type": "number"
                     },
@@ -11749,6 +11808,7 @@
                     "planificada",
                     "salidaMin",
                     "horaLimiteRegresoMin",
+                    "deposito",
                     "paradas",
                     "nuevas",
                     "hechas",
@@ -13136,6 +13196,266 @@
                   "enum": [
                     null
                   ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jornada/terminar": {
+      "post": {
+        "summary": "Terminar la ruta de hoy y devolver el resumen del día (entregadas, no entregadas y pendientes); queda registrada la hora de término",
+        "tags": [
+          "jornada"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resumen": {
+                      "nullable": true,
+                      "type": "object",
+                      "properties": {
+                        "fecha": {
+                          "type": "string"
+                        },
+                        "camionId": {
+                          "type": "string"
+                        },
+                        "desde": {
+                          "type": "string"
+                        },
+                        "hasta": {
+                          "type": "string"
+                        },
+                        "entregadas": {
+                          "type": "number"
+                        },
+                        "noEntregadas": {
+                          "type": "number"
+                        },
+                        "pendientes": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "fecha",
+                        "camionId",
+                        "desde",
+                        "hasta",
+                        "entregadas",
+                        "noEntregadas",
+                        "pendientes"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "resumen"
+                  ],
+                  "additionalProperties": false
                 }
               }
             }

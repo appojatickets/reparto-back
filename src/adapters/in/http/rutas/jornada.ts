@@ -49,6 +49,28 @@ export const rutasJornada = ({ app, casos, guard }: ContextoRutas): void => {
     },
   );
 
+  a.post(
+    '/v1/jornada/terminar',
+    {
+      preHandler: guard('jornada:gestionar'),
+      schema: {
+        tags: ['jornada'],
+        summary: 'Terminar la ruta de hoy y devolver el resumen del día (entregadas, no entregadas y pendientes); queda registrada la hora de término',
+        security: SEGURIDAD,
+        response: {
+          200: z.object({
+            resumen: z.object({ fecha: z.string(), camionId: z.string(), desde: z.string(), hasta: z.string(), entregadas: z.number(), noEntregadas: z.number(), pendientes: z.number() }).nullable(),
+          }),
+          ...RESPUESTAS_ERROR,
+        },
+      },
+    },
+    async (req, reply) => {
+      const r = await casos.terminarJornada(actor(req));
+      return reply.send({ resumen: r ? { ...r, desde: r.desde.toISOString(), hasta: r.hasta.toISOString() } : null });
+    },
+  );
+
   a.delete(
     '/v1/jornada',
     {

@@ -60,6 +60,8 @@ export type VistaRuta = {
   /** Si la ruta es de hoy y ya pasó la hora de salida (o el camión ya hizo paradas), desde cuándo se calculan las horas. */
   readonly calculadaDesdeMin?: number;
   readonly horaLimiteRegresoMin: number;
+  /** De dónde sale y adónde vuelve el camión: la app avisa que la ruta termina al llegar aquí. */
+  readonly deposito: { readonly lat: number; readonly lng: number; readonly nombre?: string };
   readonly regreso?: number;
   readonly regresoTardio?: boolean;
   readonly paradas: readonly ParadaVista[];
@@ -198,6 +200,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
       salidaMin,
       ...(plan && plan.problema.salida !== salidaMin ? { calculadaDesdeMin: plan.problema.salida } : {}),
       horaLimiteRegresoMin: ctx.config.horaLimiteRegresoMin,
+      deposito: ctx.deposito,
       paradas: (plan?.solucion.detalle ?? []).map((d) => ({
         ...item(d.id),
         posicion: d.posicion,

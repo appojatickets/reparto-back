@@ -115,7 +115,7 @@ const casos: CasosDeUso = {
   operarRuta: serviciosDeRuta.operar,
   miJornada: crearMiJornada({ jornadas, clock }),
   iniciarJornada: crearIniciarJornada({ jornadas, clock }),
-  terminarJornada: crearTerminarJornada({ jornadas, clock }),
+  terminarJornada: crearTerminarJornada({ jornadas, facturas, clock }),
   registrarEvento: crearRegistrarEvento({ facturas, entregas, clientes, resolverCamion }),
   obtenerHorario: crearObtenerHorario({ horarios }),
   guardarHorario: crearGuardarHorario({ horarios }),

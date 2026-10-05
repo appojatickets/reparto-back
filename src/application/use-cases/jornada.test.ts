@@ -16,7 +16,7 @@ describe('jornada', () => {
     const r = await crearIniciarJornada({ jornadas, clock })(chofer, 'cam-7');
     expect(r.ok && r.value.camion.id).toBe('cam-7');
     expect(jornadas.iniciar).toHaveBeenCalledWith('empresa-1', 'u-chofer', 'cam-7', '2026-10-05', new Date('2026-10-05T12:00:00.000Z'));
-    await crearTerminarJornada({ jornadas, clock })(chofer);
+    await crearTerminarJornada({ jornadas, facturas: fakeFacturas(), clock })(chofer);
     expect(jornadas.terminar).toHaveBeenCalledWith('empresa-1', 'u-chofer', new Date('2026-10-05T12:00:00.000Z'));
     await crearMiJornada({ jornadas, clock })(chofer);
     expect(jornadas.activa).toHaveBeenCalledWith('empresa-1', 'u-chofer', '2026-10-05');
@@ -27,6 +27,33 @@ describe('jornada', () => {
     jornadas.iniciar.mockResolvedValueOnce(err('CAMION_NO_DISPONIBLE'));
     const r = await crearIniciarJornada({ jornadas, clock })(chofer, 'cam-x');
     expect(!r.ok && r.error.codigo).toBe('NO_ENCONTRADO');
+  });
+});
+
+describe('terminar la ruta: queda el resumen del día', () => {
+  it('cuenta lo entregado, lo no entregado y lo que quedó pendiente de ese camión y ese día, con la hora de inicio y de término', async () => {
+    const jornadas = fakeJornadas(JORNADA);
+    const facturas = fakeFacturas();
+    facturas.listar.mockResolvedValueOnce([
+      facturaDe({ id: 'f1', estado: 'entregada' }), facturaDe({ id: 'f2', estado: 'entregada' }), facturaDe({ id: 'f3', estado: 'no_entregada' }),
+      facturaDe({ id: 'f4', estado: 'pendiente' }), facturaDe({ id: 'f5', estado: 'pendiente' }),
+    ]);
+    const r = await crearTerminarJornada({ jornadas, facturas, clock })(chofer);
+    expect(facturas.listar).toHaveBeenCalledWith('empresa-1', { fecha: '2026-10-05', camionId: 'cam-1', incluirHechas: true });
+    expect(jornadas.terminar).toHaveBeenCalledWith('empresa-1', 'u-chofer', new Date('2026-10-05T12:00:00.000Z'));
+    expect(r).toEqual({
+      fecha: '2026-10-05', camionId: 'cam-1', desde: new Date('2026-10-05T11:00:00Z'), hasta: new Date('2026-10-05T12:00:00.000Z'),
+      entregadas: 2, noEntregadas: 1, pendientes: 2,
+    });
+  });
+
+  it('sin jornada de hoy igual cierra lo que hubiera abierto y no inventa un resumen', async () => {
+    const jornadas = fakeJornadas();
+    const facturas = fakeFacturas();
+    const r = await crearTerminarJornada({ jornadas, facturas, clock })(chofer);
+    expect(r).toBeUndefined();
+    expect(jornadas.terminar).toHaveBeenCalledTimes(1);
+    expect(facturas.listar).not.toHaveBeenCalled();
   });
 });
 

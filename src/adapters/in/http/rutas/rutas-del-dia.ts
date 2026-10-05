@@ -34,6 +34,7 @@ const vistaRuta = z.object({
   salidaMin: z.number(),
   calculadaDesdeMin: z.number().optional(),
   horaLimiteRegresoMin: z.number(),
+  deposito: z.object({ lat: z.number(), lng: z.number(), nombre: z.string().optional() }),
   regreso: z.number().optional(),
   regresoTardio: z.boolean().optional(),
   paradas: z
