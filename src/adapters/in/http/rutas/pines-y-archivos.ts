@@ -104,6 +104,15 @@ export const rutasPinesYArchivos = ({ app, casos, guard }: ContextoRutas): void 
     },
   );
 
+  a.delete(
+    '/v1/locales/:id/foto',
+    { preHandler: guard('clientes:escribir'), schema: { tags: ['archivos'], summary: 'Quitar la foto de la fachada del local (admin o despachador)', security: SEGURIDAD, params: idParam, response: { 204: z.null(), ...RESPUESTAS_ERROR } } },
+    async (req, reply) => {
+      const r = await casos.quitarFotoLocal(actor(req), req.params.id);
+      return r.ok ? reply.code(204).send(null) : enviarError(reply, r.error);
+    },
+  );
+
   a.get(
     '/v1/locales/:id/foto-url',
     { preHandler: guard('clientes:leer'), schema: { tags: ['archivos'], summary: 'URL firmada (5 minutos) para ver la foto', security: SEGURIDAD, params: idParam, response: { 200: z.object({ url: z.string(), expiraEnSegundos: z.number() }), ...RESPUESTAS_ERROR } } },

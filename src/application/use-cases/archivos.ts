@@ -22,11 +22,26 @@ export const crearSolicitarUrlSubida = ({ clientes, almacen, ids }: { clientes: 
   };
 
 /** Después de subir, el cliente avisa el path; solo se acepta uno de este local y de esta empresa. */
-export const crearRegistrarFotoLocal = ({ clientes }: { clientes: ClienteRepository }) =>
+export const crearRegistrarFotoLocal = ({ clientes, almacen }: { clientes: ClienteRepository; almacen?: AlmacenArchivos }) =>
   async (actor: Usuario, localId: string, path: string): Promise<Result<void, ErrorApp>> => {
     if (!patronPath(actor.empresaId, localId).test(path)) return err(errorApp('VALIDACION', 'La ruta de la foto no es válida.'));
+    const anterior = (await clientes.obtenerLocal(actor.empresaId, localId))?.fotoPath;
     const existe = await clientes.actualizarLocal(actor.empresaId, localId, { fotoPath: path });
-    return existe ? ok(undefined) : err(errorApp('NO_ENCONTRADO', 'El local no existe.'));
+    if (!existe) return err(errorApp('NO_ENCONTRADO', 'El local no existe.'));
+    // La foto reemplazada se borra del almacenamiento para no acumular archivos huérfanos (si falla, no importa: la nueva ya quedó).
+    if (anterior !== undefined && anterior !== path) await almacen?.eliminar(anterior);
+    return ok(undefined);
+  };
+
+/** Quita la foto del local (admin o despachador): el local queda sin foto y el archivo se borra del almacenamiento. Repetirlo no falla. */
+export const crearQuitarFotoLocal = ({ clientes, almacen }: { clientes: ClienteRepository; almacen: AlmacenArchivos }) =>
+  async (actor: Usuario, localId: string): Promise<Result<void, ErrorApp>> => {
+    const local = await clientes.obtenerLocal(actor.empresaId, localId);
+    if (!local) return err(errorApp('NO_ENCONTRADO', 'El local no existe.'));
+    if (local.fotoPath === undefined) return ok(undefined);
+    await clientes.quitarFoto(actor.empresaId, localId);
+    await almacen.eliminar(local.fotoPath);
+    return ok(undefined);
   };
 
 export const crearObtenerUrlFoto = ({ clientes, almacen }: { clientes: ClienteRepository; almacen: AlmacenArchivos }) =>

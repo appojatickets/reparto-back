@@ -41,6 +41,15 @@ export class AlmacenSupabase implements AlmacenArchivos {
     return this.firmar(`/object/upload/sign/${this.bucket}/${codificarPath(path)}`, undefined, 'url');
   }
 
+  async eliminar(path: string): Promise<Result<void, ErrorAlmacen>> {
+    try {
+      const r = await llamarJson(this.fetchFn, `${this.base}/object/${this.bucket}/${codificarPath(path)}`, { method: 'DELETE', headers: cabecerasDeServicio(this.cfg.claveServicio) });
+      return r.status < 300 || r.status === 404 ? ok(undefined) : err({ detalle: `HTTP ${r.status}` });
+    } catch (e) {
+      return err({ detalle: e instanceof Error ? e.message : 'error de red' });
+    }
+  }
+
   crearUrlLectura(path: string, expiraEnSegundos: number): Promise<Result<{ url: string }, ErrorAlmacen>> {
     return this.firmar(`/object/sign/${this.bucket}/${codificarPath(path)}`, { expiresIn: expiraEnSegundos }, 'signedURL');
   }

@@ -70,6 +70,34 @@ export type CambiosLocal = {
 
 export type CoincidenciaLocal = { readonly localId: string; readonly lat?: number; readonly lng?: number };
 
+/** Una fila de la exportación de datos: un local con los datos de su cliente. */
+export type FilaExportacion = {
+  readonly localId: string;
+  readonly clienteId: string;
+  readonly razonSocial: string;
+  readonly rut?: string;
+  readonly giro?: string;
+  readonly estadoCliente: 'nuevo' | 'activo' | 'inactivo' | 'cerrado' | 'archivado';
+  readonly direccion: string;
+  readonly comuna: string;
+  readonly lat?: number;
+  readonly lng?: number;
+  readonly pinEstado: EstadoPin;
+  readonly pinFuente?: FuentePin;
+  readonly pinConfianza?: number;
+  readonly nota?: string;
+  readonly tieneFoto: boolean;
+  readonly creadoEn: string;
+};
+
+export type FiltroExportacion = {
+  readonly comunas?: readonly string[];
+  /** con: tiene pin · sin: no tiene · aproximado: el pin lo halló el buscador con poca precisión. */
+  readonly pin?: 'con' | 'sin' | 'aproximado';
+  readonly foto?: 'con' | 'sin';
+  readonly texto?: string;
+};
+
 export type LocalSinPin = { readonly id: string; readonly direccion: string; readonly comuna: string };
 
 export interface ClienteRepository {
@@ -87,6 +115,10 @@ export interface ClienteRepository {
   /** Colaborativo: fija el pin solo si el local todavía no tiene (como «sugerido», fuente chofer). Devuelve si lo fijó. */
   fijarPinSiFalta(empresaId: string, localId: string, lat: number, lng: number): Promise<boolean>;
   /** Locales sin pin a los que todavía no se les buscó la dirección (o cuya última búsqueda fue antes de `intentadosAntesDe`). */
+  /** Los locales de la empresa con los datos de su cliente, en orden de comuna y nombre (hasta `limite`). */
+  exportarLocales(empresaId: string, filtro: FiltroExportacion, limite: number): Promise<readonly FilaExportacion[]>;
+  /** Deja el local sin foto. Devuelve true si el local existe en esa empresa. */
+  quitarFoto(empresaId: string, localId: string): Promise<boolean>;
   localesSinPin(empresaId: string, limite: number, intentadosAntesDe: Date): Promise<readonly LocalSinPin[]>;
   contarLocalesSinPin(empresaId: string): Promise<number>;
   /** Anota que se buscó la dirección de este local (con o sin éxito), para no repetir la búsqueda cada vez. */

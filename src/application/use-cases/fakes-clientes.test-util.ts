@@ -16,6 +16,8 @@ export const fakeClientes = (locales: LocalDetalle[] = []) => {
     obtenerLocal: vi.fn<ClienteRepository['obtenerLocal']>((empresaId, id) => Promise.resolve(empresaId === 'empresa-1' ? locales.find((l) => l.id === id) : undefined)),
     actualizarLocal: vi.fn<ClienteRepository['actualizarLocal']>((empresaId, id) => Promise.resolve(empresaId === 'empresa-1' && locales.some((l) => l.id === id))),
     fijarPinSiFalta: vi.fn<ClienteRepository['fijarPinSiFalta']>(() => Promise.resolve(true)),
+    exportarLocales: vi.fn<ClienteRepository['exportarLocales']>(() => Promise.resolve([])),
+    quitarFoto: vi.fn<ClienteRepository['quitarFoto']>(() => Promise.resolve(true)),
     localesSinPin: vi.fn<ClienteRepository['localesSinPin']>(() => Promise.resolve([])),
     contarLocalesSinPin: vi.fn<ClienteRepository['contarLocalesSinPin']>(() => Promise.resolve(0)),
     marcarIntentoGeocodificacion: vi.fn<ClienteRepository['marcarIntentoGeocodificacion']>(() => Promise.resolve()),
@@ -46,6 +48,7 @@ export const fakeAlmacen = () => {
   const almacen = {
     crearUrlSubida: vi.fn<AlmacenArchivos['crearUrlSubida']>((path) => Promise.resolve(ok({ url: `https://alm.test/subir/${path}?token=t` }))),
     crearUrlLectura: vi.fn<AlmacenArchivos['crearUrlLectura']>((path) => Promise.resolve(ok({ url: `https://alm.test/leer/${path}?token=t` }))),
+    eliminar: vi.fn<AlmacenArchivos['eliminar']>(() => Promise.resolve(ok(undefined))),
   } satisfies AlmacenArchivos;
   return almacen;
 };
@@ -53,6 +56,7 @@ export const fakeAlmacen = () => {
 export const fallaAlmacen = (): AlmacenArchivos => ({
   crearUrlSubida: () => Promise.resolve(err({ detalle: 'caído' })),
   crearUrlLectura: () => Promise.resolve(err({ detalle: 'caído' })),
+  eliminar: () => Promise.resolve(err({ detalle: 'caído' })),
 });
 
 export const idsFijos = (...valores: string[]): IdGenerator => {

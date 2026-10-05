@@ -6,4 +6,6 @@ export type ErrorAlmacen = { readonly detalle: string };
 export interface AlmacenArchivos {
   crearUrlSubida(path: string): Promise<Result<{ readonly url: string }, ErrorAlmacen>>;
   crearUrlLectura(path: string, expiraEnSegundos: number): Promise<Result<{ readonly url: string }, ErrorAlmacen>>;
+  /** Borra un archivo del almacenamiento (una foto reemplazada o quitada). Si ya no existe, no es un error. */
+  eliminar(path: string): Promise<Result<void, ErrorAlmacen>>;
 }

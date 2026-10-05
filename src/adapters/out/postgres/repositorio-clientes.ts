@@ -8,6 +8,8 @@ import type {
   CoincidenciaLocal,
   ConsultaBusqueda,
   EstadoPin,
+  FilaExportacion,
+  FiltroExportacion,
   LocalDetalle,
   LocalSinPin,
   NuevoClienteConLocal,
@@ -324,6 +326,49 @@ export class PostgresClienteRepository implements ClienteRepository {
       .where('empresa_id', '=', empresaId)
       .where((eb) => eb.or([eb('lat', 'is', null), eb.and([eb('pin_fuente', '=', 'geocodificador'), eb(sql<number>`coalesce(pin_confianza, 0)`, '<', 0.7)])]))
       .executeTakeFirst();
+    return r.numUpdatedRows > 0n;
+  }
+
+  async exportarLocales(empresaId: string, filtro: FiltroExportacion, limite: number): Promise<readonly FilaExportacion[]> {
+    let q = this.db
+      .selectFrom('local as l')
+      .innerJoin('cliente as c', 'c.id', 'l.cliente_id')
+      .select(['l.id as local_id', 'c.id as cliente_id', 'c.razon_social', 'c.rut', 'c.giro', 'c.estado', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng', 'l.pin_estado', 'l.pin_fuente', 'l.pin_confianza', 'l.nota', 'l.foto_path', 'l.creado_en'])
+      .where('l.empresa_id', '=', empresaId);
+    if (filtro.comunas !== undefined && filtro.comunas.length > 0) q = q.where('l.comuna', 'in', [...filtro.comunas]);
+    if (filtro.pin === 'con') q = q.where('l.lat', 'is not', null);
+    if (filtro.pin === 'sin') q = q.where('l.lat', 'is', null);
+    if (filtro.pin === 'aproximado') q = q.where('l.lat', 'is not', null).where('l.pin_fuente', '=', 'geocodificador').where(sql<number>`coalesce(l.pin_confianza, 0)`, '<', 0.7);
+    if (filtro.foto === 'con') q = q.where('l.foto_path', 'is not', null);
+    if (filtro.foto === 'sin') q = q.where('l.foto_path', 'is', null);
+    if (filtro.texto !== undefined && filtro.texto.trim() !== '') {
+      const patron = `%${normalizarTexto(filtro.texto)}%`;
+      const digitos = filtro.texto.replace(/\D/g, '');
+      // El RUT solo cuenta si lo escrito trae números (con «%%» coincidiría con todos los que tienen RUT).
+      q = q.where((eb) => eb.or([eb('c.razon_social_norm', 'like', patron), eb('l.direccion_norm', 'like', patron), ...(digitos !== '' ? [eb('c.rut', 'like', `%${digitos}%`)] : [])]));
+    }
+    const filas = await q.orderBy('l.comuna').orderBy('c.razon_social').orderBy('l.direccion').limit(limite).execute();
+    return filas.map((f) => ({
+      localId: f.local_id,
+      clienteId: f.cliente_id,
+      razonSocial: f.razon_social,
+      ...(f.rut !== null ? { rut: f.rut } : {}),
+      ...(f.giro !== null ? { giro: f.giro } : {}),
+      estadoCliente: f.estado,
+      direccion: f.direccion,
+      comuna: f.comuna,
+      ...(f.lat !== null && f.lng !== null ? { lat: f.lat, lng: f.lng } : {}),
+      pinEstado: f.pin_estado,
+      ...(f.pin_fuente !== null ? { pinFuente: f.pin_fuente } : {}),
+      ...(f.pin_confianza !== null ? { pinConfianza: f.pin_confianza } : {}),
+      ...(f.nota !== null ? { nota: f.nota } : {}),
+      tieneFoto: f.foto_path !== null,
+      creadoEn: f.creado_en.toISOString(),
+    }));
+  }
+
+  async quitarFoto(empresaId: string, localId: string): Promise<boolean> {
+    const r = await this.db.updateTable('local').set({ foto_path: null }).where('id', '=', localId).where('empresa_id', '=', empresaId).executeTakeFirst();
     return r.numUpdatedRows > 0n;
   }
 

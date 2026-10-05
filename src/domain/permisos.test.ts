@@ -4,6 +4,10 @@ import { esDeCamion, puede, TODOS_LOS_PERMISOS, type Permiso, type Rol } from '.
 const roles: Rol[] = ['admin', 'despachador', 'chofer', 'ayudante'];
 
 describe('permisos por rol', () => {
+  it('solo el admin exporta datos', () => {
+    expect(roles.filter((r) => puede(r, 'datos:exportar'))).toEqual(['admin']);
+  });
+
   it('el admin puede todo', () => {
     for (const p of TODOS_LOS_PERMISOS) expect(puede('admin', p)).toBe(true);
   });

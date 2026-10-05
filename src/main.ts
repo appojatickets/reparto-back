@@ -1,6 +1,6 @@
 import { checkHealth } from './application/use-cases/check-health.js';
 import { crearActualizarLocal } from './application/use-cases/actualizar-local.js';
-import { crearObtenerUrlFoto, crearRegistrarFotoLocal, crearSolicitarUrlSubida } from './application/use-cases/archivos.js';
+import { crearObtenerUrlFoto, crearQuitarFotoLocal, crearRegistrarFotoLocal, crearSolicitarUrlSubida } from './application/use-cases/archivos.js';
 import { crearActualizarCamion, crearCrearCamion, crearListarCamiones } from './application/use-cases/camiones.js';
 import { crearActualizarFactura, crearListarFacturas, crearRegistrarFactura } from './application/use-cases/facturas.js';
 import { crearGuardarConfigEmpresa, crearObtenerConfigEmpresa } from './application/use-cases/config-empresa.js';
@@ -28,6 +28,7 @@ import { PostgresHorarioRepository } from './adapters/out/postgres/repositorio-h
 import { PostgresJornadaRepository } from './adapters/out/postgres/repositorio-jornadas.js';
 import { PostgresEntregaRepository } from './adapters/out/postgres/repositorio-entregas.js';
 import { crearActualizarVendedor, crearCrearVendedor, crearListarVendedores } from './application/use-cases/vendedores.js';
+import { crearExportarLocales } from './application/use-cases/exportar-locales.js';
 import { crearBuscarPinesPendientes, crearEstadoBusquedaPines } from './application/use-cases/buscar-pines.js';
 import { crearColaGeocodificacion } from './application/use-cases/cola-geocodificacion.js';
 import { crearGeocodificarLocal } from './application/use-cases/geocodificar-local.js';
@@ -93,7 +94,9 @@ const casos: CasosDeUso = {
   listarPropuestasPin: crearListarPropuestasPin({ pines }),
   resolverPropuestaPin: crearResolverPropuestaPin({ pines, clock }),
   solicitarUrlSubida: crearSolicitarUrlSubida({ clientes, almacen, ids: generadorDeIds }),
-  registrarFotoLocal: crearRegistrarFotoLocal({ clientes }),
+  registrarFotoLocal: crearRegistrarFotoLocal({ clientes, almacen }),
+  quitarFotoLocal: crearQuitarFotoLocal({ clientes, almacen }),
+  exportarLocales: crearExportarLocales({ clientes }),
   obtenerUrlFoto: crearObtenerUrlFoto({ clientes, almacen }),
   listarCamiones: crearListarCamiones({ camiones }),
   crearCamion: crearCrearCamion({ camiones }),

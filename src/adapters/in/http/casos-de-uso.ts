@@ -1,7 +1,8 @@
 import type { HealthReport } from '../../../application/use-cases/check-health.js';
 import type { crearActualizarLocal } from '../../../application/use-cases/actualizar-local.js';
-import type { crearObtenerUrlFoto, crearRegistrarFotoLocal, crearSolicitarUrlSubida } from '../../../application/use-cases/archivos.js';
+import type { crearObtenerUrlFoto, crearQuitarFotoLocal, crearRegistrarFotoLocal, crearSolicitarUrlSubida } from '../../../application/use-cases/archivos.js';
 import type { crearActualizarCamion, crearCrearCamion, crearListarCamiones } from '../../../application/use-cases/camiones.js';
+import type { crearExportarLocales } from '../../../application/use-cases/exportar-locales.js';
 import type { crearBuscarPinesPendientes, crearEstadoBusquedaPines } from '../../../application/use-cases/buscar-pines.js';
 import type { crearFijarPinDesdeEnlace } from '../../../application/use-cases/pin-desde-enlace.js';
 import type { crearActualizarVendedor, crearCrearVendedor, crearListarVendedores } from '../../../application/use-cases/vendedores.js';
@@ -42,6 +43,8 @@ export type CasosDeUso = {
   readonly resolverPropuestaPin: ReturnType<typeof crearResolverPropuestaPin>;
   readonly solicitarUrlSubida: ReturnType<typeof crearSolicitarUrlSubida>;
   readonly registrarFotoLocal: ReturnType<typeof crearRegistrarFotoLocal>;
+  readonly quitarFotoLocal: ReturnType<typeof crearQuitarFotoLocal>;
+  readonly exportarLocales: ReturnType<typeof crearExportarLocales>;
   readonly obtenerUrlFoto: ReturnType<typeof crearObtenerUrlFoto>;
   readonly listarCamiones: ReturnType<typeof crearListarCamiones>;
   readonly crearCamion: ReturnType<typeof crearCrearCamion>;

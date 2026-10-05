@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { crearObtenerUrlFoto, crearRegistrarFotoLocal, crearSolicitarUrlSubida } from './archivos.js';
+import { crearObtenerUrlFoto, crearQuitarFotoLocal, crearRegistrarFotoLocal, crearSolicitarUrlSubida } from './archivos.js';
 import { crearImportarPines, crearListarPropuestasPin, crearResolverPropuestaPin } from './pines.js';
 import { crearReloj, usuarioDe } from './fakes.test-util.js';
 import { fakeAlmacen, fakeClientes, fakePines, fallaAlmacen, idsFijos, localDe } from './fakes-clientes.test-util.js';
@@ -108,6 +108,33 @@ describe('fotos de fachada (URL firmada)', () => {
       const r = await registrar(chofer, 'l-1', malo);
       expect(!r.ok && r.error.codigo).toBe('VALIDACION');
     }
+  });
+
+  it('al cambiar la foto se borra la anterior del almacenamiento (y si falla el borrado igual queda la nueva)', async () => {
+    const almacen = fakeAlmacen();
+    const nueva = `empresa-1/l-1/${UUID}.webp`;
+    const clientes = fakeClientes([localDe({ fotoPath: 'empresa-1/l-1/vieja.webp' })]);
+    expect((await crearRegistrarFotoLocal({ clientes, almacen })(chofer, 'l-1', nueva)).ok).toBe(true);
+    expect(almacen.eliminar).toHaveBeenCalledWith('empresa-1/l-1/vieja.webp');
+    const sinAnterior = fakeAlmacen();
+    await crearRegistrarFotoLocal({ clientes: fakeClientes([localDe()]), almacen: sinAnterior })(chofer, 'l-1', nueva);
+    expect(sinAnterior.eliminar).not.toHaveBeenCalled();
+    const r = await crearRegistrarFotoLocal({ clientes: fakeClientes([localDe({ fotoPath: 'x' })]), almacen: fallaAlmacen() })(chofer, 'l-1', nueva);
+    expect(r.ok).toBe(true);
+  });
+
+  it('quitar la foto la saca del local y del almacenamiento; repetirlo no falla; un local inexistente es NO_ENCONTRADO', async () => {
+    const almacen = fakeAlmacen();
+    const clientes = fakeClientes([localDe({ fotoPath: 'empresa-1/l-1/x.webp' })]);
+    const quitar = crearQuitarFotoLocal({ clientes, almacen });
+    expect((await quitar(admin, 'l-1')).ok).toBe(true);
+    expect(clientes.quitarFoto).toHaveBeenCalledWith('empresa-1', 'l-1');
+    expect(almacen.eliminar).toHaveBeenCalledWith('empresa-1/l-1/x.webp');
+    const sinFoto = fakeClientes([localDe()]);
+    expect((await crearQuitarFotoLocal({ clientes: sinFoto, almacen })(admin, 'l-1')).ok).toBe(true);
+    expect(sinFoto.quitarFoto).not.toHaveBeenCalled();
+    const no = await quitar(admin, 'otro');
+    expect(!no.ok && no.error.codigo).toBe('NO_ENCONTRADO');
   });
 
   it('registrar en un local inexistente es NO_ENCONTRADO', async () => {

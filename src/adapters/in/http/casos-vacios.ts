@@ -29,6 +29,8 @@ export const casosVacios = (): CasosDeUso => {
     resolverPropuestaPin: sinImplementar,
     solicitarUrlSubida: sinImplementar,
     registrarFotoLocal: sinImplementar,
+    quitarFotoLocal: sinImplementar,
+    exportarLocales: sinImplementar,
     obtenerUrlFoto: sinImplementar,
     listarCamiones: sinImplementar,
     crearCamion: sinImplementar,
