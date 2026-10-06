@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { esHostDeMapas, extraerEnlace, leerCoordenadaDeEnlace } from './enlace-mapa.js';
+import { esHostDeMapas, extraerEnlace, leerCoordenadaDeEnlace, leerCoordenadaDeHtml } from './enlace-mapa.js';
 
 const P = { lat: -33.5972, lng: -70.7019 };
 
@@ -46,5 +46,27 @@ describe('leer coordenadas de un enlace de mapa', () => {
     expect(esHostDeMapas('evil.com')).toBe(false);
     expect(esHostDeMapas('maps.app.goo.gl.evil.com')).toBe(false);
     expect(esHostDeMapas('127.0.0.1')).toBe(false);
+  });
+});
+
+describe('leer el punto desde la página del lugar', () => {
+  it('lo toma de la imagen del mapa (center=lat,lng), con o sin codificar', () => {
+    expect(leerCoordenadaDeHtml('<meta property="og:image" content="https://maps.google.com/maps/api/staticmap?center=-33.6102%2C-70.5758&amp;zoom=15&amp;size=256x256">')).toEqual({ lat: -33.6102, lng: -70.5758 });
+    expect(leerCoordenadaDeHtml('x center=-33.6102,-70.5758&zoom=15')).toEqual({ lat: -33.6102, lng: -70.5758 });
+  });
+
+  it('lo toma de la posición inicial de la vista, que viene como longitud y luego latitud', () => {
+    expect(leerCoordenadaDeHtml('window.APP_INITIALIZATION_STATE=[[[4551.7,-70.5758,-33.6102],[0,0,0],[1024,768],13.1],null]')).toEqual({ lat: -33.6102, lng: -70.5758 });
+  });
+
+  it('o de una dirección con @lat,lng o con !3d…!4d…', () => {
+    expect(leerCoordenadaDeHtml('<link rel="canonical" href="https://www.google.com/maps/place/Los+Tilos/@-33.6102,-70.5758,17z/data=x">')).toEqual({ lat: -33.6102, lng: -70.5758 });
+    expect(leerCoordenadaDeHtml('data=!4m6!3m5!8m2!3d-33.6102!4d-70.5758')).toEqual({ lat: -33.6102, lng: -70.5758 });
+  });
+
+  it('ignora lo que cae fuera de la Región Metropolitana (por ejemplo la imagen de un mapa de otro lugar) y sigue con lo siguiente', () => {
+    expect(leerCoordenadaDeHtml('center=40.4168,-3.7038 y luego @-33.6102,-70.5758')).toEqual({ lat: -33.6102, lng: -70.5758 });
+    expect(leerCoordenadaDeHtml('center=40.4168,-3.7038')).toBeUndefined();
+    expect(leerCoordenadaDeHtml('<html>nada útil</html>')).toBeUndefined();
   });
 });

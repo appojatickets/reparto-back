@@ -11,7 +11,7 @@ const CORTO = 'Ubicación https://maps.app.goo.gl/AbC123';
 const armar = (local = localDe(), larga: string | null = LARGO) => {
   const clientes = fakeClientes([local]);
   const pines = fakePines();
-  const resolver = vi.fn<ResolvedorEnlaces['resolver']>(() => Promise.resolve(larga ?? undefined));
+  const resolver = vi.fn<ResolvedorEnlaces['resolver']>(() => Promise.resolve(larga === null ? undefined : { url: larga }));
   return { clientes, pines, resolver, caso: crearFijarPinDesdeEnlace({ clientes, pines, resolvedor: { resolver } }) };
 };
 
@@ -29,6 +29,22 @@ describe('pin desde un enlace compartido', () => {
     const r = await caso(chofer, 'l-1', CORTO);
     expect(r.ok && r.value.resultado).toBe('fijado');
     expect(resolver).toHaveBeenCalledWith('https://maps.app.goo.gl/AbC123');
+  });
+
+  it('si la dirección larga no trae el punto pero la página del lugar sí, lo lee de la página', async () => {
+    const { caso, resolver } = armar();
+    resolver.mockResolvedValueOnce({ url: 'https://www.google.com/maps/place/Los+Tilos+265/data=!4m2!3m1!1s0x9662d:0xabc', cuerpo: '<meta content="https://maps.google.com/maps/api/staticmap?center=-33.6102%2C-70.5758">' });
+    const r = await caso(chofer, 'l-1', 'https://maps.app.goo.gl/tQsDTWhhRh9eyaTC8');
+    expect(r).toEqual({ ok: true, value: { resultado: 'fijado', lat: -33.6102, lng: -70.5758 } });
+  });
+
+  it('si se abrió el enlace pero no trae el punto en ninguna parte, explica qué hacer (dejar un pin en Google Maps)', async () => {
+    const { caso, clientes, resolver } = armar();
+    resolver.mockResolvedValueOnce({ url: 'https://www.google.com/maps/place/Los+Tilos+265', cuerpo: '<html>sin datos</html>' });
+    const r = await caso(chofer, 'l-1', 'https://maps.app.goo.gl/tQsDTWhhRh9eyaTC8');
+    expect(!r.ok && r.error.codigo).toBe('VALIDACION');
+    expect(!r.ok && r.error.mensaje).toContain('mantén apretado');
+    expect(clientes.actualizarLocal).not.toHaveBeenCalled();
   });
 
   it('un enlace corto que no se puede abrir, o de otro sitio, es VALIDACION y no toca nada', async () => {

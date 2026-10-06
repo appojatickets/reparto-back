@@ -63,3 +63,31 @@ export const leerCoordenadaDeEnlace = (texto: string): Coordenada | undefined =>
   const ruta = new RegExp(`/maps/(?:search|place)/\\+?${PAR}`).exec(completo);
   return ruta ? coordenada(ruta[1], ruta[2]) : undefined;
 };
+
+const DECIMAL = '(-?\\d{1,3}\\.\\d{3,})';
+
+/**
+ * Cuando el enlace compartido no trae el punto en la dirección (Google identifica el lugar por un código interno), la propia página
+ * del lugar sí lo lleva: en la imagen del mapa (`center=lat,lng`), en la posición inicial de la vista (`[[[zoom,lng,lat]`) o en
+ * una dirección con `@lat,lng`. Se prueban en ese orden y se acepta solo lo que cae en la Región Metropolitana.
+ */
+export const leerCoordenadaDeHtml = (html: string): Coordenada | undefined => {
+  const texto = html.replace(/&amp;/g, '&').replace(/\\u003d/gi, '=').replace(/\\u0026/gi, '&');
+  const imagen = new RegExp(`center=${DECIMAL}(?:%2C|,)${DECIMAL}`).exec(texto);
+  if (imagen) {
+    const c = coordenada(imagen[1], imagen[2]);
+    if (c) return c;
+  }
+  const inicial = new RegExp(`APP_INITIALIZATION_STATE=\\[\\[\\[\\s*-?[\\d.]+\\s*,\\s*${DECIMAL}\\s*,\\s*${DECIMAL}`).exec(texto);
+  if (inicial) {
+    const c = coordenada(inicial[2], inicial[1]);
+    if (c) return c;
+  }
+  const arroba = new RegExp(`@${DECIMAL},${DECIMAL}`).exec(texto);
+  if (arroba) {
+    const c = coordenada(arroba[1], arroba[2]);
+    if (c) return c;
+  }
+  const exacto = new RegExp(`!3d${DECIMAL}!4d${DECIMAL}`).exec(texto);
+  return exacto ? coordenada(exacto[1], exacto[2]) : undefined;
+};
