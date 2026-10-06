@@ -7,6 +7,9 @@ import { crearGuardarConfigEmpresa, crearObtenerConfigEmpresa } from './applicat
 import { crearServiciosDeRuta } from './application/use-cases/rutas.js';
 import { crearGuardarHorario, crearObtenerHorario } from './application/use-cases/horarios.js';
 import { crearIniciarJornada, crearMiJornada, crearResolverCamion, crearTerminarJornada } from './application/use-cases/jornada.js';
+import { crearVerAnalitica } from './application/use-cases/analitica.js';
+import { crearAnalizarAprendizaje } from './application/use-cases/analizar-aprendizaje.js';
+import { crearRegistrarPosiciones } from './application/use-cases/seguimiento.js';
 import { crearRegistrarEvento } from './application/use-cases/entregas.js';
 import { crearAutenticarUsuario } from './application/use-cases/autenticar-usuario.js';
 import { crearBuscarClientes } from './application/use-cases/buscar-clientes.js';
@@ -23,6 +26,9 @@ import type { CasosDeUso } from './adapters/in/http/casos-de-uso.js';
 import { createDb } from './adapters/out/postgres/client.js';
 import { PostgresDatabaseHealth } from './adapters/out/postgres/database-health.js';
 import { PostgresEmpresaRepository } from './adapters/out/postgres/repositorio-empresa.js';
+import { PostgresAnaliticaRepository } from './adapters/out/postgres/repositorio-analitica.js';
+import { PostgresAprendizajeRepository } from './adapters/out/postgres/repositorio-aprendizaje.js';
+import { PostgresRegistroAprendizajeRepository } from './adapters/out/postgres/repositorio-registro-aprendizaje.js';
 import { PostgresRutaRepository } from './adapters/out/postgres/repositorio-rutas.js';
 import { PostgresHorarioRepository } from './adapters/out/postgres/repositorio-horarios.js';
 import { PostgresJornadaRepository } from './adapters/out/postgres/repositorio-jornadas.js';
@@ -65,6 +71,7 @@ const rutas = new PostgresRutaRepository(db);
 const horarios = new PostgresHorarioRepository(db);
 const jornadas = new PostgresJornadaRepository(db);
 const entregas = new PostgresEntregaRepository(db);
+const registro = new PostgresRegistroAprendizajeRepository(db);
 const identidad = new IdentidadSupabase({ urlBase: env.SUPABASE_URL, claveServicio: env.SUPABASE_SERVICE_ROLE_KEY, clavePublica: env.SUPABASE_ANON_KEY });
 const almacen = new AlmacenSupabase({ urlBase: env.SUPABASE_URL, claveServicio: env.SUPABASE_SERVICE_ROLE_KEY });
 const dbHealth = new PostgresDatabaseHealth(db);
@@ -78,7 +85,32 @@ const colaDePines = crearColaGeocodificacion({
   esperar: (ms) => new Promise((resolver) => { setTimeout(resolver, ms); }),
 });
 const programarPines = (empresaId: string, localIds: readonly string[]): void => { colaDePines.encolar(empresaId, localIds); };
-const serviciosDeRuta = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas, jornadas, clock, resolverCamion, programarPines });
+const aprendizaje = new PostgresAprendizajeRepository(db);
+const analitica = new PostgresAnaliticaRepository(db);
+const serviciosDeRuta = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas, jornadas, registro, aprendizaje, clock, resolverCamion, programarPines });
+const analizarAprendizaje = crearAnalizarAprendizaje({ aprendizaje, empresas, pines, clock });
+
+// El analizador corre en segundo plano: poco después de terminar una ruta (con calma, juntando varias) y cada pocas horas. Nunca bloquea una petición.
+const CADA_HORAS = 3;
+let analizando = false;
+let programado: NodeJS.Timeout | undefined;
+const analizarTodo = async (): Promise<void> => {
+  if (analizando) return;
+  analizando = true;
+  try {
+    for (const empresaId of await aprendizaje.empresas()) await analizarAprendizaje(empresaId);
+  } catch (e) {
+    console.error('El análisis de aprendizaje falló', e);
+  } finally {
+    analizando = false;
+  }
+};
+const analizarPronto = (): void => {
+  if (programado) return;
+  programado = setTimeout(() => { programado = undefined; void analizarTodo(); }, 30_000);
+  programado.unref();
+};
+const terminarJornada = crearTerminarJornada({ jornadas, facturas, rutas, registro, clock });
 const casos: CasosDeUso = {
   checkHealth: () => checkHealth({ db: dbHealth, clock }),
   autenticar: crearAutenticarUsuario({ identidad, usuarios, clock }),
@@ -121,8 +153,15 @@ const casos: CasosDeUso = {
   operarRuta: serviciosDeRuta.operar,
   miJornada: crearMiJornada({ jornadas, clock }),
   iniciarJornada: crearIniciarJornada({ jornadas, rutas, clock }),
-  terminarJornada: crearTerminarJornada({ jornadas, facturas, rutas, clock }),
-  registrarEvento: crearRegistrarEvento({ facturas, entregas, clientes, resolverCamion }),
+  terminarJornada: async (actor) => {
+    const resumen = await terminarJornada(actor);
+    analizarPronto();
+    return resumen;
+  },
+  verAnalitica: crearVerAnalitica({ analitica, aprendizaje, camiones, clock }),
+  ejecutarAnalisis: analizarAprendizaje,
+  registrarPosiciones: crearRegistrarPosiciones({ registro, rutas, entregas, resolverCamion, clock }),
+  registrarEvento: crearRegistrarEvento({ facturas, entregas, clientes, rutas, resolverCamion }),
   obtenerHorario: crearObtenerHorario({ horarios }),
   guardarHorario: crearGuardarHorario({ horarios }),
   obtenerConfigEmpresa: crearObtenerConfigEmpresa({ empresas }),
@@ -139,3 +178,6 @@ process.on('SIGTERM', () => void shutdown());
 process.on('SIGINT', () => void shutdown());
 
 await app.listen({ port: env.PORT, host: '0.0.0.0' });
+const ciclo = setInterval(() => void analizarTodo(), CADA_HORAS * 3_600_000);
+ciclo.unref();
+analizarPronto();

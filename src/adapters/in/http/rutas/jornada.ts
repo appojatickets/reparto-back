@@ -71,6 +71,32 @@ export const rutasJornada = ({ app, casos, guard }: ContextoRutas): void => {
     },
   );
 
+  a.post(
+    '/v1/jornada/posiciones',
+    {
+      preHandler: guard('jornada:gestionar'),
+      schema: {
+        tags: ['jornada'],
+        summary: 'Informar dónde está el camión mientras la app está abierta (se sigue al camión, no a la persona); si se queda junto al pin de una entrega, el servidor anota la llegada solo',
+        security: SEGURIDAD,
+        body: z.object({
+          puntos: z.array(z.object({
+            lat: z.number().min(-90).max(90),
+            lng: z.number().min(-180).max(180),
+            precisionM: z.number().min(0).max(100_000).optional(),
+            velocidadMs: z.number().min(0).max(100).optional(),
+            tomadoEn: z.iso.datetime(),
+          })).min(1).max(30),
+        }),
+        response: { 200: z.object({ guardados: z.number(), descartados: z.number(), llegadasAutomaticas: z.array(z.string()) }), ...RESPUESTAS_ERROR },
+      },
+    },
+    async (req, reply) => {
+      const r = await casos.registrarPosiciones(actor(req), req.body.puntos.map((p) => ({ ...p, tomadoEn: new Date(p.tomadoEn) })));
+      return r.ok ? reply.send({ ...r.value, llegadasAutomaticas: [...r.value.llegadasAutomaticas] }) : enviarError(reply, r.error);
+    },
+  );
+
   a.delete(
     '/v1/jornada',
     {

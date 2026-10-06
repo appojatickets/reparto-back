@@ -122,7 +122,68 @@ export type Tabla = {
     lat: number | null;
     lng: number | null;
     precision_m: number | null;
+    origen: Generated<'manual' | 'auto'>;
+    posicion_en_ruta: number | null;
+    paradas_en_ruta: number | null;
     creado_en: Generated<Date>;
+  };
+  ruta_operacion: {
+    id: Generated<string>;
+    empresa_id: string;
+    camion_id: string;
+    fecha_reparto: string;
+    usuario_id: string | null;
+    tipo: 'planificar' | 'subir' | 'bajar' | 'primero' | 'despues' | 'quitar' | 'ordenar' | 'insertar' | 'salida';
+    factura_id: string | null;
+    modo: 'sugerida' | 'manual';
+    version: number;
+    orden: string[];
+    creado_en: Generated<Date>;
+  };
+  posicion_camion: {
+    id: Generated<string>;
+    empresa_id: string;
+    camion_id: string;
+    usuario_id: string | null;
+    lat: number;
+    lng: number;
+    precision_m: number | null;
+    velocidad_ms: number | null;
+    tomado_en: Date;
+    creado_en: Generated<Date>;
+  };
+  jornada_resumen: {
+    jornada_id: string;
+    empresa_id: string;
+    camion_id: string;
+    fecha_reparto: string;
+    paradas: number;
+    entregadas: number;
+    no_entregadas: number;
+    sin_hacer: number;
+    sin_hacer_ids: string[];
+    duracion_min: number | null;
+    dist_sugerida_m: number | null;
+    dist_real_m: number | null;
+    inversiones: number | null;
+    analizado_en: Date | null;
+    creado_en: Generated<Date>;
+  };
+  aprendizaje_parametro: {
+    empresa_id: string;
+    clave: 'ritmo' | 'servicio_min' | 'capacidad_paradas' | 'duracion_jornada_min';
+    ambito: string;
+    valor: number;
+    muestras: number;
+    confianza: number;
+    calculado_en: Date;
+  };
+  aprendizaje_ejecucion: {
+    id: Generated<string>;
+    empresa_id: string;
+    iniciado_en: Date;
+    terminado_en: Date;
+    resumen: unknown;
   };
   jornada: {
     id: Generated<string>;

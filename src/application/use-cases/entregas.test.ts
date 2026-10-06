@@ -3,6 +3,7 @@ import type { EntregaRepository } from '../ports/out/entregas.js';
 import { usuarioDe } from './fakes.test-util.js';
 import { facturaDe, fakeFacturas, JORNADA, resolverDePrueba } from './fakes-facturas.test-util.js';
 import { fakeClientes } from './fakes-clientes.test-util.js';
+import { fakeRutas } from './fakes-rutas.test-util.js';
 import { crearRegistrarEvento } from './entregas.js';
 
 const chofer = usuarioDe({ id: 'u-chofer', rol: 'chofer' });
@@ -13,10 +14,11 @@ const pos = { lat: -33.45, lng: -70.66, precisionM: 15 };
 const montar = (factura = facturaDe({ camion: { id: 'cam-1', patente: 'ABCD12' }, local: { id: 'l-1', razonSocial: 'Rabelo', direccion: 'Av. Colón 765', comuna: 'San Bernardo', tienePin: false } }), jornada = JORNADA) => {
   const facturas = fakeFacturas();
   facturas.obtener.mockResolvedValue(factura);
-  const entregas = { registrar: vi.fn<EntregaRepository['registrar']>(() => Promise.resolve()), ultimaPosicion: vi.fn<EntregaRepository['ultimaPosicion']>(() => Promise.resolve(undefined)) };
+  const entregas = { registrar: vi.fn<EntregaRepository['registrar']>(() => Promise.resolve()), ultimaPosicion: vi.fn<EntregaRepository['ultimaPosicion']>(() => Promise.resolve(undefined)), conLlegada: vi.fn<EntregaRepository['conLlegada']>(() => Promise.resolve(new Set<string>())) };
   const clientes = fakeClientes();
-  const registrar = crearRegistrarEvento({ facturas, entregas, clientes, resolverCamion: resolverDePrueba(jornada) });
-  return { registrar, facturas, entregas, clientes };
+  const rutas = fakeRutas();
+  const registrar = crearRegistrarEvento({ facturas, entregas, clientes, rutas: rutas.repo, resolverCamion: resolverDePrueba(jornada) });
+  return { registrar, facturas, entregas, clientes, rutas };
 };
 
 describe('registrar evento de entrega', () => {
@@ -26,6 +28,13 @@ describe('registrar evento de entrega', () => {
     expect(r).toEqual({ ok: true, value: { estado: 'pendiente', pinFijado: true } });
     expect(t.entregas.registrar).toHaveBeenCalledWith('empresa-1', expect.objectContaining({ tipo: 'llegada', facturaId: 'f-1', localId: 'l-1', camionId: 'cam-1', usuarioId: 'u-chofer', lat: -33.45, lng: -70.66 }));
     expect(t.clientes.fijarPinSiFalta).toHaveBeenCalledWith('empresa-1', 'l-1', -33.45, -70.66);
+  });
+
+  it('el aviso guarda en qué lugar de la ruta iba la parada y cuántas había, y que lo avisó una persona', async () => {
+    const t = montar();
+    t.rutas.repo.obtener.mockResolvedValue({ id: 'r-1', camionId: 'cam-1', fecha: '2026-10-05', salidaMin: 480, modo: 'sugerida', version: 3, orden: ['f-9', 'f-8', 'f-1', 'f-7'], fijas: [] });
+    await t.registrar(chofer, 'f-1', { tipo: 'llegada', ...pos });
+    expect(t.entregas.registrar).toHaveBeenCalledWith('empresa-1', expect.objectContaining({ origen: 'manual', posicionEnRuta: 3, paradasEnRuta: 4 }));
   });
 
   it('si el local ya tiene pin, la posición queda solo como evidencia', async () => {
@@ -77,7 +86,7 @@ describe('registrar evento de entrega', () => {
     expect(!r.ok && r.error).toMatchObject({ codigo: 'SIN_PERMISO', mensaje: 'Esa entrega no es de tu camión de hoy.' });
     const sinCamion = montar(facturaDe());
     expect((await sinCamion.registrar(chofer, 'f-1', { tipo: 'entregado' })).ok).toBe(false);
-    const sinJornada = crearRegistrarEvento({ facturas: ajena.facturas, entregas: ajena.entregas, clientes: ajena.clientes, resolverCamion: resolverDePrueba() });
+    const sinJornada = crearRegistrarEvento({ facturas: ajena.facturas, entregas: ajena.entregas, clientes: ajena.clientes, rutas: fakeRutas().repo, resolverCamion: resolverDePrueba() });
     const s = await sinJornada(chofer, 'f-1', { tipo: 'llegada' });
     expect(!s.ok && s.error).toMatchObject({ detalle: { codigo: 'SIN_JORNADA' } });
     expect(ajena.entregas.registrar).not.toHaveBeenCalled();

@@ -21,6 +21,9 @@ export class PostgresEntregaRepository implements EntregaRepository {
           lat: e.lat ?? null,
           lng: e.lng ?? null,
           precision_m: e.precisionM ?? null,
+          origen: e.origen ?? 'manual',
+          posicion_en_ruta: e.posicionEnRuta ?? null,
+          paradas_en_ruta: e.paradasEnRuta ?? null,
         })
         .execute();
       if (e.nuevoEstado !== undefined) {
@@ -41,5 +44,11 @@ export class PostgresEntregaRepository implements EntregaRepository {
       .limit(1)
       .executeTakeFirst();
     return f && f.lat !== null && f.lng !== null ? { lat: f.lat, lng: f.lng, en: f.creado_en } : undefined;
+  }
+
+  async conLlegada(empresaId: string, facturaIds: readonly string[]): Promise<ReadonlySet<string>> {
+    if (facturaIds.length === 0) return new Set();
+    const filas = await this.db.selectFrom('entrega_evento').select('factura_id').where('empresa_id', '=', empresaId).where('tipo', '=', 'llegada').where('factura_id', 'in', [...facturaIds]).execute();
+    return new Set(filas.map((f) => f.factura_id));
   }
 }

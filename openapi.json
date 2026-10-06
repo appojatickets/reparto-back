@@ -14485,6 +14485,1244 @@
         }
       }
     },
+    "/v1/jornada/posiciones": {
+      "post": {
+        "summary": "Informar dónde está el camión mientras la app está abierta (se sigue al camión, no a la persona); si se queda junto al pin de una entrega, el servidor anota la llegada solo",
+        "tags": [
+          "jornada"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "puntos": {
+                    "minItems": 1,
+                    "maxItems": 30,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "lat": {
+                          "type": "number",
+                          "minimum": -90,
+                          "maximum": 90
+                        },
+                        "lng": {
+                          "type": "number",
+                          "minimum": -180,
+                          "maximum": 180
+                        },
+                        "precisionM": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 100000
+                        },
+                        "velocidadMs": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        "tomadoEn": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        }
+                      },
+                      "required": [
+                        "lat",
+                        "lng",
+                        "tomadoEn"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "puntos"
+                ]
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "guardados": {
+                      "type": "number"
+                    },
+                    "descartados": {
+                      "type": "number"
+                    },
+                    "llegadasAutomaticas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "guardados",
+                    "descartados",
+                    "llegadasAutomaticas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/analitica": {
+      "get": {
+        "summary": "Panel del admin: qué datos se están guardando, qué aprendió el sistema y cuánto se parece la ruta sugerida a la manejada (últimos 30 días)",
+        "tags": [
+          "analitica"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "desde": {
+                      "type": "string"
+                    },
+                    "cobertura": {
+                      "type": "object",
+                      "properties": {
+                        "jornadas": {
+                          "type": "number"
+                        },
+                        "jornadasTerminadas": {
+                          "type": "number"
+                        },
+                        "avisos": {
+                          "type": "number"
+                        },
+                        "avisosConGps": {
+                          "type": "number"
+                        },
+                        "avisosAutomaticos": {
+                          "type": "number"
+                        },
+                        "paradasConLlegada": {
+                          "type": "number"
+                        },
+                        "paradasResueltas": {
+                          "type": "number"
+                        },
+                        "puntosGps": {
+                          "type": "number"
+                        },
+                        "ultimoPuntoGps": {
+                          "type": "string"
+                        },
+                        "operacionesRuta": {
+                          "type": "number"
+                        },
+                        "correccionesManuales": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "jornadas",
+                        "jornadasTerminadas",
+                        "avisos",
+                        "avisosConGps",
+                        "avisosAutomaticos",
+                        "paradasConLlegada",
+                        "paradasResueltas",
+                        "puntosGps",
+                        "operacionesRuta",
+                        "correccionesManuales"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "porDia": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "fecha": {
+                            "type": "string"
+                          },
+                          "jornadas": {
+                            "type": "number"
+                          },
+                          "atendidas": {
+                            "type": "number"
+                          },
+                          "sinHacer": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "fecha",
+                          "jornadas",
+                          "atendidas",
+                          "sinHacer"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "calidad": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "fecha": {
+                            "type": "string"
+                          },
+                          "camionId": {
+                            "type": "string"
+                          },
+                          "camion": {
+                            "type": "string"
+                          },
+                          "distSugeridaM": {
+                            "type": "number"
+                          },
+                          "distRealM": {
+                            "type": "number"
+                          },
+                          "inversiones": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "fecha",
+                          "camionId",
+                          "distSugeridaM",
+                          "distRealM",
+                          "inversiones"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "aprendido": {
+                      "type": "object",
+                      "properties": {
+                        "ritmo": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "clave": {
+                                "type": "string",
+                                "enum": [
+                                  "ritmo",
+                                  "servicio_min",
+                                  "capacidad_paradas",
+                                  "duracion_jornada_min"
+                                ]
+                              },
+                              "ambito": {
+                                "type": "string"
+                              },
+                              "valor": {
+                                "type": "number"
+                              },
+                              "muestras": {
+                                "type": "number"
+                              },
+                              "confianza": {
+                                "type": "number"
+                              },
+                              "camion": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "clave",
+                              "ambito",
+                              "valor",
+                              "muestras",
+                              "confianza"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "capacidad": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "clave": {
+                                "type": "string",
+                                "enum": [
+                                  "ritmo",
+                                  "servicio_min",
+                                  "capacidad_paradas",
+                                  "duracion_jornada_min"
+                                ]
+                              },
+                              "ambito": {
+                                "type": "string"
+                              },
+                              "valor": {
+                                "type": "number"
+                              },
+                              "muestras": {
+                                "type": "number"
+                              },
+                              "confianza": {
+                                "type": "number"
+                              },
+                              "camion": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "clave",
+                              "ambito",
+                              "valor",
+                              "muestras",
+                              "confianza"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "servicioGeneral": {
+                          "type": "object",
+                          "properties": {
+                            "clave": {
+                              "type": "string",
+                              "enum": [
+                                "ritmo",
+                                "servicio_min",
+                                "capacidad_paradas",
+                                "duracion_jornada_min"
+                              ]
+                            },
+                            "ambito": {
+                              "type": "string"
+                            },
+                            "valor": {
+                              "type": "number"
+                            },
+                            "muestras": {
+                              "type": "number"
+                            },
+                            "confianza": {
+                              "type": "number"
+                            },
+                            "camion": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "clave",
+                            "ambito",
+                            "valor",
+                            "muestras",
+                            "confianza"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "localesLentos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "clave": {
+                                "type": "string",
+                                "enum": [
+                                  "ritmo",
+                                  "servicio_min",
+                                  "capacidad_paradas",
+                                  "duracion_jornada_min"
+                                ]
+                              },
+                              "ambito": {
+                                "type": "string"
+                              },
+                              "valor": {
+                                "type": "number"
+                              },
+                              "muestras": {
+                                "type": "number"
+                              },
+                              "confianza": {
+                                "type": "number"
+                              },
+                              "camion": {
+                                "type": "string"
+                              },
+                              "etiqueta": {
+                                "type": "object",
+                                "properties": {
+                                  "razonSocial": {
+                                    "type": "string"
+                                  },
+                                  "direccion": {
+                                    "type": "string"
+                                  },
+                                  "comuna": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "razonSocial",
+                                  "direccion",
+                                  "comuna"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "clave",
+                              "ambito",
+                              "valor",
+                              "muestras",
+                              "confianza"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "ritmo",
+                        "capacidad",
+                        "localesLentos"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "cierres": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cerrados": {
+                            "type": "number"
+                          },
+                          "intentos": {
+                            "type": "number"
+                          },
+                          "horasCerrado": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            }
+                          },
+                          "etiqueta": {
+                            "type": "object",
+                            "properties": {
+                              "razonSocial": {
+                                "type": "string"
+                              },
+                              "direccion": {
+                                "type": "string"
+                              },
+                              "comuna": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "razonSocial",
+                              "direccion",
+                              "comuna"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "localId",
+                          "cerrados",
+                          "intentos",
+                          "horasCerrado"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "ultimaEjecucion": {
+                      "type": "object",
+                      "properties": {
+                        "iniciadoEn": {
+                          "type": "string"
+                        },
+                        "terminadoEn": {
+                          "type": "string"
+                        },
+                        "resumen": {
+                          "type": "object",
+                          "properties": {
+                            "eventos": {
+                              "type": "number"
+                            },
+                            "jornadas": {
+                              "type": "number"
+                            },
+                            "parametros": {
+                              "type": "number"
+                            },
+                            "jornadasComparadas": {
+                              "type": "number"
+                            },
+                            "pinesSugeridos": {
+                              "type": "number"
+                            },
+                            "pinesProponidos": {
+                              "type": "number"
+                            },
+                            "cierresFrecuentes": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "localId": {
+                                    "type": "string"
+                                  },
+                                  "cerrados": {
+                                    "type": "number"
+                                  },
+                                  "intentos": {
+                                    "type": "number"
+                                  },
+                                  "confianzaAbierto": {
+                                    "type": "number"
+                                  },
+                                  "horasCerrado": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "number"
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "localId",
+                                  "cerrados",
+                                  "intentos",
+                                  "confianzaAbierto",
+                                  "horasCerrado"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "eventos",
+                            "jornadas",
+                            "parametros",
+                            "jornadasComparadas",
+                            "pinesSugeridos",
+                            "pinesProponidos",
+                            "cierresFrecuentes"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "iniciadoEn",
+                        "terminadoEn",
+                        "resumen"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "desde",
+                    "cobertura",
+                    "porDia",
+                    "calidad",
+                    "aprendido",
+                    "cierres"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/analitica/ejecutar": {
+      "post": {
+        "summary": "Correr el análisis ahora (normalmente corre solo en segundo plano) y devolver su resumen",
+        "tags": [
+          "analitica"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "eventos": {
+                      "type": "number"
+                    },
+                    "jornadas": {
+                      "type": "number"
+                    },
+                    "parametros": {
+                      "type": "number"
+                    },
+                    "jornadasComparadas": {
+                      "type": "number"
+                    },
+                    "pinesSugeridos": {
+                      "type": "number"
+                    },
+                    "pinesProponidos": {
+                      "type": "number"
+                    },
+                    "cierresFrecuentes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "localId": {
+                            "type": "string"
+                          },
+                          "cerrados": {
+                            "type": "number"
+                          },
+                          "intentos": {
+                            "type": "number"
+                          },
+                          "confianzaAbierto": {
+                            "type": "number"
+                          },
+                          "horasCerrado": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            }
+                          }
+                        },
+                        "required": [
+                          "localId",
+                          "cerrados",
+                          "intentos",
+                          "confianzaAbierto",
+                          "horasCerrado"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "eventos",
+                    "jornadas",
+                    "parametros",
+                    "jornadasComparadas",
+                    "pinesSugeridos",
+                    "pinesProponidos",
+                    "cierresFrecuentes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/entregas/{id}/eventos": {
       "post": {
         "summary": "Avisar desde la parada: llegué, entregué, está cerrado, espero, no se entregó o vuelvo más tarde (con la posición si hay)",

@@ -6,6 +6,7 @@ import { errorApp, type ErrorApp } from '../errores.js';
 import type { ClienteRepository } from '../ports/out/clientes.js';
 import type { EntregaRepository } from '../ports/out/entregas.js';
 import type { EstadoFactura, FacturaRepository } from '../ports/out/facturas.js';
+import type { RutaRepository } from '../ports/out/rutas.js';
 import type { ResolverCamion } from './jornada.js';
 
 export type ResultadoEvento = { readonly estado: EstadoFactura; readonly pinFijado: boolean };
@@ -15,7 +16,7 @@ export type ResultadoEvento = { readonly estado: EstadoFactura; readonly pinFija
  * Un chofer (o ayudante) solo avisa sobre facturas de su camión de hoy. Al llegar a un local sin pin, la posición se vuelve su
  * pin (colaborativo); si ya tiene, queda como evidencia.
  */
-export const crearRegistrarEvento = ({ facturas, entregas, clientes, resolverCamion }: { facturas: FacturaRepository; entregas: EntregaRepository; clientes: ClienteRepository; resolverCamion: ResolverCamion }) =>
+export const crearRegistrarEvento = ({ facturas, entregas, clientes, rutas, resolverCamion }: { facturas: FacturaRepository; entregas: EntregaRepository; clientes: ClienteRepository; rutas: RutaRepository; resolverCamion: ResolverCamion }) =>
   async (actor: Usuario, facturaId: string, entrada: EventoCrudo): Promise<Result<ResultadoEvento, ErrorApp>> => {
     const v = validarEvento(entrada);
     if (!v.ok) return err(errorApp('VALIDACION', v.error.map((e) => e.mensaje).join(' '), { errores: v.error }));
@@ -33,8 +34,13 @@ export const crearRegistrarEvento = ({ facturas, entregas, clientes, resolverCam
       return err(errorApp('CONFLICTO', f.estado === 'entregada' ? 'Esa entrega ya está marcada como entregada.' : 'Esa entrega ya está marcada como no entregada.'));
     }
 
+    // En qué lugar de la ruta iba esta parada: sirve para comparar lo que sugirió el sistema con lo que de verdad se hizo.
+    const ruta = f.camion ? await rutas.obtener(actor.empresaId, f.camion.id, f.fecha) : undefined;
+    const lugar = ruta ? ruta.orden.indexOf(facturaId) + 1 : 0;
     await entregas.registrar(actor.empresaId, {
       ...evento,
+      origen: 'manual',
+      ...(ruta && lugar > 0 ? { posicionEnRuta: lugar, paradasEnRuta: ruta.orden.length } : {}),
       facturaId,
       localId: f.local.id,
       ...(f.camion ? { camionId: f.camion.id } : {}),

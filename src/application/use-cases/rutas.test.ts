@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { err } from '../../domain/shared/result.js';
 import { crearReloj, usuarioDe } from './fakes.test-util.js';
-import { fakeJornadas, resolverDePrueba } from './fakes-facturas.test-util.js';
+import { fakeJornadas, fakeRegistro, resolverDePrueba } from './fakes-facturas.test-util.js';
 import { CAMION_ID, FECHA, fakeCamionesRuta, fakeEmpresas, fakeEntregasRuta, fakeFacturasRuta, fakeRutas, paradaDe } from './fakes-rutas.test-util.js';
 import { crearServiciosDeRuta } from './rutas.js';
 
 const despachador = usuarioDe({ id: 'u-d', rol: 'despachador' });
 
-const montar = (opciones: { pendientes?: ReturnType<typeof paradaDe>[]; config?: Parameters<typeof fakeEmpresas>[0] | null; jornadas?: ReturnType<typeof fakeJornadas> } = {}) => {
+const montar = (opciones: { pendientes?: ReturnType<typeof paradaDe>[]; config?: Parameters<typeof fakeEmpresas>[0] | null; jornadas?: ReturnType<typeof fakeJornadas>; registro?: ReturnType<typeof fakeRegistro> } = {}) => {
   const rutas = fakeRutas(opciones.pendientes ?? [paradaDe('A'), paradaDe('B'), paradaDe('C'), paradaDe('D')]);
   const empresas = fakeEmpresas(opciones.config);
   const facturas = fakeFacturasRuta();
-  const servicios = crearServiciosDeRuta({ rutas: rutas.repo, empresas, camiones: fakeCamionesRuta(), facturas, entregas: fakeEntregasRuta(), jornadas: opciones.jornadas ?? fakeJornadas(), clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba() });
+  const servicios = crearServiciosDeRuta({ rutas: rutas.repo, empresas, camiones: fakeCamionesRuta(), facturas, entregas: fakeEntregasRuta(), jornadas: opciones.jornadas ?? fakeJornadas(), registro: opciones.registro ?? fakeRegistro(), clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba() });
   return { ...servicios, rutas, facturas, empresas };
 };
 const entrada = { camionId: CAMION_ID, fecha: FECHA };
@@ -124,7 +124,7 @@ describe('ruta de hoy: desde dónde y desde cuándo se calcula', () => {
     const entregas = fakeEntregasRuta();
     if (ultima) entregas.ultimaPosicion.mockResolvedValue({ ...ultima, en: new Date(ahora) });
     const facturas = fakeFacturasRuta();
-    const servicios = crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas, entregas, jornadas: fakeJornadas(), clock: crearReloj(ahora).clock, resolverCamion: resolverDePrueba() });
+    const servicios = crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas, entregas, jornadas: fakeJornadas(), registro: fakeRegistro(), clock: crearReloj(ahora).clock, resolverCamion: resolverDePrueba() });
     return { servicios, entregas, facturas };
   };
 
@@ -180,6 +180,41 @@ describe('la lista empieza limpia al terminar la ruta', () => {
     jornadas.ultimaDelCamion.mockResolvedValueOnce({ desde: new Date('2026-10-05T09:45:00Z') });
     await ver(despachador, entrada);
     expect(facturas.listar).toHaveBeenLastCalledWith('empresa-1', { fecha: FECHA, camionId: CAMION_ID, incluirHechas: true, hechasDesde: new Date('2026-10-05T09:45:00Z') });
+  });
+});
+
+describe('cada cálculo y cada movimiento de la ruta queda guardado para aprender', () => {
+  it('guarda lo que sugirió el sistema y luego cada corrección con el orden que quedó, y la ruta sigue aunque no se pueda anotar', async () => {
+    const registro = fakeRegistro();
+    const s = montar({ registro });
+    const v = await s.planificar(despachador, entrada);
+    expect(registro.registrarOperacion).toHaveBeenCalledWith('empresa-1', expect.objectContaining({ camionId: CAMION_ID, fecha: FECHA, usuarioId: 'u-d', tipo: 'planificar', modo: 'sugerida' }));
+    const vista = v.ok ? v.value : undefined;
+    const primera = vista?.paradas[0]?.facturaId ?? '';
+    const r = await s.operar(despachador, { ...entrada, version: vista?.version ?? 0, operacion: { tipo: 'bajar', facturaId: primera } });
+    expect(r.ok).toBe(true);
+    expect(registro.registrarOperacion).toHaveBeenLastCalledWith('empresa-1', expect.objectContaining({ tipo: 'bajar', facturaId: primera, modo: 'manual' }));
+    registro.registrarOperacion.mockRejectedValue(new Error('base caída'));
+    expect((await s.planificar(despachador, entrada)).ok).toBe(true);
+  });
+});
+
+describe('la ruta usa lo que el sistema aprendió', () => {
+  it('un camión más lento que lo calculado alarga los tiempos de viaje de su ruta (ritmo aprendido) y un local lento alarga su atención', async () => {
+    const base = montar({ pendientes: [paradaDe('A'), paradaDe('B')] });
+    const aprendizaje = { parametros: () => Promise.resolve([{ clave: 'ritmo' as const, ambito: 'camion:cam-1', valor: 1.5, muestras: 40, confianza: 1 }, { clave: 'servicio_min' as const, ambito: 'local:l-A', valor: 30, muestras: 6, confianza: 0.6 }]) };
+    const rutas = fakeRutas([paradaDe('A'), paradaDe('B')]);
+    const conAprendizaje = crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), entregas: fakeEntregasRuta(), jornadas: fakeJornadas(), registro: fakeRegistro(), aprendizaje, clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba() });
+    const a = await base.planificar(despachador, entrada);
+    const b = await conAprendizaje.planificar(despachador, entrada);
+    expect(a.ok && b.ok).toBe(true);
+    expect(b.ok ? b.value.regreso ?? 0 : 0).toBeGreaterThan(a.ok ? a.value.regreso ?? 0 : Infinity);
+  });
+
+  it('si no se puede leer lo aprendido, la ruta se calcula igual con los valores de respaldo', async () => {
+    const rutas = fakeRutas([paradaDe('A')]);
+    const servicios = crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), entregas: fakeEntregasRuta(), jornadas: fakeJornadas(), registro: fakeRegistro(), aprendizaje: { parametros: () => Promise.reject(new Error('caído')) }, clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba() });
+    expect((await servicios.planificar(despachador, entrada)).ok).toBe(true);
   });
 });
 
@@ -293,7 +328,7 @@ describe('ruta del chofer', () => {
   const chofer = usuarioDe({ id: 'u-chofer', rol: 'chofer' });
   const montarChofer = (jornada?: Parameters<typeof resolverDePrueba>[0]) => {
     const rutas = fakeRutas([paradaDe('A'), paradaDe('B')]);
-    return crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), entregas: fakeEntregasRuta(), jornadas: fakeJornadas(jornada), clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba(jornada) });
+    return crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), entregas: fakeEntregasRuta(), jornadas: fakeJornadas(jornada), registro: fakeRegistro(), clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba(jornada) });
   };
   const JORNADA_CAM = { id: 'j-1', usuarioId: 'u-chofer', fecha: FECHA, desde: new Date(), camion: { id: CAMION_ID, patente: 'ABCD12' } };
 

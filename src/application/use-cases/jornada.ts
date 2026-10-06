@@ -6,6 +6,7 @@ import { errorApp, type ErrorApp } from '../errores.js';
 import type { Clock } from '../ports/out/clock.js';
 import type { FacturaRepository } from '../ports/out/facturas.js';
 import type { Jornada, JornadaRepository } from '../ports/out/jornadas.js';
+import type { RegistroAprendizajeRepository } from '../ports/out/registro-aprendizaje.js';
 import type { RutaRepository } from '../ports/out/rutas.js';
 
 type Deps = { readonly jornadas: JornadaRepository; readonly clock: Clock };
@@ -41,7 +42,7 @@ export type ResumenJornada = {
  * al instante: se borra la ruta guardada, lo hecho queda registrado fuera de la lista y lo pendiente se suelta del camión.
  * Si no había jornada de hoy, cierra lo que hubiera abierto y no devuelve resumen.
  */
-export const crearTerminarJornada = ({ jornadas, facturas, rutas, clock }: Deps & { readonly facturas: FacturaRepository; readonly rutas: RutaRepository }) =>
+export const crearTerminarJornada = ({ jornadas, facturas, rutas, registro, clock }: Deps & { readonly facturas: FacturaRepository; readonly rutas: RutaRepository; readonly registro: RegistroAprendizajeRepository }) =>
   async (actor: Usuario): Promise<ResumenJornada | undefined> => {
     const ahora = clock.now();
     const j = await jornadas.activa(actor.empresaId, actor.id, fechaEnChile(ahora));
@@ -49,6 +50,11 @@ export const crearTerminarJornada = ({ jornadas, facturas, rutas, clock }: Deps 
     if (!j) return undefined;
     const del = await facturas.listar(actor.empresaId, { fecha: j.fecha, camionId: j.camion.id, incluirHechas: true });
     const contar = (estado: 'entregada' | 'no_entregada' | 'pendiente'): number => del.filter((f) => f.estado === estado).length;
+    // Antes de soltar lo pendiente se anota qué no se alcanzó: es lo que dice cuántas paradas caben en un día.
+    await registro.guardarResumenDeJornada(actor.empresaId, {
+      jornadaId: j.id, camionId: j.camion.id, fecha: j.fecha, paradas: del.length, entregadas: contar('entregada'), noEntregadas: contar('no_entregada'),
+      sinHacer: contar('pendiente'), sinHacerIds: del.filter((f) => f.estado === 'pendiente').map((f) => f.id), duracionMin: Math.max(0, Math.round((ahora.getTime() - j.desde.getTime()) / 60_000)),
+    });
     await facturas.soltarPendientesDelCamion(actor.empresaId, j.camion.id, j.fecha);
     await rutas.borrar(actor.empresaId, j.camion.id, j.fecha);
     await rutas.borrarAnteriores(actor.empresaId, fechaEnChile(ahora));

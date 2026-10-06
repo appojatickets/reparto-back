@@ -28,6 +28,8 @@ export type DatosProblema = {
   readonly horaLimiteRegresoMin: number;
   readonly entradas: readonly EntradaParada[];
   readonly fijas?: readonly string[];
+  /** Cuánto demora este camión frente a lo calculado (lo aprendido de sus rutas reales); 1 si no se sabe. */
+  readonly ritmo?: number;
 };
 
 /**
@@ -65,7 +67,7 @@ export const armarProblema = (d: DatosProblema): { readonly problema: ProblemaRu
       paradas,
       fijas: (d.fijas ?? []).filter((id) => ids.has(id)),
       tiempos: crearTiemposHaversine(coordenadas),
-      ritmo: 1,
+      ritmo: d.ritmo ?? 1,
       parametros: { ...PARAMETROS_POR_DEFECTO, horaLimiteRegresoMin: d.horaLimiteRegresoMin },
     },
   };

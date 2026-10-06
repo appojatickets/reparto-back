@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { crearReloj, usuarioDe } from './fakes.test-util.js';
-import { fakeFacturas, fakeJornadas, JORNADA, facturaDe, resolverDePrueba } from './fakes-facturas.test-util.js';
+import { fakeFacturas, fakeJornadas, fakeRegistro, JORNADA, facturaDe, resolverDePrueba } from './fakes-facturas.test-util.js';
 import { crearActualizarFactura, crearListarFacturas, crearRegistrarFactura } from './facturas.js';
 import { fakeRutas } from './fakes-rutas.test-util.js';
 import { crearIniciarJornada, crearMiJornada, crearResolverCamion, crearTerminarJornada } from './jornada.js';
@@ -17,7 +17,7 @@ describe('jornada', () => {
     const r = await crearIniciarJornada({ jornadas, rutas: fakeRutas().repo, clock })(chofer, 'cam-7');
     expect(r.ok && r.value.camion.id).toBe('cam-7');
     expect(jornadas.iniciar).toHaveBeenCalledWith('empresa-1', 'u-chofer', 'cam-7', '2026-10-05', new Date('2026-10-05T12:00:00.000Z'));
-    await crearTerminarJornada({ jornadas, facturas: fakeFacturas(), rutas: fakeRutas().repo, clock })(chofer);
+    await crearTerminarJornada({ jornadas, facturas: fakeFacturas(), rutas: fakeRutas().repo, registro: fakeRegistro(), clock })(chofer);
     expect(jornadas.terminar).toHaveBeenCalledWith('empresa-1', 'u-chofer', new Date('2026-10-05T12:00:00.000Z'));
     await crearMiJornada({ jornadas, clock })(chofer);
     expect(jornadas.activa).toHaveBeenCalledWith('empresa-1', 'u-chofer', '2026-10-05');
@@ -39,7 +39,7 @@ describe('terminar la ruta: queda el resumen del día', () => {
       facturaDe({ id: 'f1', estado: 'entregada' }), facturaDe({ id: 'f2', estado: 'entregada' }), facturaDe({ id: 'f3', estado: 'no_entregada' }),
       facturaDe({ id: 'f4', estado: 'pendiente' }), facturaDe({ id: 'f5', estado: 'pendiente' }),
     ]);
-    const r = await crearTerminarJornada({ jornadas, facturas, rutas: fakeRutas().repo, clock })(chofer);
+    const r = await crearTerminarJornada({ jornadas, facturas, rutas: fakeRutas().repo, registro: fakeRegistro(), clock })(chofer);
     expect(facturas.listar).toHaveBeenCalledWith('empresa-1', { fecha: '2026-10-05', camionId: 'cam-1', incluirHechas: true });
     expect(jornadas.terminar).toHaveBeenCalledWith('empresa-1', 'u-chofer', new Date('2026-10-05T12:00:00.000Z'));
     expect(r).toEqual({
@@ -52,16 +52,27 @@ describe('terminar la ruta: queda el resumen del día', () => {
     const jornadas = fakeJornadas(JORNADA);
     const facturas = fakeFacturas();
     const { repo: rutas } = fakeRutas();
-    await crearTerminarJornada({ jornadas, facturas, rutas, clock })(chofer);
+    await crearTerminarJornada({ jornadas, facturas, rutas, registro: fakeRegistro(), clock })(chofer);
     expect(facturas.soltarPendientesDelCamion).toHaveBeenCalledWith('empresa-1', 'cam-1', '2026-10-05');
     expect(rutas.borrar).toHaveBeenCalledWith('empresa-1', 'cam-1', '2026-10-05');
     expect(rutas.borrarAnteriores).toHaveBeenCalledWith('empresa-1', '2026-10-05');
   });
 
+  it('guarda el resumen de la jornada para aprender: cuántas había, cuántas se hicieron y cuáles no se alcanzaron (aunque se suelten del camión)', async () => {
+    const jornadas = fakeJornadas(JORNADA);
+    const facturas = fakeFacturas();
+    facturas.listar.mockResolvedValueOnce([facturaDe({ id: 'f1', estado: 'entregada' }), facturaDe({ id: 'f2', estado: 'no_entregada' }), facturaDe({ id: 'f3', estado: 'pendiente' })]);
+    const registro = fakeRegistro();
+    await crearTerminarJornada({ jornadas, facturas, rutas: fakeRutas().repo, registro, clock })(chofer);
+    expect(registro.guardarResumenDeJornada).toHaveBeenCalledWith('empresa-1', {
+      jornadaId: 'j-1', camionId: 'cam-1', fecha: '2026-10-05', paradas: 3, entregadas: 1, noEntregadas: 1, sinHacer: 1, sinHacerIds: ['f3'], duracionMin: 60,
+    });
+  });
+
   it('sin jornada de hoy igual cierra lo que hubiera abierto y no inventa un resumen', async () => {
     const jornadas = fakeJornadas();
     const facturas = fakeFacturas();
-    const r = await crearTerminarJornada({ jornadas, facturas, rutas: fakeRutas().repo, clock })(chofer);
+    const r = await crearTerminarJornada({ jornadas, facturas, rutas: fakeRutas().repo, registro: fakeRegistro(), clock })(chofer);
     expect(r).toBeUndefined();
     expect(jornadas.terminar).toHaveBeenCalledTimes(1);
     expect(facturas.listar).not.toHaveBeenCalled();

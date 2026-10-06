@@ -15,6 +15,9 @@ import type { EmpresaRepository } from '../ports/out/empresa.js';
 import type { EntregaRepository } from '../ports/out/entregas.js';
 import type { FacturaRepository } from '../ports/out/facturas.js';
 import type { JornadaRepository } from '../ports/out/jornadas.js';
+import { aprendidoParaRuta, SIN_APRENDIZAJE, type AprendidoParaRuta } from '../../domain/aprendizaje/uso.js';
+import type { AprendizajeRepository } from '../ports/out/aprendizaje.js';
+import type { RegistroAprendizajeRepository, TipoOperacionRuta } from '../ports/out/registro-aprendizaje.js';
 import type { FacturaParaRuta, ModoRuta, RutaGuardada, RutaRepository } from '../ports/out/rutas.js';
 import type { ResolverCamion } from './jornada.js';
 
@@ -88,6 +91,10 @@ type Dependencias = {
   readonly facturas: FacturaRepository;
   readonly entregas: EntregaRepository;
   readonly jornadas: JornadaRepository;
+  /** Cada cálculo o movimiento de la ruta queda guardado (el sistema aprende de lo que sugirió y de lo que la gente corrigió). */
+  readonly registro: RegistroAprendizajeRepository;
+  /** Lo que el analizador aprendió (ritmo del camión, tiempo de atención por local). Sin esto la ruta usa sus valores de respaldo. */
+  readonly aprendizaje?: Pick<AprendizajeRepository, 'parametros'>;
   readonly clock: Clock;
   readonly resolverCamion: ResolverCamion;
   /** Pide buscar el pin de estos locales por su dirección (en segundo plano; la ruta no espera). */
@@ -99,6 +106,7 @@ type Contexto = {
   readonly deposito: Deposito;
   readonly items: readonly FacturaParaRuta[];
   readonly guardada: RutaGuardada | undefined;
+  readonly aprendido: AprendidoParaRuta;
   /** Solo si la ruta es de hoy: la hora actual (la ruta no puede empezar antes) y la última posición del camión. */
   readonly ahoraMin?: number;
   readonly origen?: Coordenada;
@@ -119,7 +127,7 @@ const itemDe = (f: FacturaParaRuta): ItemVista => ({
   ...(f.nota !== undefined ? { nota: f.nota } : {}),
 });
 
-const entradaDe = (f: FacturaParaRuta): EntradaParada => {
+const entradaDe = (f: FacturaParaRuta, servicioMin?: number): EntradaParada => {
   // Sin pin la ruta no se detiene: se ubica por el centro de la comuna hasta que haya un pin mejor.
   const coordenada = f.lat !== undefined && f.lng !== undefined ? { lat: f.lat, lng: f.lng } : centroDeComuna(f.comuna);
   return {
@@ -130,10 +138,11 @@ const entradaDe = (f: FacturaParaRuta): EntradaParada => {
     horarios: f.horarios,
     ...(f.antesDeMin !== undefined ? { antesDeMin: f.antesDeMin } : {}),
     urgente: f.urgente,
+    ...(servicioMin !== undefined ? { servicioMin } : {}),
   };
 };
 
-export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entregas, jornadas, clock, resolverCamion, programarPines }: Dependencias) => {
+export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entregas, jornadas, registro, aprendizaje, clock, resolverCamion, programarPines }: Dependencias) => {
   const presupuesto = () => ({ reloj: () => clock.now().getTime(), limiteMs: LIMITE_OPTIMIZACION_MS });
 
   const cargar = async (actor: Usuario, camionId: string, fecha: string): Promise<Result<Contexto, ErrorApp>> => {
@@ -144,6 +153,8 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
     if (!cams.some((c) => c.id === camionId)) return err(errorApp('NO_ENCONTRADO', 'El camión no existe.'));
     if (!config?.deposito) return err(errorApp('VALIDACION', 'Primero configura el depósito (de dónde salen los camiones).', { codigo: 'SIN_DEPOSITO' }));
     const esHoy = fecha === fechaEnChile(clock.now());
+    // Lo aprendido nunca bloquea la ruta: si no se puede leer, se usan los valores de respaldo.
+    const aprendido = aprendizaje ? aprendidoParaRuta(await aprendizaje.parametros(actor.empresaId).catch(() => []), camionId) : SIN_APRENDIZAJE;
     // Lo hecho solo cuenta desde que empezó la jornada vigente (o desde que terminó la última): al terminar la ruta la lista queda limpia.
     const jornada = await jornadas.ultimaDelCamion(actor.empresaId, camionId, fecha);
     const hechasDesde = jornada ? (jornada.hasta ?? jornada.desde) : undefined;
@@ -161,7 +172,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
         : [],
     );
     return ok({
-      config, deposito: config.deposito, items, guardada, hechas,
+      config, deposito: config.deposito, items, guardada, hechas, aprendido,
       ...(esHoy ? { ahoraMin: minutosEnChile(clock.now()) } : {}),
       ...(ultima ? { origen: { lat: ultima.lat, lng: ultima.lng } } : {}),
     });
@@ -175,7 +186,8 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
       ...(ctx.origen ? { origen: ctx.origen } : {}),
       salida: ctx.ahoraMin !== undefined ? Math.max(salida, ctx.ahoraMin) : salida,
       horaLimiteRegresoMin: ctx.config.horaLimiteRegresoMin,
-      entradas: ctx.items.map(entradaDe),
+      entradas: ctx.items.map((f) => entradaDe(f, ctx.aprendido.servicioMin(f.localId))),
+      ritmo: ctx.aprendido.ritmo,
       fijas,
     });
 
@@ -233,6 +245,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
     salidaPlan: number,
     estado: { readonly problema: ProblemaRuta; readonly solucion: Solucion; readonly modo: ModoRuta },
     sinPin: readonly EntradaParada[],
+    operacion: { readonly tipo: TipoOperacionRuta; readonly facturaId?: string },
     versionEsperada?: number,
   ): Promise<Result<VistaRuta, ErrorApp>> => {
     const g = await rutas.guardar(actor.empresaId, {
@@ -246,6 +259,13 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
       ...(versionEsperada !== undefined ? { versionEsperada } : {}),
     });
     if (!g.ok) return err(errorApp('CONFLICTO', 'Otra persona cambió esta ruta. Se cargó la versión nueva; vuelve a intentar.', { codigo: 'RUTA_DESACTUALIZADA' }));
+    // Aprender nunca bloquea la ruta: si no se puede anotar, la ruta sigue igual.
+    await registro
+      .registrarOperacion(actor.empresaId, {
+        camionId, fecha, usuarioId: actor.id, tipo: operacion.tipo, ...(operacion.facturaId !== undefined ? { facturaId: operacion.facturaId } : {}),
+        modo: estado.modo, version: g.value.version, orden: estado.solucion.orden,
+      })
+      .catch(() => undefined);
     return ok(vistaDe(ctx, camionId, fecha, salidaPlan, sinPin, { solucion: estado.solucion, problema: estado.problema, modo: estado.modo, version: g.value.version }));
   };
 
@@ -269,7 +289,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
     if (!Number.isInteger(salida) || salida < 0 || salida > 1439) return err(errorApp('VALIDACION', 'La hora de salida no es válida.'));
     const { problema, sinPin } = problemaDe(ctx.value, entrada.fecha, salida, []);
     const solucion = optimizar(problema, { presupuesto: presupuesto() });
-    return guardarYVer(actor, ctx.value, entrada.camionId, entrada.fecha, salida, { problema, solucion, modo: 'sugerida' }, sinPin);
+    return guardarYVer(actor, ctx.value, entrada.camionId, entrada.fecha, salida, { problema, solucion, modo: 'sugerida' }, sinPin, { tipo: 'planificar' });
   };
 
   const operar = async (actor: Usuario, entrada: { camionId: string; fecha: string; version: number; operacion: Operacion }): Promise<Result<VistaRuta, ErrorApp>> => {
@@ -337,7 +357,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
     };
     const r = aplicar();
     if (!r.ok) return r;
-    return guardarYVer(actor, ctx2, entrada.camionId, entrada.fecha, salida, r.value, sinPin, entrada.version);
+    return guardarYVer(actor, ctx2, entrada.camionId, entrada.fecha, salida, r.value, sinPin, { tipo: op.tipo, ...('facturaId' in op ? { facturaId: op.facturaId } : {}) }, entrada.version);
   };
 
   return { ver, planificar, operar };

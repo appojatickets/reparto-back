@@ -2,6 +2,7 @@ import { vi } from 'vitest';
 import { err, ok } from '../../domain/shared/result.js';
 import type { Camion, CamionRepository } from '../ports/out/camiones.js';
 import type { FacturaDetallada, FacturaRepository } from '../ports/out/facturas.js';
+import type { RegistroAprendizajeRepository } from '../ports/out/registro-aprendizaje.js';
 import type { Jornada, JornadaRepository } from '../ports/out/jornadas.js';
 import { crearReloj } from './fakes.test-util.js';
 import { crearResolverCamion } from './jornada.js';
@@ -48,3 +49,11 @@ export const fakeJornadas = (activa?: Jornada) =>
 
 /** El resolvedor real con una jornada fija (reloj de prueba: 2026-10-05 12:00 UTC). Despachador y admin pasan sin jornada. */
 export const resolverDePrueba = (activa?: Jornada) => crearResolverCamion({ jornadas: fakeJornadas(activa), clock: crearReloj().clock });
+
+export const fakeRegistro = () =>
+  ({
+    registrarOperacion: vi.fn<RegistroAprendizajeRepository['registrarOperacion']>(() => Promise.resolve()),
+    registrarPosiciones: vi.fn<RegistroAprendizajeRepository['registrarPosiciones']>(() => Promise.resolve()),
+    posicionesDesde: vi.fn<RegistroAprendizajeRepository['posicionesDesde']>(() => Promise.resolve([])),
+    guardarResumenDeJornada: vi.fn<RegistroAprendizajeRepository['guardarResumenDeJornada']>(() => Promise.resolve()),
+  }) satisfies RegistroAprendizajeRepository;
