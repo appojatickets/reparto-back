@@ -45,6 +45,8 @@ export type FiltroFacturas = {
   readonly incluirAnuladas?: boolean;
   /** Incluye también las ya entregadas y las no entregadas (por defecto solo las pendientes). */
   readonly incluirHechas?: boolean;
+  /** Las ya entregadas o no entregadas solo entran si se hicieron desde ese momento (la lista de la ruta empieza limpia tras terminar). */
+  readonly hechasDesde?: Date;
 };
 
 export interface FacturaRepository {
@@ -52,4 +54,6 @@ export interface FacturaRepository {
   obtener(empresaId: string, id: string): Promise<FacturaDetallada | undefined>;
   listar(empresaId: string, filtro: FiltroFacturas): Promise<readonly FacturaDetallada[]>;
   actualizar(empresaId: string, id: string, cambios: CambiosFactura): Promise<Result<FacturaDetallada, 'NO_ENCONTRADA' | 'CAMION_NO_DISPONIBLE'>>;
+  /** Al terminar la ruta, lo pendiente se suelta del camión (queda «sin camión» en su mismo día). Devuelve cuántas se soltaron. */
+  soltarPendientesDelCamion(empresaId: string, camionId: string, fecha: string): Promise<number>;
 }

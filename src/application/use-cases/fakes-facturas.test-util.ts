@@ -31,6 +31,7 @@ export const fakeFacturas = () =>
     obtener: vi.fn<FacturaRepository['obtener']>(() => Promise.resolve(facturaDe())),
     listar: vi.fn<FacturaRepository['listar']>(() => Promise.resolve([facturaDe()])),
     actualizar: vi.fn<FacturaRepository['actualizar']>(() => Promise.resolve(ok(facturaDe()))),
+    soltarPendientesDelCamion: vi.fn<FacturaRepository['soltarPendientesDelCamion']>(() => Promise.resolve(0)),
   }) satisfies FacturaRepository;
 
 export { err, ok };
@@ -42,6 +43,7 @@ export const fakeJornadas = (activa?: Jornada) =>
     activa: vi.fn<JornadaRepository['activa']>(() => Promise.resolve(activa)),
     iniciar: vi.fn<JornadaRepository['iniciar']>((_e, usuarioId, camionId, fecha, ahora) => Promise.resolve(ok({ ...JORNADA, usuarioId, fecha, desde: ahora, camion: { id: camionId, patente: 'ABCD12' } }))),
     terminar: vi.fn<JornadaRepository['terminar']>(() => Promise.resolve(true)),
+    ultimaDelCamion: vi.fn<JornadaRepository['ultimaDelCamion']>(() => Promise.resolve(activa && { desde: activa.desde })),
   }) satisfies JornadaRepository;
 
 /** El resolvedor real con una jornada fija (reloj de prueba: 2026-10-05 12:00 UTC). Despachador y admin pasan sin jornada. */

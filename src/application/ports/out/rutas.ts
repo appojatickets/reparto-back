@@ -54,4 +54,8 @@ export interface RutaRepository {
   /** Facturas `pendiente` del camión ese día, con el horario de su local. */
   facturasPendientes(empresaId: string, camionId: string, fecha: string): Promise<readonly FacturaParaRuta[]>;
   guardar(empresaId: string, datos: GuardarRuta): Promise<Result<RutaGuardada, 'VERSION_DESACTUALIZADA'>>;
+  /** La ruta se arma cada día: borra la guardada de ese camión y día (no sirve guardar rutas, nunca se repiten). */
+  borrar(empresaId: string, camionId: string, fecha: string): Promise<void>;
+  /** Borra todas las rutas guardadas de días anteriores a `fecha`. */
+  borrarAnteriores(empresaId: string, fecha: string): Promise<void>;
 }

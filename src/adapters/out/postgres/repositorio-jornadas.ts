@@ -37,6 +37,18 @@ export class PostgresJornadaRepository implements JornadaRepository {
     return ok(aJornada({ id: j.id, usuario_id: usuarioId, fecha, desde: j.desde, camion_id: camion.id, patente: camion.patente, alias: camion.alias }));
   }
 
+  async ultimaDelCamion(empresaId: string, camionId: string, fecha: string): Promise<{ readonly desde: Date; readonly hasta?: Date } | undefined> {
+    const j = await this.db
+      .selectFrom('jornada')
+      .select(['desde', 'hasta'])
+      .where('empresa_id', '=', empresaId)
+      .where('camion_id', '=', camionId)
+      .where('fecha_reparto', '=', fecha)
+      .orderBy('desde', 'desc')
+      .executeTakeFirst();
+    return j && { desde: j.desde, ...(j.hasta !== null ? { hasta: j.hasta } : {}) };
+  }
+
   async terminar(empresaId: string, usuarioId: string, ahora: Date): Promise<boolean> {
     const r = await this.db.updateTable('jornada').set({ hasta: ahora }).where('empresa_id', '=', empresaId).where('usuario_id', '=', usuarioId).where('hasta', 'is', null).executeTakeFirst();
     return r.numUpdatedRows > 0n;

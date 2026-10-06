@@ -13,6 +13,8 @@ export interface JornadaRepository {
   activa(empresaId: string, usuarioId: string, fecha: string): Promise<Jornada | undefined>;
   /** Cierra la jornada abierta del usuario (si hay) y abre una en ese camión. */
   iniciar(empresaId: string, usuarioId: string, camionId: string, fecha: string, ahora: Date): Promise<Result<Jornada, 'CAMION_NO_DISPONIBLE'>>;
+  /** La jornada más reciente de ese camión ese día (abierta o terminada): marca desde cuándo cuenta lo hecho en la lista de la ruta. */
+  ultimaDelCamion(empresaId: string, camionId: string, fecha: string): Promise<{ readonly desde: Date; readonly hasta?: Date } | undefined>;
   /** Cierra la jornada abierta. Devuelve false si no había. */
   terminar(empresaId: string, usuarioId: string, ahora: Date): Promise<boolean>;
 }

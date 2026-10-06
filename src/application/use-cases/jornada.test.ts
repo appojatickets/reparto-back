@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { crearReloj, usuarioDe } from './fakes.test-util.js';
 import { fakeFacturas, fakeJornadas, JORNADA, facturaDe, resolverDePrueba } from './fakes-facturas.test-util.js';
 import { crearActualizarFactura, crearListarFacturas, crearRegistrarFactura } from './facturas.js';
+import { fakeRutas } from './fakes-rutas.test-util.js';
 import { crearIniciarJornada, crearMiJornada, crearResolverCamion, crearTerminarJornada } from './jornada.js';
 import { err } from '../../domain/shared/result.js';
 
@@ -13,10 +14,10 @@ const { clock } = crearReloj();
 describe('jornada', () => {
   it('iniciar usa la fecha de hoy en Chile y el reloj inyectado; cerrar y consultar pasan por el repositorio', async () => {
     const jornadas = fakeJornadas();
-    const r = await crearIniciarJornada({ jornadas, clock })(chofer, 'cam-7');
+    const r = await crearIniciarJornada({ jornadas, rutas: fakeRutas().repo, clock })(chofer, 'cam-7');
     expect(r.ok && r.value.camion.id).toBe('cam-7');
     expect(jornadas.iniciar).toHaveBeenCalledWith('empresa-1', 'u-chofer', 'cam-7', '2026-10-05', new Date('2026-10-05T12:00:00.000Z'));
-    await crearTerminarJornada({ jornadas, facturas: fakeFacturas(), clock })(chofer);
+    await crearTerminarJornada({ jornadas, facturas: fakeFacturas(), rutas: fakeRutas().repo, clock })(chofer);
     expect(jornadas.terminar).toHaveBeenCalledWith('empresa-1', 'u-chofer', new Date('2026-10-05T12:00:00.000Z'));
     await crearMiJornada({ jornadas, clock })(chofer);
     expect(jornadas.activa).toHaveBeenCalledWith('empresa-1', 'u-chofer', '2026-10-05');
@@ -25,7 +26,7 @@ describe('jornada', () => {
   it('un camión que no existe o está fuera de servicio es NO_ENCONTRADO', async () => {
     const jornadas = fakeJornadas();
     jornadas.iniciar.mockResolvedValueOnce(err('CAMION_NO_DISPONIBLE'));
-    const r = await crearIniciarJornada({ jornadas, clock })(chofer, 'cam-x');
+    const r = await crearIniciarJornada({ jornadas, rutas: fakeRutas().repo, clock })(chofer, 'cam-x');
     expect(!r.ok && r.error.codigo).toBe('NO_ENCONTRADO');
   });
 });
@@ -38,7 +39,7 @@ describe('terminar la ruta: queda el resumen del día', () => {
       facturaDe({ id: 'f1', estado: 'entregada' }), facturaDe({ id: 'f2', estado: 'entregada' }), facturaDe({ id: 'f3', estado: 'no_entregada' }),
       facturaDe({ id: 'f4', estado: 'pendiente' }), facturaDe({ id: 'f5', estado: 'pendiente' }),
     ]);
-    const r = await crearTerminarJornada({ jornadas, facturas, clock })(chofer);
+    const r = await crearTerminarJornada({ jornadas, facturas, rutas: fakeRutas().repo, clock })(chofer);
     expect(facturas.listar).toHaveBeenCalledWith('empresa-1', { fecha: '2026-10-05', camionId: 'cam-1', incluirHechas: true });
     expect(jornadas.terminar).toHaveBeenCalledWith('empresa-1', 'u-chofer', new Date('2026-10-05T12:00:00.000Z'));
     expect(r).toEqual({
@@ -47,13 +48,32 @@ describe('terminar la ruta: queda el resumen del día', () => {
     });
   });
 
+  it('deja la lista limpia al instante: borra la ruta guardada y suelta lo pendiente del camión; también barre las rutas de días anteriores', async () => {
+    const jornadas = fakeJornadas(JORNADA);
+    const facturas = fakeFacturas();
+    const { repo: rutas } = fakeRutas();
+    await crearTerminarJornada({ jornadas, facturas, rutas, clock })(chofer);
+    expect(facturas.soltarPendientesDelCamion).toHaveBeenCalledWith('empresa-1', 'cam-1', '2026-10-05');
+    expect(rutas.borrar).toHaveBeenCalledWith('empresa-1', 'cam-1', '2026-10-05');
+    expect(rutas.borrarAnteriores).toHaveBeenCalledWith('empresa-1', '2026-10-05');
+  });
+
   it('sin jornada de hoy igual cierra lo que hubiera abierto y no inventa un resumen', async () => {
     const jornadas = fakeJornadas();
     const facturas = fakeFacturas();
-    const r = await crearTerminarJornada({ jornadas, facturas, clock })(chofer);
+    const r = await crearTerminarJornada({ jornadas, facturas, rutas: fakeRutas().repo, clock })(chofer);
     expect(r).toBeUndefined();
     expect(jornadas.terminar).toHaveBeenCalledTimes(1);
     expect(facturas.listar).not.toHaveBeenCalled();
+    expect(facturas.soltarPendientesDelCamion).not.toHaveBeenCalled();
+  });
+});
+
+describe('empezar el día: la ruta no se reutiliza', () => {
+  it('al iniciar la jornada se borran las rutas guardadas de días anteriores', async () => {
+    const rutas = fakeRutas().repo;
+    await crearIniciarJornada({ jornadas: fakeJornadas(), rutas, clock })(chofer, 'cam-7');
+    expect(rutas.borrarAnteriores).toHaveBeenCalledWith('empresa-1', '2026-10-05');
   });
 });
 

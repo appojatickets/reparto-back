@@ -118,4 +118,12 @@ export class PostgresRutaRepository implements RutaRepository {
       return ok({ id, camionId: d.camionId, fecha: d.fecha, salidaMin: d.salidaMin, modo: d.modo, version, orden: d.orden, fijas: d.fijas });
     });
   }
+
+  async borrar(empresaId: string, camionId: string, fecha: string): Promise<void> {
+    await this.db.deleteFrom('ruta').where('empresa_id', '=', empresaId).where('camion_id', '=', camionId).where('fecha_reparto', '=', fecha).execute();
+  }
+
+  async borrarAnteriores(empresaId: string, fecha: string): Promise<void> {
+    await this.db.deleteFrom('ruta').where('empresa_id', '=', empresaId).where('fecha_reparto', '<', fecha).execute();
+  }
 }

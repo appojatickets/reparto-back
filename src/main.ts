@@ -78,7 +78,7 @@ const colaDePines = crearColaGeocodificacion({
   esperar: (ms) => new Promise((resolver) => { setTimeout(resolver, ms); }),
 });
 const programarPines = (empresaId: string, localIds: readonly string[]): void => { colaDePines.encolar(empresaId, localIds); };
-const serviciosDeRuta = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas, clock, resolverCamion, programarPines });
+const serviciosDeRuta = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas, jornadas, clock, resolverCamion, programarPines });
 const casos: CasosDeUso = {
   checkHealth: () => checkHealth({ db: dbHealth, clock }),
   autenticar: crearAutenticarUsuario({ identidad, usuarios, clock }),
@@ -120,8 +120,8 @@ const casos: CasosDeUso = {
   planificarRuta: serviciosDeRuta.planificar,
   operarRuta: serviciosDeRuta.operar,
   miJornada: crearMiJornada({ jornadas, clock }),
-  iniciarJornada: crearIniciarJornada({ jornadas, clock }),
-  terminarJornada: crearTerminarJornada({ jornadas, facturas, clock }),
+  iniciarJornada: crearIniciarJornada({ jornadas, rutas, clock }),
+  terminarJornada: crearTerminarJornada({ jornadas, facturas, rutas, clock }),
   registrarEvento: crearRegistrarEvento({ facturas, entregas, clientes, resolverCamion }),
   obtenerHorario: crearObtenerHorario({ horarios }),
   guardarHorario: crearGuardarHorario({ horarios }),

@@ -14,6 +14,7 @@ import type { Clock } from '../ports/out/clock.js';
 import type { EmpresaRepository } from '../ports/out/empresa.js';
 import type { EntregaRepository } from '../ports/out/entregas.js';
 import type { FacturaRepository } from '../ports/out/facturas.js';
+import type { JornadaRepository } from '../ports/out/jornadas.js';
 import type { FacturaParaRuta, ModoRuta, RutaGuardada, RutaRepository } from '../ports/out/rutas.js';
 import type { ResolverCamion } from './jornada.js';
 
@@ -86,6 +87,7 @@ type Dependencias = {
   readonly camiones: CamionRepository;
   readonly facturas: FacturaRepository;
   readonly entregas: EntregaRepository;
+  readonly jornadas: JornadaRepository;
   readonly clock: Clock;
   readonly resolverCamion: ResolverCamion;
   /** Pide buscar el pin de estos locales por su dirección (en segundo plano; la ruta no espera). */
@@ -131,7 +133,7 @@ const entradaDe = (f: FacturaParaRuta): EntradaParada => {
   };
 };
 
-export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entregas, clock, resolverCamion, programarPines }: Dependencias) => {
+export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entregas, jornadas, clock, resolverCamion, programarPines }: Dependencias) => {
   const presupuesto = () => ({ reloj: () => clock.now().getTime(), limiteMs: LIMITE_OPTIMIZACION_MS });
 
   const cargar = async (actor: Usuario, camionId: string, fecha: string): Promise<Result<Contexto, ErrorApp>> => {
@@ -142,10 +144,13 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
     if (!cams.some((c) => c.id === camionId)) return err(errorApp('NO_ENCONTRADO', 'El camión no existe.'));
     if (!config?.deposito) return err(errorApp('VALIDACION', 'Primero configura el depósito (de dónde salen los camiones).', { codigo: 'SIN_DEPOSITO' }));
     const esHoy = fecha === fechaEnChile(clock.now());
+    // Lo hecho solo cuenta desde que empezó la jornada vigente (o desde que terminó la última): al terminar la ruta la lista queda limpia.
+    const jornada = await jornadas.ultimaDelCamion(actor.empresaId, camionId, fecha);
+    const hechasDesde = jornada ? (jornada.hasta ?? jornada.desde) : undefined;
     const [items, guardada, todas, ultima] = await Promise.all([
       rutas.facturasPendientes(actor.empresaId, camionId, fecha),
       rutas.obtener(actor.empresaId, camionId, fecha),
-      facturas.listar(actor.empresaId, { fecha, camionId, incluirHechas: true }),
+      facturas.listar(actor.empresaId, { fecha, camionId, incluirHechas: true, ...(hechasDesde ? { hechasDesde } : {}) }),
       esHoy ? entregas.ultimaPosicion(actor.empresaId, camionId, fecha) : Promise.resolve(undefined),
     ]);
     const sinPinIds = [...new Set(items.filter((f) => f.lat === undefined).map((f) => f.localId))];

@@ -11,3 +11,13 @@ Estado: aceptada. Pedido del dueño, 2026-10-05: «el sistema debe detectar que 
 
 ## Pendiente (aprendizaje)
 Con unas dos semanas de rutas reales: ritmo real por camión y franja, tiempo de servicio por local, horario aprendido de los locales («cerrado» repetido a la misma hora) y pines por visitas coherentes. Los tiempos no se muestran hasta que sean confiables.
+
+## Actualización: la ruta no se guarda, solo los datos para aprender
+
+La ruta se arma cada día y nunca se repite, así que no se conserva. Al **terminar la ruta** (`POST /v1/jornada/terminar`) la lista del camión queda limpia al instante:
+
+- se borra la ruta guardada de ese camión y día, y toda ruta guardada de días anteriores (también al empezar una jornada, por si alguien no terminó);
+- lo entregado y lo no entregado deja de mostrarse en la lista: `hechas` solo cuenta desde que terminó la última jornada del camión (o desde que empezó la vigente), sin columnas nuevas;
+- lo pendiente se suelta del camión y queda «sin camión» en su mismo día (no pasa solo al día siguiente).
+
+Lo que sí queda es lo que sirve para que el algoritmo aprenda: la jornada con hora de inicio y término, los avisos de entrega con su posición (`entrega_evento`) y el resultado de cada factura. Si no se toca TERMINAR, el día siguiente empieza limpio igual: todo está separado por fecha y la jornada de otro día no cuenta.

@@ -38,6 +38,11 @@ export const fakeRutas = (pendientes: FacturaParaRuta[] = []) => {
       guardada = { id: 'r-1', camionId: d.camionId, fecha: d.fecha, salidaMin: d.salidaMin, modo: d.modo, version: (guardada?.version ?? 0) + 1, orden: d.orden, fijas: d.fijas };
       return Promise.resolve(ok(guardada));
     }),
+    borrar: vi.fn<RutaRepository['borrar']>(() => {
+      guardada = undefined;
+      return Promise.resolve();
+    }),
+    borrarAnteriores: vi.fn<RutaRepository['borrarAnteriores']>(() => Promise.resolve()),
   } satisfies RutaRepository;
   return { repo, estado, guardadaActual: () => guardada };
 };
@@ -62,6 +67,7 @@ export const fakeFacturasRuta = () =>
     obtener: vi.fn<FacturaRepository['obtener']>(),
     listar: vi.fn<FacturaRepository['listar']>(() => Promise.resolve([])),
     actualizar: vi.fn<FacturaRepository['actualizar']>(() => Promise.resolve(ok(facturaDe()))),
+    soltarPendientesDelCamion: vi.fn<FacturaRepository['soltarPendientesDelCamion']>(() => Promise.resolve(0)),
   }) satisfies FacturaRepository;
 
 export const fakeEntregasRuta = () =>

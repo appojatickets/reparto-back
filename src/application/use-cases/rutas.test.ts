@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { err } from '../../domain/shared/result.js';
 import { crearReloj, usuarioDe } from './fakes.test-util.js';
-import { resolverDePrueba } from './fakes-facturas.test-util.js';
+import { fakeJornadas, resolverDePrueba } from './fakes-facturas.test-util.js';
 import { CAMION_ID, FECHA, fakeCamionesRuta, fakeEmpresas, fakeEntregasRuta, fakeFacturasRuta, fakeRutas, paradaDe } from './fakes-rutas.test-util.js';
 import { crearServiciosDeRuta } from './rutas.js';
 
 const despachador = usuarioDe({ id: 'u-d', rol: 'despachador' });
 
-const montar = (opciones: { pendientes?: ReturnType<typeof paradaDe>[]; config?: Parameters<typeof fakeEmpresas>[0] | null } = {}) => {
+const montar = (opciones: { pendientes?: ReturnType<typeof paradaDe>[]; config?: Parameters<typeof fakeEmpresas>[0] | null; jornadas?: ReturnType<typeof fakeJornadas> } = {}) => {
   const rutas = fakeRutas(opciones.pendientes ?? [paradaDe('A'), paradaDe('B'), paradaDe('C'), paradaDe('D')]);
   const empresas = fakeEmpresas(opciones.config);
   const facturas = fakeFacturasRuta();
-  const servicios = crearServiciosDeRuta({ rutas: rutas.repo, empresas, camiones: fakeCamionesRuta(), facturas, entregas: fakeEntregasRuta(), clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba() });
+  const servicios = crearServiciosDeRuta({ rutas: rutas.repo, empresas, camiones: fakeCamionesRuta(), facturas, entregas: fakeEntregasRuta(), jornadas: opciones.jornadas ?? fakeJornadas(), clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba() });
   return { ...servicios, rutas, facturas, empresas };
 };
 const entrada = { camionId: CAMION_ID, fecha: FECHA };
@@ -124,7 +124,7 @@ describe('ruta de hoy: desde dónde y desde cuándo se calcula', () => {
     const entregas = fakeEntregasRuta();
     if (ultima) entregas.ultimaPosicion.mockResolvedValue({ ...ultima, en: new Date(ahora) });
     const facturas = fakeFacturasRuta();
-    const servicios = crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas, entregas, clock: crearReloj(ahora).clock, resolverCamion: resolverDePrueba() });
+    const servicios = crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas, entregas, jornadas: fakeJornadas(), clock: crearReloj(ahora).clock, resolverCamion: resolverDePrueba() });
     return { servicios, entregas, facturas };
   };
 
@@ -167,6 +167,19 @@ describe('ruta de hoy: desde dónde y desde cuándo se calcula', () => {
     const r = await servicios.ver(despachador, entrada);
     expect(r.ok && r.value.hechas.map((h) => [h.cliente, h.estado])).toEqual([['Kiosko', 'entregada'], ['Bazar', 'no_entregada']]);
     expect(facturas.listar).toHaveBeenCalledWith('empresa-1', { fecha: FECHA, camionId: CAMION_ID, incluirHechas: true });
+  });
+});
+
+describe('la lista empieza limpia al terminar la ruta', () => {
+  it('lo hecho solo cuenta desde que terminó la última jornada del camión (o desde que empezó la vigente)', async () => {
+    const jornadas = fakeJornadas();
+    jornadas.ultimaDelCamion.mockResolvedValueOnce({ desde: new Date('2026-10-05T09:00:00Z'), hasta: new Date('2026-10-05T09:30:00Z') });
+    const { ver, facturas } = montar({ jornadas });
+    await ver(despachador, entrada);
+    expect(facturas.listar).toHaveBeenCalledWith('empresa-1', { fecha: FECHA, camionId: CAMION_ID, incluirHechas: true, hechasDesde: new Date('2026-10-05T09:30:00Z') });
+    jornadas.ultimaDelCamion.mockResolvedValueOnce({ desde: new Date('2026-10-05T09:45:00Z') });
+    await ver(despachador, entrada);
+    expect(facturas.listar).toHaveBeenLastCalledWith('empresa-1', { fecha: FECHA, camionId: CAMION_ID, incluirHechas: true, hechasDesde: new Date('2026-10-05T09:45:00Z') });
   });
 });
 
@@ -280,7 +293,7 @@ describe('ruta del chofer', () => {
   const chofer = usuarioDe({ id: 'u-chofer', rol: 'chofer' });
   const montarChofer = (jornada?: Parameters<typeof resolverDePrueba>[0]) => {
     const rutas = fakeRutas([paradaDe('A'), paradaDe('B')]);
-    return crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), entregas: fakeEntregasRuta(), clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba(jornada) });
+    return crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), entregas: fakeEntregasRuta(), jornadas: fakeJornadas(jornada), clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba(jornada) });
   };
   const JORNADA_CAM = { id: 'j-1', usuarioId: 'u-chofer', fecha: FECHA, desde: new Date(), camion: { id: CAMION_ID, patente: 'ABCD12' } };
 

@@ -84,6 +84,8 @@ export class PostgresFacturaRepository implements FacturaRepository {
     if (filtro.incluirHechas) estados.push('entregada', 'no_entregada');
     if (filtro.incluirAnuladas) estados.push('anulada');
     q = q.where('f.estado', 'in', estados);
+    const desde = filtro.hechasDesde;
+    if (desde) q = q.where((eb) => eb.or([eb('f.estado', 'not in', ['entregada', 'no_entregada']), eb('f.actualizado_en', '>=', desde)]));
     if (filtro.camionId !== undefined) q = q.where('f.camion_id', '=', filtro.camionId);
     if (filtro.sinCamion) q = q.where('f.camion_id', 'is', null);
     return (await q.orderBy('f.creado_en').orderBy('f.id').execute()).map(aFactura);
@@ -109,5 +111,17 @@ export class PostgresFacturaRepository implements FacturaRepository {
       .execute();
     const f = await this.porId(empresaId, id);
     return f ? ok(f) : err('NO_ENCONTRADA');
+  }
+
+  async soltarPendientesDelCamion(empresaId: string, camionId: string, fecha: string): Promise<number> {
+    const r = await this.db
+      .updateTable('factura')
+      .set({ camion_id: null, actualizado_en: sql<Date>`now()` })
+      .where('empresa_id', '=', empresaId)
+      .where('camion_id', '=', camionId)
+      .where('fecha_reparto', '=', fecha)
+      .where('estado', '=', 'pendiente')
+      .executeTakeFirst();
+    return Number(r.numUpdatedRows);
   }
 }

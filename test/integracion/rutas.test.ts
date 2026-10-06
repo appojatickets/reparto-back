@@ -98,7 +98,7 @@ describe('rutas en Postgres', () => {
     await factura(s, '3', 'Kiosko C');
     await factura(s, '4', 'Sin Pin D');
     const reloj = { now: () => new Date('2026-10-05T12:00:00Z') };
-    const servicios = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas: new PostgresEntregaRepository(db), clock: reloj, resolverCamion: pasarCamion });
+    const servicios = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas: new PostgresEntregaRepository(db), jornadas: new PostgresJornadaRepository(db), clock: reloj, resolverCamion: pasarCamion });
     const usuario = { id: s.usuario, empresaId: s.empresa, rol: 'despachador' as const, username: 'd', nombre: 'D', activo: true };
 
     const p = await servicios.planificar(usuario, { camionId: s.camion, fecha: FECHA });
@@ -154,7 +154,7 @@ describe('horario manual en Postgres', () => {
     await empresas.guardarConfig(s.empresa, { deposito: { lat: -33.5, lng: -70.7 }, salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260 });
     await factura(s, '1', 'Almacén A');
     await factura(s, '2', 'Bazar B');
-    const servicios = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas: new PostgresEntregaRepository(db), clock: { now: () => new Date('2026-10-05T12:00:00Z') }, resolverCamion: pasarCamion });
+    const servicios = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas: new PostgresEntregaRepository(db), jornadas: new PostgresJornadaRepository(db), clock: { now: () => new Date('2026-10-05T12:00:00Z') }, resolverCamion: pasarCamion });
     const usuario = { id: s.usuario, empresaId: s.empresa, rol: 'despachador' as const, username: 'd', nombre: 'D', activo: true };
     const p = await servicios.planificar(usuario, { camionId: s.camion, fecha: FECHA }); // 2026-10-05 es lunes: Almacén A está cerrado
     expect(p.ok && p.value.paradas.map((x) => x.cliente)).toEqual(['Bazar B']);
