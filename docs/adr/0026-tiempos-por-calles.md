@@ -4,7 +4,7 @@ Estado: aceptada (se activa al cargar la clave `ORS_API_KEY`).
 
 ## Contexto
 
-La ruta calcula en línea recta × 1,35 (ADR 0025): es óptima en esa medida, pero no ve sentidos de calle, líneas de tren ni la Panamericana, y por eso los choferes siguen moviendo paradas. Google Maps (matriz de rutas, US$5 por 1.000 pares tras 10.000 gratis al mes, con tarjeta) saldría unos US$95 al mes con 3 camiones si se recalcula todo; no es «todo gratis».
+La ruta calcula en línea recta × 1,35 (ADR 0025): es óptima en esa medida, pero no ve sentidos de calle, líneas de tren ni la Panamericana, y por eso los choferes siguen moviendo paradas. **Google Maps fue descartado por el dueño el 2026-10-07**: la matriz de rutas cuesta US$5 por 1.000 pares tras 10.000 gratis al mes y exige tarjeta (unos US$95 al mes con 3 camiones de 20 paradas y una matriz por día; bastante más con 40 paradas y recálculo en cada entrega), y sus condiciones al parecer no permiten guardar los tiempos devueltos, así que la caché permanente no serviría. No es «todo gratis».
 
 ## Decisión
 
@@ -16,4 +16,4 @@ La ruta calcula en línea recta × 1,35 (ADR 0025): es óptima en esa medida, pe
 
 ## Pendiente
 
-Aprender el ritmo contra los tiempos por calles; evaluar tráfico en vivo (Google, con tarjeta) solo si con esto igual se mueven paradas por el tráfico; servidor propio de OpenStreetMap si el plan gratuito no alcanza.
+Aprender el ritmo contra los tiempos por calles; servidor propio de OpenStreetMap (con autorización del dueño, por el costo del plan) si el plan gratuito no alcanza. Sin tráfico en vivo: Google Maps está descartado.

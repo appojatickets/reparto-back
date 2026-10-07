@@ -158,8 +158,8 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 ### A19-6. Distancias por calles (decisión tuya)
 La ruta hoy mide en línea recta × 1,35. Es óptima en esa medida, pero no ve sentidos de calle, líneas de tren ni la Panamericana.
 - [ ] **Opción recomendada, gratis: OpenRouteService** (datos de OpenStreetMap). Crea la cuenta en `account.heigit.org`, genera una clave API y cárgala en Render → `reparto-back` → **Environment** como `ORS_API_KEY` (nunca la pegues en el chat). Plan gratis: 500 consultas de matriz al día. **Si te pide tarjeta, detente y avísame.** Ya está implementado (ADR 0026): cuando la cargues, la ruta usa calles sola (no hay que hacer nada más); con caché y vuelve a línea recta si algo falla.
-- [ ] Cuando la hayas cargado, avísame «listo» (sin la clave): aplico en tu base la tabla de caché y compruebo en los registros que ya consulta.
-- [ ] **Opción Google Maps** (calles reales y tráfico en vivo): matriz de rutas a US$5 por 1.000 pares (10.000 gratis al mes). Una ruta de 20 paradas son ~441 pares ≈ US$2,2; con 3 camiones y 22 días son ~US$95 al mes si se recalcula de cero. Pide cuenta de facturación con tarjeta: **no la usaré sin tu autorización explícita**. Solo tiene sentido si, con las distancias por calles gratis, igual mueves paradas por el tráfico.
+- [ ] Cuando la hayas cargado, avísame «listo» (sin la clave): compruebo en los registros que ya consulta (la tabla de caché ya está creada en tu base).
+- [x] **Google Maps: descartado por ti (2026-10-07).** Habría costado con tarjeta (≈ US$95 al mes con 3 camiones de 20 paradas, más con rutas largas) y no permite guardar los tiempos. No se usa.
 - [ ] **Alternativa propia (más adelante):** servidor de rutas propio con datos de OpenStreetMap. Necesita un plan de Render más grande que el Starter (costo extra): no lo haré sin tu autorización.
 
 ## B. Antes de usar el sistema con choferes reales
