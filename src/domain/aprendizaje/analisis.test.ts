@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { atenciones, calidadDeJornada, capacidadAprendida, cierresFrecuentes, completarConVisitas, mediana, pinesDudosos, pinesSugeridos, ritmoAprendido, servicioAprendido, tramosDeViaje, visitasDeducidas, type EventoObs, type LocalObs, type OperacionObs, type PosicionObs } from './analisis.js';
+import { atenciones, calidadDeJornada, capacidadAprendida, cierresFrecuentes, completarConVisitas, mediana, resumenesDelDia, pinesDudosos, pinesSugeridos, ritmoAprendido, servicioAprendido, tramosDeViaje, visitasDeducidas, type EventoObs, type LocalObs, type OperacionObs, type PosicionObs } from './analisis.js';
 
 const T0 = Date.parse('2026-10-05T13:00:00Z'); // 10:00 en Chile (verano)
 const en = (min: number): Date => new Date(T0 + min * 60_000);
@@ -95,6 +95,11 @@ describe('capacidad del camión', () => {
     ]);
     expect(p.find((q) => q.clave === 'capacidad_paradas' && q.ambito === 'global')).toMatchObject({ valor: 30, muestras: 3 });
     expect(p.find((q) => q.clave === 'duracion_jornada_min' && q.ambito === 'global')?.valor).toBe(380);
+  });
+
+  it('lo que hizo cada camión cada día sale de los avisos: entregas distintas atendidas y tiempo entre la primera y la última', () => {
+    const r = resumenesDelDia([ev('a', 'llegada', 0), ev('a', 'entregado', 10), ev('b', 'entregado', 70), ev('b', 'entregado', 75), ev('c', 'cerrado', 80), ev('d', 'no_entregado', 130)]);
+    expect(r).toEqual([{ camionId: 'cam-1', fecha: '2026-10-05', atendidas: 3, duracionMin: 130 }]);
   });
 
   it('un día con casi nada (probar la app) no dice cuántas entregas caben', () => {

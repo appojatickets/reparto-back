@@ -48,7 +48,8 @@ export const crearTerminarJornada = ({ jornadas, facturas, rutas, registro, cloc
     const j = await jornadas.activa(actor.empresaId, actor.id, fechaEnChile(ahora));
     await jornadas.terminar(actor.empresaId, actor.id, ahora);
     if (!j) return undefined;
-    const del = await facturas.listar(actor.empresaId, { fecha: j.fecha, camionId: j.camion.id, incluirHechas: true });
+    // Solo lo hecho desde que empezó esta jornada: lo de una jornada anterior del mismo día ya quedó contado en su resumen.
+    const del = await facturas.listar(actor.empresaId, { fecha: j.fecha, camionId: j.camion.id, incluirHechas: true, hechasDesde: j.desde });
     const contar = (estado: 'entregada' | 'no_entregada' | 'pendiente'): number => del.filter((f) => f.estado === estado).length;
     // Antes de soltar lo pendiente se anota qué no se alcanzó: es lo que dice cuántas paradas caben en un día.
     await registro.guardarResumenDeJornada(actor.empresaId, {

@@ -184,6 +184,24 @@ const DURACION_MINIMA_MIN = 5;
 const ENTREGAS_MINIMAS_DEL_DIA = 3;
 
 /**
+ * Lo que hizo cada camión cada día, sacado de los avisos: cuántas entregas atendió y cuánto pasó entre la primera y la última. Es más
+ * confiable que los resúmenes de jornada (un día puede tener varias jornadas y cada una cuenta solo lo suyo).
+ */
+export const resumenesDelDia = (eventos: readonly EventoObs[]): readonly ResumenObs[] => {
+  const dias = new Map<string, { camionId: string; fecha: string; facturas: Set<string>; primero: number; ultimo: number }>();
+  for (const e of eventos) {
+    if (e.camionId === undefined) continue;
+    const k = `${e.camionId}|${dia(e.creadoEn)}`;
+    const d = dias.get(k) ?? { camionId: e.camionId, fecha: dia(e.creadoEn), facturas: new Set<string>(), primero: Infinity, ultimo: -Infinity };
+    if (e.tipo === 'entregado' || e.tipo === 'no_entregado') d.facturas.add(e.facturaId);
+    d.primero = Math.min(d.primero, ms(e.creadoEn));
+    d.ultimo = Math.max(d.ultimo, ms(e.creadoEn));
+    dias.set(k, d);
+  }
+  return [...dias.values()].map((d) => ({ camionId: d.camionId, fecha: d.fecha, atendidas: d.facturas.size, duracionMin: Math.round((d.ultimo - d.primero) / 60_000) }));
+};
+
+/**
  * Cuántas entregas se alcanzan a hacer en un día y cuánto trabaja el camión, por camión y en general (mediana: no la mueve un día raro).
  * Un chofer puede cerrar y abrir la ruta varias veces en el día (cargas por tandas): se suma por camión y día, no por jornada.
  */

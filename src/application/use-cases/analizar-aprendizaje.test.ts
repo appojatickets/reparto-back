@@ -22,7 +22,6 @@ const datos = (): DatosAnalisis => ({
     ...[0, 1, 2].map((d) => ev(`p${d}`, 'lp', 'llegada', d * 1440, { lat: -33.7 + 0.012, lng: -70.7, precisionM: 10 })),
   ],
   jornadas: [{ id: 'j-1', camionId: 'cam-1', fecha: '2026-10-01', desde: en(-30), hasta: en(400) }],
-  resumenes: [],
   posiciones: [],
   operaciones: [{ camionId: 'cam-1', fecha: '2026-10-01', tipo: 'planificar', modo: 'sugerida', orden: ['f1', 'f2', 'f3', 'f4', 'f5'], creadoEn: en(-20) }],
 });
@@ -90,7 +89,7 @@ describe('analizador de segundo plano', () => {
   });
 
   it('sin datos no inventa nada', async () => {
-    const t = montar({ locales: [], eventos: [], jornadas: [], resumenes: [], operaciones: [], posiciones: [] });
+    const t = montar({ locales: [], eventos: [], jornadas: [], operaciones: [], posiciones: [] });
     expect(await t.analizar('empresa-1')).toMatchObject({ eventos: 0, parametros: 0, pinesSugeridos: 0, cierresFrecuentes: [] });
     expect(t.aprendizaje.guardarCalidad).not.toHaveBeenCalled();
   });

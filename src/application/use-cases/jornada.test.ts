@@ -40,7 +40,7 @@ describe('terminar la ruta: queda el resumen del día', () => {
       facturaDe({ id: 'f4', estado: 'pendiente' }), facturaDe({ id: 'f5', estado: 'pendiente' }),
     ]);
     const r = await crearTerminarJornada({ jornadas, facturas, rutas: fakeRutas().repo, registro: fakeRegistro(), clock })(chofer);
-    expect(facturas.listar).toHaveBeenCalledWith('empresa-1', { fecha: '2026-10-05', camionId: 'cam-1', incluirHechas: true });
+    expect(facturas.listar).toHaveBeenCalledWith('empresa-1', { fecha: '2026-10-05', camionId: 'cam-1', incluirHechas: true, hechasDesde: new Date('2026-10-05T11:00:00Z') });
     expect(jornadas.terminar).toHaveBeenCalledWith('empresa-1', 'u-chofer', new Date('2026-10-05T12:00:00.000Z'));
     expect(r).toEqual({
       fecha: '2026-10-05', camionId: 'cam-1', desde: new Date('2026-10-05T11:00:00Z'), hasta: new Date('2026-10-05T12:00:00.000Z'),

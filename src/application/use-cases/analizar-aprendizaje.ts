@@ -1,5 +1,5 @@
 import {
-  atenciones, calidadDeJornada, capacidadAprendida, cierresFrecuentes, completarConVisitas, pinesDudosos, pinesSugeridos, ritmoAprendido, servicioAprendido, tramosDeViaje, visitasDeducidas, type LocalObs, type ParametroAprendido,
+  atenciones, calidadDeJornada, capacidadAprendida, cierresFrecuentes, completarConVisitas, pinesDudosos, pinesSugeridos, resumenesDelDia, ritmoAprendido, servicioAprendido, tramosDeViaje, visitasDeducidas, type LocalObs, type ParametroAprendido,
 } from '../../domain/aprendizaje/analisis.js';
 import { distanciaMetros } from '../../domain/importacion/propuesta-pin.js';
 import type { AprendizajeRepository, ResumenAnalisis } from '../ports/out/aprendizaje.js';
@@ -27,7 +27,7 @@ export const crearAnalizarAprendizaje = ({ aprendizaje, empresas, pines, clock }
     const parametros: ParametroAprendido[] = [
       ...servicioAprendido(atenciones(visitas.eventos, visitas.salidas)),
       ...ritmoAprendido(tramosDeViaje(visitas.eventos, locales, visitas.salidas)),
-      ...capacidadAprendida(datos.resumenes),
+      ...capacidadAprendida(resumenesDelDia(datos.eventos)),
     ];
     await aprendizaje.guardarParametros(empresaId, parametros, iniciadoEn);
 
