@@ -138,9 +138,14 @@ describe('crearConLocal', () => {
     expect(a.ok && repetida.ok && repetida.value.localId === a.value.localId).toBe(true);
     const otraDir = await repo.crearConLocal(e, { ...datos, rut: '12345678-5', local: { ...datos.local, direccion: 'Otra 55' } });
     expect(a.ok && otraDir.ok && otraDir.value.clienteId === a.value.clienteId).toBe(true);
-    const s1 = await repo.crearConLocal(e, datos);
+    // Sin RUT, el mismo nombre con la misma dirección es el mismo cliente aunque el existente sí tenga RUT: no se duplica.
+    const sinRutIgual = await repo.crearConLocal(e, datos);
+    expect(a.ok && sinRutIgual.ok && sinRutIgual.value.existente && sinRutIgual.value.localId === a.value.localId).toBe(true);
+    // Un cliente sin RUT con otro nombre sí es nuevo; repetirlo devuelve el mismo.
+    const otroNombre = { ...datos, razonSocial: 'Kiosko Sin Rut' };
+    const s1 = await repo.crearConLocal(e, otroNombre);
     expect(s1.ok && s1.value.existente).toBe(false);
-    const s2 = await repo.crearConLocal(e, datos);
+    const s2 = await repo.crearConLocal(e, otroNombre);
     expect(s1.ok && s2.ok && s2.value.existente && s2.value.localId === s1.value.localId).toBe(true);
   });
 

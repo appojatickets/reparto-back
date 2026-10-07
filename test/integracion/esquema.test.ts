@@ -12,7 +12,11 @@ describe('esquema', () => {
       select c.relname, c.relrowsecurity from pg_class c join pg_namespace n on n.oid = c.relnamespace
       where n.nspname = 'public' and c.relkind = 'r' and c.relname <> 'pgmigrations' order by 1`.execute(db);
     const nombres = r.rows.map((f) => f.relname);
-    expect(nombres).toEqual(['camion', 'cliente', 'empresa', 'entrega_evento', 'factura', 'horario_local', 'jornada', 'local', 'login_intento', 'parada_ruta', 'propuesta_pin', 'ruta', 'usuario', 'vendedor']);
+    // La lista es a propósito fija: una tabla nueva obliga a decidir (y probar) su RLS antes de pasar por aquí.
+    expect(nombres).toEqual([
+      'aprendizaje_ejecucion', 'aprendizaje_parametro', 'camion', 'cliente', 'empresa', 'entrega_evento', 'factura', 'foto_reporte', 'horario_local', 'jornada', 'jornada_resumen',
+      'local', 'login_intento', 'parada_ruta', 'posicion_camion', 'propuesta_pin', 'ruta', 'ruta_operacion', 'usuario', 'vendedor',
+    ]);
     expect(r.rows.filter((f) => !f.relrowsecurity)).toEqual([]);
   });
 
