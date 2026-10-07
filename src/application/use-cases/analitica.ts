@@ -10,6 +10,8 @@ const LOCALES_LENTOS = 15;
 export type LocalLento = ParametroAprendido & { readonly etiqueta?: EtiquetaLocal };
 export type CierreConEtiqueta = { readonly localId: string; readonly cerrados: number; readonly intentos: number; readonly horasCerrado: readonly number[]; readonly etiqueta?: EtiquetaLocal };
 
+export type PinDudosoConEtiqueta = { readonly localId: string; readonly distanciaM: number; readonly visitas: number; readonly fuente?: string; readonly etiqueta?: EtiquetaLocal };
+
 export type PanelAnalitica = {
   readonly desde: Date;
   readonly cobertura: Cobertura;
@@ -22,6 +24,7 @@ export type PanelAnalitica = {
     readonly localesLentos: readonly LocalLento[];
   };
   readonly cierres: readonly CierreConEtiqueta[];
+  readonly pinesDudosos: readonly PinDudosoConEtiqueta[];
   readonly ultimaEjecucion?: EjecucionAnalisis;
 };
 
@@ -40,7 +43,8 @@ export const crearVerAnalitica = ({ analitica, aprendizaje, camiones, clock }: {
     };
     const lentos = parametros.filter((p) => p.clave === 'servicio_min' && p.ambito.startsWith('local:')).sort((a, b) => b.valor - a.valor).slice(0, LOCALES_LENTOS);
     const cierres = ultima?.resumen.cierresFrecuentes ?? [];
-    const etiquetas = await analitica.etiquetasDeLocales(empresaId, [...lentos.map((p) => p.ambito.slice(6)), ...cierres.map((c) => c.localId)]);
+    const dudosos = ultima?.resumen.pinesDudosos ?? [];
+    const etiquetas = await analitica.etiquetasDeLocales(empresaId, [...lentos.map((p) => p.ambito.slice(6)), ...cierres.map((c) => c.localId), ...dudosos.map((d) => d.localId)]);
     const servicioGeneral = parametros.find((p) => p.clave === 'servicio_min' && p.ambito === 'global');
     return {
       desde,
@@ -54,6 +58,7 @@ export const crearVerAnalitica = ({ analitica, aprendizaje, camiones, clock }: {
         localesLentos: lentos.map((p) => { const e = etiquetas.get(p.ambito.slice(6)); return { ...p, ...(e ? { etiqueta: e } : {}) }; }),
       },
       cierres: cierres.map((c) => { const e = etiquetas.get(c.localId); return { localId: c.localId, cerrados: c.cerrados, intentos: c.intentos, horasCerrado: c.horasCerrado, ...(e ? { etiqueta: e } : {}) }; }),
+      pinesDudosos: dudosos.map((d) => { const e = etiquetas.get(d.localId); return { ...d, ...(e ? { etiqueta: e } : {}) }; }),
       ...(ultima ? { ultimaEjecucion: ultima } : {}),
     };
   };

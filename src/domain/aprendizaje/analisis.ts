@@ -34,7 +34,10 @@ export type EventoObs = {
   readonly creadoEn: Date;
 };
 
-export type LocalObs = { readonly id: string; readonly comuna: string; readonly lat?: number; readonly lng?: number };
+export type LocalObs = { readonly id: string; readonly comuna: string; readonly lat?: number; readonly lng?: number; readonly pinFuente?: string };
+
+/** Un punto del recorrido del camión. */
+export type PosicionObs = { readonly camionId: string; readonly lat: number; readonly lng: number; readonly precisionM?: number; readonly tomadoEn: Date };
 
 export type OperacionObs = {
   readonly camionId: string;
@@ -166,12 +169,28 @@ export const ritmoAprendido = (tramos: readonly TramoDeViaje[]): readonly Parame
 
 // ---------------------------------------------------------------- capacidad del camión
 
-export type ResumenObs = { readonly camionId: string; readonly atendidas: number; readonly duracionMin?: number };
+export type ResumenObs = { readonly camionId: string; readonly fecha: string; readonly atendidas: number; readonly duracionMin?: number };
 export const MINIMO_JORNADAS_CAPACIDAD = 3;
+/** Una jornada de menos minutos que esto (alguien eligió camión y terminó enseguida) no cuenta como tiempo trabajado. */
+const DURACION_MINIMA_MIN = 5;
+/** Un día con menos entregas que esto no dice cuántas caben. */
+const ENTREGAS_MINIMAS_DEL_DIA = 3;
 
-/** Cuántas entregas se alcanzan a hacer en una jornada y cuánto dura, por camión y en general (mediana: no la mueve un día raro). */
-export const capacidadAprendida = (resumenes: readonly ResumenObs[]): readonly ParametroAprendido[] => {
+/**
+ * Cuántas entregas se alcanzan a hacer en un día y cuánto trabaja el camión, por camión y en general (mediana: no la mueve un día raro).
+ * Un chofer puede cerrar y abrir la ruta varias veces en el día (cargas por tandas): se suma por camión y día, no por jornada.
+ */
+export const capacidadAprendida = (resumenesDeJornadas: readonly ResumenObs[]): readonly ParametroAprendido[] => {
   const salida: ParametroAprendido[] = [];
+  const dias = new Map<string, { camionId: string; fecha: string; atendidas: number; duracionMin: number }>();
+  for (const r of resumenesDeJornadas) {
+    const k = `${r.camionId}|${r.fecha}`;
+    const d = dias.get(k) ?? { camionId: r.camionId, fecha: r.fecha, atendidas: 0, duracionMin: 0 };
+    d.atendidas += r.atendidas;
+    if (r.duracionMin !== undefined && r.duracionMin >= DURACION_MINIMA_MIN) d.duracionMin += r.duracionMin;
+    dias.set(k, d);
+  }
+  const resumenes: ResumenObs[] = [...dias.values()].filter((d) => d.atendidas >= ENTREGAS_MINIMAS_DEL_DIA).map((d) => ({ camionId: d.camionId, fecha: d.fecha, atendidas: d.atendidas, ...(d.duracionMin > 0 ? { duracionMin: d.duracionMin } : {}) }));
   const agregar = (ambito: string, rs: readonly ResumenObs[]): void => {
     if (rs.length < MINIMO_JORNADAS_CAPACIDAD) return;
     const confianza = redondear(rs.length / (rs.length + 5));
@@ -209,7 +228,7 @@ const largoM = (orden: readonly string[], coord: ReadonlyMap<string, Coordenada>
   return Math.round((total + distanciaKm(previo, deposito)) * 1000);
 };
 
-/** Compara lo que el sistema sugirió para salir (su último cálculo automático antes del primer aviso) con el orden en que se hicieron las paradas. */
+/** Compara lo que el sistema sugirió para salir (su último cálculo automático antes del primer aviso, incluido «ir primero», que el sistema recalcula) con el orden en que se hicieron las paradas. */
 export const calidadDeJornada = (j: JornadaObs, eventos: readonly EventoObs[], operaciones: readonly OperacionObs[], locales: ReadonlyMap<string, LocalObs>, deposito: Coordenada): CalidadJornada | undefined => {
   const fin = ms(j.hasta ?? new Date(ms(j.desde) + 20 * 3_600_000));
   const evs = eventos.filter((e) => e.camionId === j.camionId && ms(e.creadoEn) >= ms(j.desde) && ms(e.creadoEn) <= fin);
@@ -222,7 +241,7 @@ export const calidadDeJornada = (j: JornadaObs, eventos: readonly EventoObs[], o
   if (primeros.size < 3) return undefined;
   const salida = Math.min(...primeros.values());
   const ops = operaciones.filter((o) => o.camionId === j.camionId && o.fecha === j.fecha).sort((a, b) => ms(a.creadoEn) - ms(b.creadoEn));
-  const calculos = ops.filter((o) => (o.tipo === 'planificar' || o.tipo === 'ordenar') && ms(o.creadoEn) <= salida);
+  const calculos = ops.filter((o) => (o.tipo === 'planificar' || o.tipo === 'ordenar' || (o.tipo === 'primero' && o.modo === 'sugerida')) && ms(o.creadoEn) <= salida);
   const sugerida = calculos[calculos.length - 1] ?? ops[0];
   if (!sugerida) return undefined;
 
@@ -298,4 +317,70 @@ export const cierresFrecuentes = (eventos: readonly EventoObs[]): readonly Cierr
     });
   }
   return salida.sort((a, b) => b.cerrados - a.cerrados);
+};
+
+// ---------------------------------------------------------------- llegadas que se deducen del recorrido del camión
+
+/** A cuántos metros del pin se considera que el camión estaba en el local. */
+export const RADIO_LLEGADA_INFERIDA_M = 80;
+const PRECISION_LLEGADA_INFERIDA_M = 60;
+const VENTANA_LLEGADA_INFERIDA_MIN = 40;
+
+/**
+ * Los choferes avisan ENTREGADO pero casi nunca LLEGUÉ. Para medir cuánto se demora cada local y cuánto tarda el camión entre paradas
+ * hace falta la hora de llegada: se deduce del recorrido. La llegada es el primer punto del último tramo seguido en que el camión
+ * estuvo junto al pin, antes de avisar la entrega. Solo para entregas sin aviso de llegada y con pin; no se guarda, se recalcula.
+ */
+export const llegadasInferidas = (eventos: readonly EventoObs[], locales: ReadonlyMap<string, LocalObs>, posiciones: readonly PosicionObs[]): readonly EventoObs[] => {
+  const conLlegada = new Set(eventos.filter((e) => e.tipo === 'llegada').map((e) => e.facturaId));
+  const porCamion = porClave(posiciones, (p) => p.camionId);
+  const salida: EventoObs[] = [];
+  for (const e of eventos) {
+    if (e.tipo !== 'entregado' || conLlegada.has(e.facturaId) || e.camionId === undefined) continue;
+    const l = locales.get(e.localId);
+    if (l?.lat === undefined || l.lng === undefined) continue;
+    const entrega = ms(e.creadoEn);
+    const ventana = (porCamion.get(e.camionId) ?? [])
+      .filter((p) => ms(p.tomadoEn) >= entrega - VENTANA_LLEGADA_INFERIDA_MIN * 60_000 && ms(p.tomadoEn) <= entrega + 60_000)
+      .sort((a, b) => ms(a.tomadoEn) - ms(b.tomadoEn));
+    let tramo: PosicionObs[] = [];
+    let ultimo: PosicionObs[] = [];
+    for (const p of ventana) {
+      const cerca = (p.precisionM === undefined || p.precisionM <= PRECISION_LLEGADA_INFERIDA_M) && distanciaKm(p, { lat: l.lat, lng: l.lng }) * 1000 <= RADIO_LLEGADA_INFERIDA_M;
+      if (cerca) tramo.push(p);
+      else {
+        if (tramo.length > 0) ultimo = tramo;
+        tramo = [];
+      }
+    }
+    const elegido = tramo.length > 0 ? tramo : ultimo;
+    const primero = elegido[0];
+    if (!primero) continue;
+    salida.push({ facturaId: e.facturaId, localId: e.localId, camionId: e.camionId, tipo: 'llegada', creadoEn: primero.tomadoEn, lat: primero.lat, lng: primero.lng, ...(primero.precisionM !== undefined ? { precisionM: primero.precisionM } : {}) });
+  }
+  return salida;
+};
+
+// ---------------------------------------------------------------- entregas avisadas lejos del pin
+
+export type PinDudoso = { readonly localId: string; readonly distanciaM: number; readonly visitas: number; readonly fuente?: string };
+export const DISTANCIA_PIN_DUDOSO_M = 150;
+const PRECISION_PIN_DUDOSO_M = 50;
+
+/**
+ * Locales donde se avisó ENTREGADO con buen GPS lejos de su pin: o el pin está mal, o se avisó desde otro lado. Es lo primero que
+ * conviene revisar de un pin; con ≥ 3 visitas coherentes el sistema además propone el pin nuevo.
+ */
+export const pinesDudosos = (eventos: readonly EventoObs[], locales: ReadonlyMap<string, LocalObs>): readonly PinDudoso[] => {
+  const salida: PinDudoso[] = [];
+  const entregas = eventos.filter((e) => e.tipo === 'entregado' && e.lat !== undefined && e.lng !== undefined && (e.precisionM === undefined || e.precisionM <= PRECISION_PIN_DUDOSO_M));
+  for (const [localId, evs] of porClave(entregas, (e) => e.localId)) {
+    const l = locales.get(localId);
+    if (l?.lat === undefined || l.lng === undefined) continue;
+    const distancias = evs.map((e) => distanciaKm({ lat: e.lat ?? 0, lng: e.lng ?? 0 }, { lat: l.lat ?? 0, lng: l.lng ?? 0 }) * 1000);
+    const lejos = distancias.filter((d) => d > DISTANCIA_PIN_DUDOSO_M);
+    if (lejos.length === 0) continue;
+    salida.push({ localId, distanciaM: Math.round(mediana(lejos) ?? 0), visitas: evs.length, ...(l.pinFuente !== undefined ? { fuente: l.pinFuente } : {}) });
+  }
+  return salida.sort((a, b) => b.distanciaM - a.distanciaM);
 };

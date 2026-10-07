@@ -1,4 +1,4 @@
-import type { CalidadJornada, CierreFrecuente, EventoObs, JornadaObs, LocalObs, OperacionObs, ParametroAprendido, ResumenObs } from '../../../domain/aprendizaje/analisis.js';
+import type { CalidadJornada, CierreFrecuente, EventoObs, JornadaObs, LocalObs, OperacionObs, ParametroAprendido, PinDudoso, PosicionObs, ResumenObs } from '../../../domain/aprendizaje/analisis.js';
 
 /** Todo lo registrado desde `desde`, listo para que el analizador lo recorra (el volumen es chico: unas decenas de avisos por camión y día). */
 export type DatosAnalisis = {
@@ -7,6 +7,8 @@ export type DatosAnalisis = {
   readonly jornadas: readonly JornadaObs[];
   readonly resumenes: readonly (ResumenObs & { readonly jornadaId: string })[];
   readonly operaciones: readonly OperacionObs[];
+  /** El recorrido del camión (para deducir las llegadas que nadie avisó). */
+  readonly posiciones: readonly PosicionObs[];
 };
 
 export type ResumenAnalisis = {
@@ -16,6 +18,10 @@ export type ResumenAnalisis = {
   readonly jornadasComparadas: number;
   readonly pinesSugeridos: number;
   readonly pinesProponidos: number;
+  /** Cuántas llegadas se dedujeron del recorrido porque nadie avisó LLEGUÉ. */
+  readonly llegadasDeducidas: number;
+  /** Locales donde se entregó lejos del pin (los 20 más lejanos). */
+  readonly pinesDudosos: readonly PinDudoso[];
   /** Los locales encontrados cerrados con más frecuencia (los 20 primeros). */
   readonly cierresFrecuentes: readonly CierreFrecuente[];
 };

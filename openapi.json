@@ -15454,6 +15454,52 @@
                         "additionalProperties": false
                       }
                     },
+                    "pinesDudosos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "localId": {
+                            "type": "string"
+                          },
+                          "distanciaM": {
+                            "type": "number"
+                          },
+                          "visitas": {
+                            "type": "number"
+                          },
+                          "fuente": {
+                            "type": "string"
+                          },
+                          "etiqueta": {
+                            "type": "object",
+                            "properties": {
+                              "razonSocial": {
+                                "type": "string"
+                              },
+                              "direccion": {
+                                "type": "string"
+                              },
+                              "comuna": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "razonSocial",
+                              "direccion",
+                              "comuna"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "localId",
+                          "distanciaM",
+                          "visitas"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "ultimaEjecucion": {
                       "type": "object",
                       "properties": {
@@ -15482,6 +15528,9 @@
                               "type": "number"
                             },
                             "pinesProponidos": {
+                              "type": "number"
+                            },
+                            "llegadasDeducidas": {
                               "type": "number"
                             },
                             "cierresFrecuentes": {
@@ -15526,6 +15575,7 @@
                             "jornadasComparadas",
                             "pinesSugeridos",
                             "pinesProponidos",
+                            "llegadasDeducidas",
                             "cierresFrecuentes"
                           ],
                           "additionalProperties": false
@@ -15545,7 +15595,8 @@
                     "porDia",
                     "calidad",
                     "aprendido",
-                    "cierres"
+                    "cierres",
+                    "pinesDudosos"
                   ],
                   "additionalProperties": false
                 }
@@ -15784,6 +15835,9 @@
                     "pinesProponidos": {
                       "type": "number"
                     },
+                    "llegadasDeducidas": {
+                      "type": "number"
+                    },
                     "cierresFrecuentes": {
                       "type": "array",
                       "items": {
@@ -15826,6 +15880,7 @@
                     "jornadasComparadas",
                     "pinesSugeridos",
                     "pinesProponidos",
+                    "llegadasDeducidas",
                     "cierresFrecuentes"
                   ],
                   "additionalProperties": false

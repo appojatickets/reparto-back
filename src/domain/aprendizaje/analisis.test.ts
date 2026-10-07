@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { atenciones, calidadDeJornada, capacidadAprendida, cierresFrecuentes, mediana, pinesSugeridos, ritmoAprendido, servicioAprendido, tramosDeViaje, type EventoObs, type LocalObs, type OperacionObs } from './analisis.js';
+import { atenciones, calidadDeJornada, capacidadAprendida, cierresFrecuentes, llegadasInferidas, mediana, pinesDudosos, pinesSugeridos, ritmoAprendido, servicioAprendido, tramosDeViaje, type EventoObs, type LocalObs, type OperacionObs, type PosicionObs } from './analisis.js';
 
 const T0 = Date.parse('2026-10-05T13:00:00Z'); // 10:00 en Chile (verano)
 const en = (min: number): Date => new Date(T0 + min * 60_000);
@@ -79,11 +79,26 @@ describe('ritmo de viaje', () => {
 });
 
 describe('capacidad del camión', () => {
-  it('necesita 3 jornadas y usa la mediana', () => {
-    expect(capacidadAprendida([{ camionId: 'c1', atendidas: 30 }, { camionId: 'c1', atendidas: 20 }])).toEqual([]);
-    const p = capacidadAprendida([{ camionId: 'c1', atendidas: 30, duracionMin: 480 }, { camionId: 'c1', atendidas: 20, duracionMin: 500 }, { camionId: 'c1', atendidas: 33, duracionMin: 520 }]);
+  const r = (fecha: string, atendidas: number, duracionMin?: number, camionId = 'c1') => ({ camionId, fecha, atendidas, ...(duracionMin !== undefined ? { duracionMin } : {}) });
+
+  it('necesita 3 días con entregas y usa la mediana', () => {
+    expect(capacidadAprendida([r('2026-10-01', 30), r('2026-10-02', 20)])).toEqual([]);
+    const p = capacidadAprendida([r('2026-10-01', 30, 480), r('2026-10-02', 20, 500), r('2026-10-03', 33, 520)]);
     expect(p.find((q) => q.clave === 'capacidad_paradas' && q.ambito === 'camion:c1')?.valor).toBe(30);
     expect(p.find((q) => q.clave === 'duracion_jornada_min' && q.ambito === 'global')?.valor).toBe(500);
+  });
+
+  it('si el chofer cierra y abre la ruta varias veces en el día, se suma por día y no por jornada; las jornadas de segundos no cuentan', () => {
+    const p = capacidadAprendida([
+      r('2026-10-01', 13, 190), r('2026-10-01', 22, 170), r('2026-10-01', 3, 2), // un día de 38 entregas en 360 min
+      r('2026-10-02', 30, 400), r('2026-10-03', 28, 380),
+    ]);
+    expect(p.find((q) => q.clave === 'capacidad_paradas' && q.ambito === 'global')).toMatchObject({ valor: 30, muestras: 3 });
+    expect(p.find((q) => q.clave === 'duracion_jornada_min' && q.ambito === 'global')?.valor).toBe(380);
+  });
+
+  it('un día con casi nada (probar la app) no dice cuántas entregas caben', () => {
+    expect(capacidadAprendida([r('2026-10-01', 1), r('2026-10-02', 2), r('2026-10-03', 1)])).toEqual([]);
   });
 });
 
@@ -110,6 +125,12 @@ describe('calidad de la ruta: lo sugerido frente a lo manejado', () => {
     const manual: OperacionObs = { ...sugerida, tipo: 'subir', modo: 'manual', orden: ['f2', 'f1', 'f3', 'f4'], creadoEn: en(-10) };
     const q = calidadDeJornada(jornada, visitas(['f2', 'f1', 'f3', 'f4']), [sugerida, manual], locales, DEPOSITO);
     expect(q?.inversiones).toBe(1);
+  });
+
+  it('«ir primero» lo recalcula el sistema: cuenta como lo que sugirió, no como corrección de la persona', () => {
+    const primero: OperacionObs = { ...sugerida, tipo: 'primero', modo: 'sugerida', orden: ['f3', 'f1', 'f2', 'f4'], creadoEn: en(-15) };
+    const q = calidadDeJornada(jornada, visitas(['f3', 'f1', 'f2', 'f4']), [sugerida, primero], locales, DEPOSITO);
+    expect(q?.inversiones).toBe(0);
   });
 
   it('con menos de 3 paradas en común no compara', () => {
@@ -147,5 +168,53 @@ describe('locales encontrados cerrados', () => {
     expect(r.map((x) => [x.localId, x.cerrados, x.intentos])).toEqual([['l-a', 2, 3], ['l-c', 2, 2]]);
     expect(r[0]?.horasCerrado).toEqual([10, 11]);
     expect(r[0]?.confianzaAbierto).toBeCloseTo(2 / 5, 2);
+  });
+});
+
+describe('llegadas que se deducen del recorrido', () => {
+  const LOCAL = local('l-fa', -33.5, -70.7);
+  const locales = new Map([['l-fa', LOCAL]]);
+  const punto = (min: number, dLat: number, extra: Partial<PosicionObs> = {}): PosicionObs => ({ camionId: 'cam-1', lat: -33.5 + dLat, lng: -70.7, tomadoEn: en(min), ...extra });
+  const entrega = ev('fa', 'entregado', 10);
+
+  it('toma el primer punto del último tramo junto al pin antes de avisar la entrega', () => {
+    const r = llegadasInferidas([entrega], locales, [punto(0, 0.02), punto(5, 0.0002), punto(7, 0.0003), punto(9, 0.0001)]);
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({ facturaId: 'fa', localId: 'l-fa', camionId: 'cam-1', tipo: 'llegada' });
+    expect(r[0]?.creadoEn.getTime()).toBe(en(5).getTime());
+  });
+
+  it('si el camión pasó antes por el lugar y volvió, vale el último tramo', () => {
+    const r = llegadasInferidas([entrega], locales, [punto(1, 0.0002), punto(3, 0.02), punto(8, 0.0002), punto(9, 0.0002)]);
+    expect(r[0]?.creadoEn.getTime()).toBe(en(8).getTime());
+  });
+
+  it('no inventa llegadas: con aviso de llegada, sin pin, sin recorrido cerca o con GPS impreciso no hace nada', () => {
+    const recorrido = [punto(5, 0.0002), punto(7, 0.0002)];
+    expect(llegadasInferidas([entrega, ev('fa', 'llegada', 4)], locales, recorrido)).toEqual([]);
+    expect(llegadasInferidas([entrega], new Map([['l-fa', { id: 'l-fa', comuna: 'X' }]]), recorrido)).toEqual([]);
+    expect(llegadasInferidas([entrega], locales, [punto(5, 0.02), punto(7, 0.02)])).toEqual([]);
+    expect(llegadasInferidas([entrega], locales, [punto(5, 0.0002, { precisionM: 300 })])).toEqual([]);
+    expect(llegadasInferidas([entrega], locales, [{ ...punto(5, 0.0002), camionId: 'otro' }])).toEqual([]);
+  });
+
+  it('con las llegadas deducidas ya se puede medir cuánto se demora el local', () => {
+    const deducidas = llegadasInferidas([entrega], locales, [punto(4, 0.0002), punto(8, 0.0002)]);
+    expect(atenciones([entrega, ...deducidas]).map((a) => a.minutos)).toEqual([6]);
+  });
+});
+
+describe('entregas avisadas lejos del pin', () => {
+  const locales = new Map<string, LocalObs>([['l-x', { id: 'l-x', comuna: 'Buin', lat: -33.5, lng: -70.7, pinFuente: 'geocodificador' }], ['l-y', local('l-y', -33.5, -70.7)]]);
+  const entrega = (id: string, localId: string, dLat: number, extra: Partial<EventoObs> = {}): EventoObs => ({ facturaId: id, localId, camionId: 'cam-1', tipo: 'entregado', lat: -33.5 + dLat, lng: -70.7, precisionM: 10, creadoEn: en(0), ...extra });
+
+  it('lista los locales donde se entregó a más de 150 m del pin, con la distancia y de dónde vino el pin', () => {
+    const r = pinesDudosos([entrega('a', 'l-x', 0.0162), entrega('b', 'l-x', 0.0001), entrega('c', 'l-y', 0.0002)], locales);
+    expect(r).toEqual([{ localId: 'l-x', distanciaM: 1801, visitas: 2, fuente: 'geocodificador' }]);
+  });
+
+  it('ignora el GPS impreciso y los locales sin pin', () => {
+    expect(pinesDudosos([entrega('a', 'l-x', 0.0162, { precisionM: 300 })], locales)).toEqual([]);
+    expect(pinesDudosos([entrega('a', 'sin-pin', 0.0162)], new Map())).toEqual([]);
   });
 });

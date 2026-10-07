@@ -27,7 +27,7 @@ describe('panel de analítica', () => {
       guardarParametros: vi.fn<AprendizajeRepository['guardarParametros']>(),
       guardarCalidad: vi.fn<AprendizajeRepository['guardarCalidad']>(),
       registrarEjecucion: vi.fn<AprendizajeRepository['registrarEjecucion']>(),
-      ultimaEjecucion: vi.fn<AprendizajeRepository['ultimaEjecucion']>(() => Promise.resolve(undefined)),
+      ultimaEjecucion: vi.fn<AprendizajeRepository['ultimaEjecucion']>(() => Promise.resolve({ iniciadoEn: new Date('2026-10-05T20:00:00Z'), terminadoEn: new Date('2026-10-05T20:00:02Z'), resumen: { eventos: 80, jornadas: 6, parametros: 5, jornadasComparadas: 1, pinesSugeridos: 0, pinesProponidos: 0, llegadasDeducidas: 12, cierresFrecuentes: [], pinesDudosos: [{ localId: 'l-1', distanciaM: 1800, visitas: 2, fuente: 'geocodificador' }] } })),
     } satisfies AprendizajeRepository;
     const p = await crearVerAnalitica({ analitica, aprendizaje, camiones: fakeCamionesRuta(), clock: crearReloj().clock })('empresa-1');
     expect(p.cobertura).toEqual(COBERTURA);
@@ -36,6 +36,7 @@ describe('panel de analítica', () => {
     expect(p.aprendido.localesLentos[0]).toMatchObject({ ambito: 'local:l-1', etiqueta: { razonSocial: 'Kiosko Ana' } });
     expect(p.aprendido.capacidad).toHaveLength(1);
     expect(p.calidad[0]).toMatchObject({ camion: 'ABCD12', inversiones: 3 });
-    expect(p.ultimaEjecucion).toBeUndefined();
+    expect(p.pinesDudosos).toEqual([{ localId: 'l-1', distanciaM: 1800, visitas: 2, fuente: 'geocodificador', etiqueta: { razonSocial: 'Kiosko Ana', direccion: 'Calle 1', comuna: 'Buin' } }]);
+    expect(p.ultimaEjecucion?.resumen.llegadasDeducidas).toBe(12);
   });
 });
