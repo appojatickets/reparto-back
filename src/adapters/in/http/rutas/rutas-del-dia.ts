@@ -60,6 +60,7 @@ const vistaRuta = z.object({
 
 const operacion = z.discriminatedUnion('tipo', [
   z.object({ tipo: z.enum(['subir', 'bajar', 'primero', 'despues', 'quitar']), facturaId: z.uuid() }),
+  z.object({ tipo: z.literal('mover'), facturaId: z.uuid(), posicion: z.number().int().min(0).max(999) }),
   z.object({ tipo: z.enum(['ordenar', 'insertar']) }),
   z.object({ tipo: z.literal('salida'), salidaMin: minuto }),
 ]);

@@ -68,6 +68,7 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'GET', url: `/v1/rutas?camionId=${UUID}&fecha=2026-10-05`, permiso: 'rutas:leer', caso: 'verRuta' },
   { metodo: 'POST', url: '/v1/rutas/planificar', body: { camionId: UUID, fecha: '2026-10-05' }, permiso: 'rutas:escribir', caso: 'planificarRuta' },
   { metodo: 'POST', url: '/v1/rutas/operaciones', body: { camionId: UUID, fecha: '2026-10-05', version: 1, operacion: { tipo: 'ordenar' } }, permiso: 'rutas:escribir', caso: 'operarRuta' },
+  { metodo: 'POST', url: '/v1/rutas/operaciones', body: { camionId: UUID, fecha: '2026-10-05', version: 1, operacion: { tipo: 'mover', facturaId: UUID, posicion: 2 } }, permiso: 'rutas:escribir', caso: 'operarRuta' },
   { metodo: 'POST', url: `/v1/entregas/${UUID}/eventos`, body: { tipo: 'llegada' }, permiso: 'entregas:registrar', caso: 'registrarEvento' },
   { metodo: 'GET', url: '/v1/analitica', permiso: 'metricas:leer', caso: 'verAnalitica' },
   { metodo: 'POST', url: '/v1/analitica/ejecutar', permiso: 'metricas:leer', caso: 'ejecutarAnalisis' },

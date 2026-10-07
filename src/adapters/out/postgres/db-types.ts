@@ -137,7 +137,7 @@ export type Tabla = {
     camion_id: string;
     fecha_reparto: string;
     usuario_id: string | null;
-    tipo: 'planificar' | 'subir' | 'bajar' | 'primero' | 'despues' | 'quitar' | 'ordenar' | 'insertar' | 'salida';
+    tipo: 'planificar' | 'subir' | 'bajar' | 'primero' | 'despues' | 'mover' | 'quitar' | 'ordenar' | 'insertar' | 'salida';
     factura_id: string | null;
     modo: 'sugerida' | 'manual';
     version: number;

@@ -4,7 +4,7 @@ import { esFechaValida, fechaEnChile, minutosEnChile } from '../../domain/shared
 import type { Coordenada } from '../../domain/valor/coordenada.js';
 import { err, ok, type Result } from '../../domain/shared/result.js';
 import { armarProblema, type EntradaParada } from '../../domain/ruteo/armar-problema.js';
-import { insertarNuevas, moverAlFrente, moverParada, ordenarPendientes, posponer, type EstadoRuta, type ResultadoOperacion } from '../../domain/ruteo/operaciones.js';
+import { insertarNuevas, moverAlFrente, moverAPosicion, moverParada, ordenarPendientes, posponer, type EstadoRuta, type ResultadoOperacion } from '../../domain/ruteo/operaciones.js';
 import { evaluarOrden, optimizar } from '../../domain/ruteo/optimizador.js';
 import type { Motivo, ProblemaRuta, Solucion, Sugerencia } from '../../domain/ruteo/tipos.js';
 import { errorApp, type ErrorApp } from '../errores.js';
@@ -83,6 +83,8 @@ export type VistaRuta = {
 
 export type Operacion =
   | { readonly tipo: 'subir' | 'bajar' | 'primero' | 'despues' | 'quitar'; readonly facturaId: string }
+  /** Arrastrar y soltar: la parada queda en la posición `posicion` (0 = la primera) de la lista de paradas en orden. */
+  | { readonly tipo: 'mover'; readonly facturaId: string; readonly posicion: number }
   | { readonly tipo: 'ordenar' | 'insertar' }
   | { readonly tipo: 'salida'; readonly salidaMin: number };
 
@@ -346,6 +348,10 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
         case 'subir':
         case 'bajar': {
           const r = moverParada(estado, op.facturaId, op.tipo === 'subir' ? -1 : 1);
+          return r.ok ? ok({ ...r.value, modo: 'manual' }) : err(errorApp('NO_ENCONTRADO', r.error.mensaje));
+        }
+        case 'mover': {
+          const r = moverAPosicion(estado, op.facturaId, op.posicion);
           return r.ok ? ok({ ...r.value, modo: 'manual' }) : err(errorApp('NO_ENCONTRADO', r.error.mensaje));
         }
         case 'primero': {

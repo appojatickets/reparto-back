@@ -16,7 +16,7 @@ export class PostgresAnaliticaRepository implements AnaliticaRepository {
         sql<string>`count(distinct factura_id) filter (where tipo in ('entregado', 'no_entregado'))`.as('resueltas'),
       ]).where('empresa_id', '=', empresaId).where('creado_en', '>=', desde).executeTakeFirst(),
       this.db.selectFrom('posicion_camion').select([sql<string>`count(*)`.as('total'), sql<Date | null>`max(tomado_en)`.as('ultimo')]).where('empresa_id', '=', empresaId).where('tomado_en', '>=', desde).executeTakeFirst(),
-      this.db.selectFrom('ruta_operacion').select([sql<string>`count(*)`.as('total'), sql<string>`count(*) filter (where tipo in ('subir', 'bajar', 'primero', 'despues', 'quitar'))`.as('manuales')]).where('empresa_id', '=', empresaId).where('creado_en', '>=', desde).executeTakeFirst(),
+      this.db.selectFrom('ruta_operacion').select([sql<string>`count(*)`.as('total'), sql<string>`count(*) filter (where tipo in ('subir', 'bajar', 'mover', 'primero', 'despues', 'quitar'))`.as('manuales')]).where('empresa_id', '=', empresaId).where('creado_en', '>=', desde).executeTakeFirst(),
     ]);
     return {
       jornadas: n(jornadas?.total), jornadasTerminadas: n(jornadas?.terminadas),

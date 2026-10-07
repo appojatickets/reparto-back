@@ -115,7 +115,13 @@ describe('rutas en Postgres', () => {
     const v = await servicios.ver(usuario, { camionId: s.camion, fecha: FECHA });
     expect(v.ok && v.value.paradas.map((x) => x.facturaId)).toEqual([orden[0], orden[2], orden[1], ...orden.slice(3)]);
 
-    const q = await servicios.operar(usuario, { camionId: s.camion, fecha: FECHA, version: 2, operacion: { tipo: 'quitar', facturaId: orden[0] ?? '' } });
+    // Arrastrar y soltar: la primera parada queda al final y el movimiento se anota para que el sistema aprenda.
+    const mv = await servicios.operar(usuario, { camionId: s.camion, fecha: FECHA, version: 2, operacion: { tipo: 'mover', facturaId: orden[0] ?? '', posicion: 3 } });
+    expect(mv.ok && mv.value.paradas.map((x) => x.facturaId)).toEqual([orden[2], orden[1], ...orden.slice(3), orden[0]]);
+    expect(mv.ok && mv.value).toMatchObject({ modo: 'manual', version: 3 });
+    expect(await db.selectFrom('ruta_operacion').select('id').where('empresa_id', '=', s.empresa).where('tipo', '=', 'mover').execute()).toHaveLength(1);
+
+    const q = await servicios.operar(usuario, { camionId: s.camion, fecha: FECHA, version: 3, operacion: { tipo: 'quitar', facturaId: orden[0] ?? '' } });
     expect(q.ok && q.value.paradas).toHaveLength(3);
     expect((await facturas.listar(s.empresa, { fecha: FECHA, sinCamion: true })).map((f) => f.id)).toEqual([orden[0]]);
   });

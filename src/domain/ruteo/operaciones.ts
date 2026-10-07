@@ -87,19 +87,16 @@ export const ordenarPendientes = (estado: EstadoRuta, opciones: OpcionesOptimiza
   return { problema: estado.problema, solucion: desdeActual.costo < desdeCero.costo ? desdeActual : desdeCero };
 };
 
-/** SUBIR / BAJAR: intercambia la parada con su vecina. Solo cambia ese par; el resto queda como estaba. */
-export const moverParada = (estado: EstadoRuta, id: string, delta: -1 | 1): Result<ResultadoOperacion, ErrorDominio> => {
+/**
+ * ARRASTRAR Y SOLTAR: la parada queda exactamente en `destino` (0 = la primera; fuera de la lista se acota a los extremos) y las demás
+ * conservan su orden relativo. No se reoptimiza: lo que la persona soltó es lo que manda.
+ */
+export const moverAPosicion = (estado: EstadoRuta, id: string, destino: number): Result<ResultadoOperacion, ErrorDominio> => {
   const idx = estado.orden.indexOf(id);
   if (idx < 0) return noExiste();
-  const destino = idx + delta;
-  const orden = [...estado.orden];
-  if (destino >= 0 && destino < orden.length) {
-    const otra = orden[destino];
-    const esta = orden[idx];
-    if (otra === undefined || esta === undefined) return noExiste();
-    orden[destino] = esta;
-    orden[idx] = otra;
-  }
+  const sinEsta = estado.orden.filter((x) => x !== id);
+  const posicion = Math.max(0, Math.min(Math.trunc(destino), sinEsta.length));
+  const orden = [...sinEsta.slice(0, posicion), id, ...sinEsta.slice(posicion)];
   // Una fijada solo sigue fijada mientras siga encabezando la ruta.
   const fijadas = new Set(estado.problema.fijas);
   const fijas: string[] = [];
@@ -109,6 +106,12 @@ export const moverParada = (estado: EstadoRuta, id: string, delta: -1 | 1): Resu
   }
   const problema: ProblemaRuta = { ...estado.problema, fijas };
   return ok({ problema, solucion: evaluarOrden(problema, orden) });
+};
+
+/** SUBIR / BAJAR: la parada pasa un lugar arriba o abajo (se intercambia con su vecina); el resto queda como estaba. */
+export const moverParada = (estado: EstadoRuta, id: string, delta: -1 | 1): Result<ResultadoOperacion, ErrorDominio> => {
+  const idx = estado.orden.indexOf(id);
+  return idx < 0 ? noExiste() : moverAPosicion(estado, id, idx + delta);
 };
 
 /** Mete en la ruta las paradas del problema que aún no tienen lugar, sin reordenar las demás. */

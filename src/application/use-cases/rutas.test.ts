@@ -194,6 +194,10 @@ describe('cada cálculo y cada movimiento de la ruta queda guardado para aprende
     const r = await s.operar(despachador, { ...entrada, version: vista?.version ?? 0, operacion: { tipo: 'bajar', facturaId: primera } });
     expect(r.ok).toBe(true);
     expect(registro.registrarOperacion).toHaveBeenLastCalledWith('empresa-1', expect.objectContaining({ tipo: 'bajar', facturaId: primera, modo: 'manual' }));
+    const ultima = vista?.paradas[vista.paradas.length - 1]?.facturaId ?? '';
+    const m = await s.operar(despachador, { ...entrada, version: r.ok ? r.value.version ?? 0 : 0, operacion: { tipo: 'mover', facturaId: ultima, posicion: 0 } });
+    expect(m.ok).toBe(true);
+    expect(registro.registrarOperacion).toHaveBeenLastCalledWith('empresa-1', expect.objectContaining({ tipo: 'mover', facturaId: ultima, modo: 'manual' }));
     registro.registrarOperacion.mockRejectedValue(new Error('base caída'));
     expect((await s.planificar(despachador, entrada)).ok).toBe(true);
   });
@@ -266,6 +270,22 @@ describe('acomodar la ruta', () => {
     expect(r.ok && r.value).toMatchObject({ modo: 'manual', version: version + 1 });
     const b = await s.operar(despachador, { ...entrada, version: version + 1, operacion: { tipo: 'bajar', facturaId: tercero } });
     expect(b.ok && ids(b.value)).toEqual(orden);
+  });
+
+  it('MOVER (arrastrar y soltar) deja la parada en la posición pedida, pasa a modo manual y sube la versión', async () => {
+    const { s, orden, version } = await planificada();
+    const ultimo = orden[orden.length - 1] ?? '';
+    const alFrente = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'mover', facturaId: ultimo, posicion: 0 } });
+    expect(alFrente.ok && ids(alFrente.value)).toEqual([ultimo, ...orden.slice(0, -1)]);
+    expect(alFrente.ok && alFrente.value).toMatchObject({ modo: 'manual', version: version + 1 });
+    const alMedio = await s.operar(despachador, { ...entrada, version: version + 1, operacion: { tipo: 'mover', facturaId: ultimo, posicion: 2 } });
+    expect(alMedio.ok && ids(alMedio.value)).toEqual([orden[0], orden[1], ultimo, ...orden.slice(2, -1)]);
+  });
+
+  it('MOVER con una posición fuera de la lista deja la parada en el extremo', async () => {
+    const { s, orden, version } = await planificada();
+    const r = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'mover', facturaId: orden[0] ?? '', posicion: 99 } });
+    expect(r.ok && ids(r.value)).toEqual([...orden.slice(1), orden[0]]);
   });
 
   it('en modo manual IR PRIMERO solo pasa al frente, sin reordenar el resto', async () => {
@@ -341,6 +361,8 @@ describe('acomodar la ruta', () => {
     const { s, version } = await planificada();
     const ajena = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'subir', facturaId: 'f-ZZZ' } });
     expect(!ajena.ok && ajena.error.codigo).toBe('NO_ENCONTRADO');
+    const mover = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'mover', facturaId: 'f-ZZZ', posicion: 0 } });
+    expect(!mover.ok && mover.error.codigo).toBe('NO_ENCONTRADO');
     const q = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'quitar', facturaId: 'f-ZZZ' } });
     expect(!q.ok && q.error.codigo).toBe('NO_ENCONTRADO');
     const salida = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'salida', salidaMin: -5 } });
