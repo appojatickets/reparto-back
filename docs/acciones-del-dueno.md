@@ -3,7 +3,21 @@
 Lista viva de lo que el agente **no puede** hacer (paneles, claves, decisiones de negocio, pruebas con personas).
 Marca cada casilla al terminar. Nunca pegues claves secretas en el chat: cárgalas directo en el panel.
 
-Última actualización: 2026-10-04 (Fase 4a: el chofer elige camión, carga facturas y ve su ruta).
+Última actualización: 2026-10-07 (aprendizaje en segundo plano, pines por verificar/verificados, ruta que prefiere lo cercano).
+
+---
+
+## ⭐ Lo que sigue: tus tareas, en orden
+
+Lo más importante primero. Marca cada casilla al terminar; el detalle de cada una está más abajo (A19).
+
+1. [ ] **Cargar los horarios de atención** (hoy hay 0): Importar clientes → **REVISAR LAS NOTAS CON HORARIOS** → **APLICAR**. Es lo más barato y hace que la ruta respete a quién le sirve cada hora.
+2. [ ] **Buscar los pines que faltan:** 591 de 751 locales no tienen pin. Importar clientes → **BUSCAR LOS PINES POR DIRECCIÓN** y deja la pantalla abierta ~15 minutos.
+3. [ ] **Contarme 3 paradas que moviste a mano y por qué** (cierra pronto, sentido de la calle, queda de paso, pedido del cliente…). Con eso afino cómo ordena la ruta.
+4. [ ] **Decidir las distancias por calles** (hoy la ruta mide en línea recta): ver A19-6. Recomendado: OpenRouteService, gratis.
+5. [ ] **Pegar el enlace que no funcionó** (`maps.app.goo.gl/tQsDTWhhRh9eyaTC8`) en un local con **PEGAR UBICACIÓN** y contarme el mensaje que sale.
+6. [ ] **Verificar pines** que ya sepas que están bien (ficha del local → **VERIFICAR PIN**): quedan fijos y las entregas dejan de moverlos.
+7. [ ] **Pedir a los choferes** que trabajen con la app abierta y la pantalla encendida: el recorrido y la llegada automática solo funcionan así.
 
 ---
 
@@ -131,6 +145,22 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] Prueba **ELIMINAR LA FOTO** en una de «Por verificar» (pide confirmar).
 - [ ] Como chofer, sube una foto nueva (o cambia la de un local ya verificado): debe aparecer en «Por verificar», no en «Verificadas».
 
+### A19. Aprendizaje, pines por verificar y ruta que sigue lo que haces (ADR 0022, 0024 y 0025 del back; 0013 y 0015 del front)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces (la etiqueta de versión está al pie de IMPORTAR CLIENTES).
+- [ ] **Permisos:** al abrir la app debe pedir **ubicación** y **micrófono**. Acepta los dos. Si rechazaste alguno, aparece un aviso con cómo activarlo (candado junto a la dirección → Permitir).
+- [ ] **Pin que sale de la entrega:** como chofer, marca **ENTREGADO** estando en la puerta del cliente. En la ficha del local el pin debe quedar **POR VERIFICAR** y moverse a donde estás. Después de varias entregas queda donde coinciden.
+- [ ] **Verificar un pin:** ficha del local → **VERIFICAR PIN** (admin o despachador). Pasa a **PIN VERIFICADO ✓** y las entregas ya no lo mueven. **QUITAR VERIFICACIÓN** lo vuelve a ajustar.
+- [ ] **Decidir:** los 33 pines exactos que pegaste desde enlaces de Google Maps también se ajustan con el camión hasta que los verifiques. ¿Los verifico todos de una vez con un botón? (dime sí o no).
+- [ ] **ANALÍTICA** (menú del admin): mira cuántos avisos con ubicación hay, cuántas llegadas dedujo del recorrido, los pines verificados / por verificar / sin pin y «La siguiente parada fue la que mostraba la ruta». **ANALIZAR AHORA** lo recalcula.
+- [ ] **Ruta que prefiere lo cercano:** calcula una ruta con varias paradas y comprueba si ahora la siguiente parada coincide más con lo que tú harías. Si todavía mueves paradas, anota cuáles y por qué (es la tarea 3 de arriba).
+- [ ] **Mover paradas:** hoy solo sube o baja de a un lugar (un chofer usó SUBIR 59 veces para 13 paradas). Dime si necesitas «mover a la posición N» o arrastrar.
+
+### A19-6. Distancias por calles (decisión tuya)
+La ruta hoy mide en línea recta × 1,35. Es óptima en esa medida, pero no ve sentidos de calle, líneas de tren ni la Panamericana.
+- [ ] **Opción recomendada, gratis: OpenRouteService** (datos de OpenStreetMap). Crea la cuenta en `account.heigit.org`, genera una clave API y cárgala en Render → `reparto-back` → **Environment** como `ORS_API_KEY` (nunca la pegues en el chat). Plan gratis: 500 consultas de matriz al día. **Si te pide tarjeta, detente y avísame.** Cuando la cargues, lo implemento con caché y vuelve a línea recta si falla.
+- [ ] **Opción Google Maps** (calles reales y tráfico en vivo): matriz de rutas a US$5 por 1.000 pares (10.000 gratis al mes). Una ruta de 20 paradas son ~441 pares ≈ US$2,2; con 3 camiones y 22 días son ~US$95 al mes si se recalcula de cero. Pide cuenta de facturación con tarjeta: **no la usaré sin tu autorización explícita**. Solo tiene sentido si, con las distancias por calles gratis, igual mueves paradas por el tráfico.
+- [ ] **Alternativa propia (más adelante):** servidor de rutas propio con datos de OpenStreetMap. Necesita un plan de Render más grande que el Starter (costo extra): no lo haré sin tu autorización.
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos
@@ -146,7 +176,7 @@ Con esto el servidor deja de dormirse (ver `docs/adr/0006-render-starter-pagado.
 
 ### B4. Aviso de privacidad (Ley 21.719)
 La ley rige desde el 1-dic-2026 (hay un proyecto para aplazarla, aún en trámite).
-- [ ] Revisar con quien corresponda el texto del aviso a choferes y clientes: qué se registra (hora de cada entrega, posición puntual), para qué, quién lo ve y por cuánto tiempo (12 meses).
+- [ ] Revisar con quien corresponda el texto del aviso a choferes y clientes: qué se registra (hora de cada entrega, posición al avisar, **posición del camión cada minuto mientras la app está abierta**, llegadas detectadas solas, lo que mueven en la ruta), para qué (mejorar las rutas; se sigue al camión, no al chofer), quién lo ve y por cuánto tiempo (12 meses).
 - [ ] Informar a los choferes antes de usar la app.
 
 ### B5. Spikes que requieren personas o dispositivos
@@ -161,6 +191,7 @@ La ley rige desde el 1-dic-2026 (hay un proyecto para aplazarla, aún en trámit
 - [ ] **Prioridad:** ¿qué significa exactamente «prioridad» en una factura? (hoy solo adelanta la llegada con un peso pequeño y sube el costo de no atenderla).
 - [ ] **Frío (O-02):** ¿hay un tiempo máximo fuera del freezer? Está desactivado hasta que lo definas.
 - [ ] **Pines:** ¿quién revisa los pines que proponen los choferes? (hoy: admin y despachador).
+- [ ] **Pines verificados:** ¿quién verifica pines y con qué criterio? (hoy: admin y despachador, desde la ficha del local).
 - [ ] **Roles:** ¿hace falta el rol despachador en la práctica o lo hace el administrador?
 - [ ] **O-05/O-07:** ¿puedes exportar los clientes del sistema de facturación (aunque sea una planilla) para sembrar la base?
 - [ ] **O-08:** línea base actual: km, horas de ruta, hora de regreso y rechazos por local cerrado, en un día normal por camión.
