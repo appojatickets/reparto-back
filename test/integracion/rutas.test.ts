@@ -112,12 +112,16 @@ describe('rutas en Postgres', () => {
     const m = await servicios.operar(usuario, { camionId: s.camion, fecha: FECHA, version: 1, operacion: { tipo: 'subir', facturaId: orden[2] ?? '' } });
     expect(m.ok && m.value).toMatchObject({ modo: 'manual', version: 2 });
 
+    // Lo que quedó arriba de la parada subida se fija tal cual; lo de abajo se ordena solo (ADR 0029).
     const v = await servicios.ver(usuario, { camionId: s.camion, fecha: FECHA });
-    expect(v.ok && v.value.paradas.map((x) => x.facturaId)).toEqual([orden[0], orden[2], orden[1], ...orden.slice(3)]);
+    const trasSubir = v.ok ? v.value.paradas.map((x) => x.facturaId) : [];
+    expect(trasSubir.slice(0, 2)).toEqual([orden[0], orden[2]]);
+    expect([...trasSubir].sort()).toEqual([...orden].sort());
+    expect(v.ok && v.value.paradas.map((x) => x.fijada)).toEqual([true, true, false, false]);
 
     // Arrastrar y soltar: la primera parada queda al final y el movimiento se anota para que el sistema aprenda.
     const mv = await servicios.operar(usuario, { camionId: s.camion, fecha: FECHA, version: 2, operacion: { tipo: 'mover', facturaId: orden[0] ?? '', posicion: 3 } });
-    expect(mv.ok && mv.value.paradas.map((x) => x.facturaId)).toEqual([orden[2], orden[1], ...orden.slice(3), orden[0]]);
+    expect(mv.ok && mv.value.paradas.map((x) => x.facturaId)).toEqual([...trasSubir.slice(1), orden[0]]);
     expect(mv.ok && mv.value).toMatchObject({ modo: 'manual', version: 3 });
     expect(await db.selectFrom('ruta_operacion').select('id').where('empresa_id', '=', s.empresa).where('tipo', '=', 'mover').execute()).toHaveLength(1);
 
