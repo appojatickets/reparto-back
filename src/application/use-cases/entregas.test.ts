@@ -1,3 +1,4 @@
+import type { Usuario } from '../../domain/entidades/usuario.js';
 import { describe, expect, it, vi } from 'vitest';
 import type { EntregaRepository } from '../ports/out/entregas.js';
 import { usuarioDe } from './fakes.test-util.js';
@@ -17,11 +18,27 @@ const montar = (factura = facturaDe({ camion: { id: 'cam-1', patente: 'ABCD12' }
   const entregas = { registrar: vi.fn<EntregaRepository['registrar']>(() => Promise.resolve()), ultimaPosicion: vi.fn<EntregaRepository['ultimaPosicion']>(() => Promise.resolve(undefined)), conLlegada: vi.fn<EntregaRepository['conLlegada']>(() => Promise.resolve(new Set<string>())), posicionesDeEntrega: vi.fn<EntregaRepository['posicionesDeEntrega']>(() => Promise.resolve([])) };
   const clientes = fakeClientes();
   const rutas = fakeRutas();
-  const registrar = crearRegistrarEvento({ facturas, entregas, clientes, rutas: rutas.repo, resolverCamion: resolverDePrueba(jornada) });
-  return { registrar, facturas, entregas, clientes, rutas };
+  const reordenarTrasVisita = vi.fn<(actor: Usuario, camionId: string, fecha: string, facturaId: string) => Promise<boolean>>(() => Promise.resolve(true));
+  const registrar = crearRegistrarEvento({ facturas, entregas, clientes, rutas: rutas.repo, resolverCamion: resolverDePrueba(jornada), reordenarTrasVisita });
+  return { registrar, facturas, entregas, clientes, rutas, reordenarTrasVisita };
 };
 
 describe('registrar evento de entrega', () => {
+  it('al entregar o no entregar, la ruta de ese camión se reordena sola si la parada no era la siguiente (llegar no la toca)', async () => {
+    const t = montar();
+    await t.registrar(chofer, 'f-1', { tipo: 'llegada', ...pos });
+    expect(t.reordenarTrasVisita).not.toHaveBeenCalled();
+    await t.registrar(chofer, 'f-1', { tipo: 'entregado', ...pos });
+    expect(t.reordenarTrasVisita).toHaveBeenCalledWith(chofer, 'cam-1', expect.any(String), 'f-1');
+  });
+
+  it('si reordenar la ruta falla, el aviso igual queda hecho', async () => {
+    const t = montar();
+    t.reordenarTrasVisita.mockRejectedValueOnce(new Error('caída'));
+    const r = await t.registrar(chofer, 'f-1', { tipo: 'entregado', ...pos });
+    expect(r.ok && r.value.estado).toBe('entregada');
+  });
+
   it('llegar a un local sin pin guarda el aviso y fija el pin con la posición (colaborativo)', async () => {
     const t = montar();
     const r = await t.registrar(chofer, 'f-1', { tipo: 'llegada', ...pos });

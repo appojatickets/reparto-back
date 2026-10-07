@@ -18,7 +18,17 @@ export type ResultadoEvento = { readonly estado: EstadoFactura; readonly pinFija
  * el pin del local mientras ese pin no esté verificado (se va ajustando con cada entrega); uno verificado no se mueve. Al llegar o
  * encontrarlo cerrado, un local sin pin toma esa posición.
  */
-export const crearRegistrarEvento = ({ facturas, entregas, clientes, rutas, resolverCamion }: { facturas: FacturaRepository; entregas: EntregaRepository; clientes: ClienteRepository; rutas: RutaRepository; resolverCamion: ResolverCamion }) =>
+type DependenciasEvento = {
+  readonly facturas: FacturaRepository;
+  readonly entregas: EntregaRepository;
+  readonly clientes: ClienteRepository;
+  readonly rutas: RutaRepository;
+  readonly resolverCamion: ResolverCamion;
+  /** Si la parada avisada no era la siguiente de la lista, lo que queda se reordena solo desde ahí (lo que se hace manda). */
+  readonly reordenarTrasVisita?: (actor: Usuario, camionId: string, fecha: string, facturaId: string) => Promise<unknown>;
+};
+
+export const crearRegistrarEvento = ({ facturas, entregas, clientes, rutas, resolverCamion, reordenarTrasVisita }: DependenciasEvento) =>
   async (actor: Usuario, facturaId: string, entrada: EventoCrudo): Promise<Result<ResultadoEvento, ErrorApp>> => {
     const v = validarEvento(entrada);
     if (!v.ok) return err(errorApp('VALIDACION', v.error.map((e) => e.mensaje).join(' '), { errores: v.error }));
@@ -58,5 +68,7 @@ export const crearRegistrarEvento = ({ facturas, entregas, clientes, rutas, reso
     } else if (puedeFijarPin(evento, f.local.tienePin) && evento.lat !== undefined && evento.lng !== undefined) {
       pinFijado = await clientes.fijarPinSiFalta(actor.empresaId, f.local.id, evento.lat, evento.lng);
     }
+    // Avisar ya está hecho: reordenar lo que queda nunca hace fallar el aviso.
+    if (nuevoEstado !== undefined && f.camion && reordenarTrasVisita) await reordenarTrasVisita(actor, f.camion.id, f.fecha, facturaId).catch(() => undefined);
     return ok({ estado: nuevoEstado ?? f.estado, pinFijado });
   };

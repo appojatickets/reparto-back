@@ -283,24 +283,50 @@ describe('acomodar la ruta', () => {
     return { s, orden: ids(p.value), version: p.value.version ?? 0 };
   };
 
-  it('SUBIR y BAJAR mueven una posición, pasan a modo manual y suben la versión', async () => {
+  it('SUBIR y BAJAR mueven una posición, pasan a modo manual y suben la versión; lo de arriba queda fijado', async () => {
     const { s, orden, version } = await planificada();
     const tercero = orden[2] ?? '';
     const r = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'subir', facturaId: tercero } });
-    expect(r.ok && ids(r.value)).toEqual([orden[0], tercero, orden[1], orden[3]]);
+    expect(r.ok && ids(r.value).slice(0, 2)).toEqual([orden[0], tercero]);
+    expect(r.ok && [...ids(r.value)].sort()).toEqual([...orden].sort());
+    expect(r.ok && r.value.paradas.map((p) => p.fijada)).toEqual([true, true, false, false]);
     expect(r.ok && r.value).toMatchObject({ modo: 'manual', version: version + 1 });
+    const debajo = r.ok ? (ids(r.value)[2] ?? '') : '';
     const b = await s.operar(despachador, { ...entrada, version: version + 1, operacion: { tipo: 'bajar', facturaId: tercero } });
-    expect(b.ok && ids(b.value)).toEqual(orden);
+    expect(b.ok && ids(b.value).slice(0, 3)).toEqual([orden[0], debajo, tercero]);
   });
 
   it('MOVER (arrastrar y soltar) deja la parada en la posición pedida, pasa a modo manual y sube la versión', async () => {
     const { s, orden, version } = await planificada();
     const ultimo = orden[orden.length - 1] ?? '';
     const alFrente = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'mover', facturaId: ultimo, posicion: 0 } });
-    expect(alFrente.ok && ids(alFrente.value)).toEqual([ultimo, ...orden.slice(0, -1)]);
+    expect(alFrente.ok && ids(alFrente.value)[0]).toBe(ultimo);
     expect(alFrente.ok && alFrente.value).toMatchObject({ modo: 'manual', version: version + 1 });
+    const actual = alFrente.ok ? ids(alFrente.value) : [];
     const alMedio = await s.operar(despachador, { ...entrada, version: version + 1, operacion: { tipo: 'mover', facturaId: ultimo, posicion: 2 } });
-    expect(alMedio.ok && ids(alMedio.value)).toEqual([orden[0], orden[1], ultimo, ...orden.slice(2, -1)]);
+    expect(alMedio.ok && ids(alMedio.value).slice(0, 3)).toEqual([actual[1], actual[2], ultimo]);
+  });
+
+  it('al mover una parada a mano, lo de abajo se ordena solo desde ahí', async () => {
+    // Cuatro locales en fila hacia el este del depósito: la ruta va A, B, C, D. Si el chofer pone D primero, lo que queda se ordena desde D.
+    const enFila = ['A', 'B', 'C', 'D'].map((n, i) => paradaDe(n, { lat: -33.5, lng: -70.69 + i * 0.01 }));
+    const s = montar({ pendientes: enFila });
+    const p = await s.planificar(despachador, entrada);
+    expect(p.ok && ids(p.value)).toEqual(['f-A', 'f-B', 'f-C', 'f-D']);
+    const r = await s.operar(despachador, { ...entrada, version: p.ok ? (p.value.version ?? 0) : 0, operacion: { tipo: 'mover', facturaId: 'f-D', posicion: 0 } });
+    expect(r.ok && ids(r.value)).toEqual(['f-D', 'f-C', 'f-B', 'f-A']);
+    expect(r.ok && r.value.paradas[0]).toMatchObject({ fijada: true });
+  });
+
+  it('con lo de arriba fijado a mano, las facturas nuevas entran debajo y no lo mueven', async () => {
+    const { s, orden, version } = await planificada();
+    const r = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'mover', facturaId: orden[3] ?? '', posicion: 1 } });
+    const arriba = r.ok ? ids(r.value).slice(0, 2) : [];
+    s.rutas.estado.pendientes = [...s.rutas.estado.pendientes, paradaDe('E')];
+    const i = await s.operar(despachador, { ...entrada, version: version + 1, operacion: { tipo: 'insertar' } });
+    expect(i.ok && ids(i.value).slice(0, 2)).toEqual(arriba);
+    expect(i.ok && ids(i.value)).toContain('f-E');
+    expect(i.ok && i.value.modo).toBe('manual');
   });
 
   it('MOVER con una posición fuera de la lista deja la parada en el extremo', async () => {
@@ -309,13 +335,13 @@ describe('acomodar la ruta', () => {
     expect(r.ok && ids(r.value)).toEqual([...orden.slice(1), orden[0]]);
   });
 
-  it('en modo manual IR PRIMERO solo pasa al frente, sin reordenar el resto', async () => {
+  it('en modo manual IR PRIMERO la deja al frente y lo que se fijó antes a mano sigue detrás de ella', async () => {
     const { s, orden, version } = await planificada();
     const m = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'subir', facturaId: orden[1] ?? '' } });
     const actual = m.ok ? ids(m.value) : [];
     const ultimo = actual[3] ?? '';
     const r = await s.operar(despachador, { ...entrada, version: version + 1, operacion: { tipo: 'primero', facturaId: ultimo } });
-    expect(r.ok && ids(r.value)).toEqual([ultimo, ...actual.slice(0, 3)]);
+    expect(r.ok && ids(r.value).slice(0, 2)).toEqual([ultimo, orden[1]]);
     expect(r.ok && r.value.paradas[0]).toMatchObject({ fijada: true });
     expect(r.ok && r.value.modo).toBe('manual');
   });
@@ -413,5 +439,33 @@ describe('ruta del chofer', () => {
     expect(!plan.ok && plan.error.codigo).toBe('SIN_PERMISO');
     const sin = await montarChofer().ver(chofer, entrada);
     expect(!sin.ok && sin.error).toMatchObject({ detalle: { codigo: 'SIN_JORNADA' } });
+  });
+});
+
+describe('lo que se hace manda: avisar una parada que no era la siguiente', () => {
+  const enFila = () => ['A', 'B', 'C', 'D'].map((n, i) => paradaDe(n, { lat: -33.5, lng: -70.69 + i * 0.01 }));
+
+  it('si el chofer entregó otra antes de la siguiente, lo que queda se ordena solo desde donde está', async () => {
+    const rutas = fakeRutas(enFila());
+    const entregas = fakeEntregasRuta();
+    const registro = fakeRegistro();
+    const s = crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), entregas, jornadas: fakeJornadas(), registro, clock: crearReloj('2026-10-05T12:00:00Z').clock, resolverCamion: resolverDePrueba() });
+    const p = await s.planificar(despachador, entrada);
+    expect(p.ok && ids(p.value)).toEqual(['f-A', 'f-B', 'f-C', 'f-D']);
+    // Fue directo a D (la última de la lista) y la entregó: el camión está ahí y D ya no está pendiente.
+    rutas.estado.pendientes = rutas.estado.pendientes.filter((f) => f.facturaId !== 'f-D');
+    entregas.ultimaPosicion.mockResolvedValue({ lat: -33.5, lng: -70.66, en: new Date('2026-10-05T12:00:00Z') });
+    expect(await s.reordenarTrasVisita(despachador, CAMION_ID, FECHA, 'f-D')).toBe(true);
+    expect(rutas.guardadaActual()?.orden).toEqual(['f-C', 'f-B', 'f-A']);
+    expect(registro.registrarOperacion).toHaveBeenLastCalledWith('empresa-1', expect.objectContaining({ tipo: 'ordenar', orden: ['f-C', 'f-B', 'f-A'] }));
+  });
+
+  it('si siguió la lista, no se toca nada', async () => {
+    const s = montar({ pendientes: enFila() });
+    await s.planificar(despachador, entrada);
+    s.rutas.estado.pendientes = s.rutas.estado.pendientes.filter((f) => f.facturaId !== 'f-A');
+    const llamadas = s.rutas.repo.guardar.mock.calls.length;
+    expect(await s.reordenarTrasVisita(despachador, CAMION_ID, FECHA, 'f-A')).toBe(false);
+    expect(s.rutas.repo.guardar.mock.calls.length).toBe(llamadas);
   });
 });

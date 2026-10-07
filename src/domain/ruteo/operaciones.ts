@@ -108,6 +108,18 @@ export const moverAPosicion = (estado: EstadoRuta, id: string, destino: number):
   return ok({ problema, solucion: evaluarOrden(problema, orden) });
 };
 
+/**
+ * Lo que se cambia a mano manda y lo de abajo se ordena solo: la parada `id` y todo lo que quedó arriba de ella se fija tal cual está (así
+ * lo dejó la persona) y lo que está debajo se vuelve a ordenar desde ahí. Se usa después de subir, bajar o arrastrar una parada.
+ */
+export const ordenarDebajoDe = (estado: EstadoRuta, id: string, opciones: OpcionesOptimizacion = {}): Result<ResultadoOperacion, ErrorDominio> => {
+  const idx = estado.orden.indexOf(id);
+  if (idx < 0) return noExiste();
+  const enProblema = new Set(estado.problema.paradas.map((p) => p.id));
+  const fijas = estado.orden.slice(0, idx + 1).filter((x) => enProblema.has(x));
+  return ok(ordenarPendientes({ problema: { ...estado.problema, fijas }, orden: estado.orden }, opciones));
+};
+
 /** SUBIR / BAJAR: la parada pasa un lugar arriba o abajo (se intercambia con su vecina); el resto queda como estaba. */
 export const moverParada = (estado: EstadoRuta, id: string, delta: -1 | 1): Result<ResultadoOperacion, ErrorDominio> => {
   const idx = estado.orden.indexOf(id);

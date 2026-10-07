@@ -5,7 +5,7 @@ import type { Coordenada } from '../../domain/valor/coordenada.js';
 import { err, ok, type Result } from '../../domain/shared/result.js';
 import { armarProblema, type EntradaParada } from '../../domain/ruteo/armar-problema.js';
 import { ubicarPorOrdenDeCarga, type AnclaDeCarga } from '../../domain/ruteo/ubicacion-por-carga.js';
-import { insertarNuevas, moverAlFrente, moverAPosicion, moverParada, ordenarPendientes, posponer, type EstadoRuta, type ResultadoOperacion } from '../../domain/ruteo/operaciones.js';
+import { insertarNuevas, moverAlFrente, moverAPosicion, moverParada, ordenarDebajoDe, ordenarPendientes, posponer, type EstadoRuta, type ResultadoOperacion } from '../../domain/ruteo/operaciones.js';
 import { evaluarOrden, optimizar } from '../../domain/ruteo/optimizador.js';
 import type { Motivo, ProblemaRuta, Solucion, Sugerencia } from '../../domain/ruteo/tipos.js';
 import { errorApp, type ErrorApp } from '../errores.js';
@@ -373,37 +373,38 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
     const estado: EstadoRuta = { problema, orden };
     const opciones = { presupuesto: presupuesto() };
     const manual = guardada.modo === 'manual';
+    // Ruta acomodada a mano antes de que lo de abajo se ordenara solo (sin nada fijado): ahí no se reordena nada sin que lo pidan.
+    const manualSinFijas = manual && problema.fijas.length === 0;
+    /** Lo que la persona dejó arriba (hasta la parada que movió) queda tal cual; lo de abajo se ordena solo desde ahí. */
+    const yOrdenarDebajo = (r: Result<ResultadoOperacion, { mensaje: string }>, id: string): Result<ResultadoOperacion & { modo: ModoRuta }, ErrorApp> => {
+      if (!r.ok) return err(errorApp('NO_ENCONTRADO', r.error.mensaje));
+      const debajo = ordenarDebajoDe({ problema: r.value.problema, orden: r.value.solucion.orden }, id, opciones);
+      return debajo.ok ? ok({ ...debajo.value, modo: 'manual' }) : err(errorApp('NO_ENCONTRADO', debajo.error.mensaje));
+    };
 
     const aplicar = (): Result<ResultadoOperacion & { modo: ModoRuta }, ErrorApp> => {
       switch (op.tipo) {
         case 'subir':
-        case 'bajar': {
-          const r = moverParada(estado, op.facturaId, op.tipo === 'subir' ? -1 : 1);
-          return r.ok ? ok({ ...r.value, modo: 'manual' }) : err(errorApp('NO_ENCONTRADO', r.error.mensaje));
-        }
-        case 'mover': {
-          const r = moverAPosicion(estado, op.facturaId, op.posicion);
-          return r.ok ? ok({ ...r.value, modo: 'manual' }) : err(errorApp('NO_ENCONTRADO', r.error.mensaje));
-        }
+        case 'bajar':
+          return yOrdenarDebajo(moverParada(estado, op.facturaId, op.tipo === 'subir' ? -1 : 1), op.facturaId);
+        case 'mover':
+          return yOrdenarDebajo(moverAPosicion(estado, op.facturaId, op.posicion), op.facturaId);
         case 'primero': {
-          if (!manual) {
-            const r = moverAlFrente(estado, op.facturaId, opciones);
-            return r.ok ? ok({ ...r.value, modo: guardada.modo }) : err(errorApp('NO_ENCONTRADO', r.error.mensaje));
-          }
-          // A mano: solo pasa al frente, sin reordenar el resto.
-          const p: ProblemaRuta = { ...problema, fijas: [op.facturaId, ...problema.fijas.filter((x) => x !== op.facturaId)] };
-          return ok({ problema: p, solucion: evaluarOrden(p, [op.facturaId, ...orden.filter((x) => x !== op.facturaId)]), modo: 'manual' });
+          // Pasa a ser la siguiente y lo demás se ordena desde ahí (lo que la persona fijó antes sigue detrás de ella).
+          const r = moverAlFrente(estado, op.facturaId, opciones);
+          return r.ok ? ok({ ...r.value, modo: guardada.modo }) : err(errorApp('NO_ENCONTRADO', r.error.mensaje));
         }
         case 'despues': {
           const r = posponer(estado, op.facturaId);
           return r.ok ? ok({ ...r.value, modo: guardada.modo }) : err(errorApp('NO_ENCONTRADO', r.error.mensaje));
         }
         case 'quitar':
-          return ok({ problema, solucion: manual ? evaluarOrden(problema, orden) : optimizar(problema, { ...opciones, ordenInicial: orden }), modo: guardada.modo });
+          return ok({ problema, solucion: manualSinFijas ? evaluarOrden(problema, orden) : optimizar(problema, { ...opciones, ordenInicial: orden }), modo: guardada.modo });
         case 'ordenar':
           return ok({ ...ordenarPendientes(estado, opciones), modo: 'sugerida' });
         case 'insertar':
-          return ok({ ...insertarNuevas(estado), modo: guardada.modo });
+          // Las nuevas entran debajo de lo que la persona fijó y lo de abajo se ordena con ellas.
+          return ok({ ...(problema.fijas.length === 0 ? insertarNuevas(estado) : ordenarPendientes(estado, opciones)), modo: guardada.modo });
         case 'salida':
           return ok({ problema, solucion: manual ? evaluarOrden(problema, orden) : optimizar(problema, { ...opciones, ordenInicial: orden }), modo: guardada.modo });
       }
@@ -413,5 +414,26 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
     return guardarYVer(actor, ctx2, entrada.camionId, entrada.fecha, salida, r.value, sinPin, { tipo: op.tipo, ...('facturaId' in op ? { facturaId: op.facturaId } : {}) }, entrada.version);
   };
 
-  return { ver, planificar, operar };
+  /**
+   * Lo que se hace manda: si el chofer avisó (entregó o no se pudo) una parada que no era la siguiente de la lista, lo que queda se vuelve a
+   * ordenar solo desde donde está ahora. Lo que la persona fijó arriba se respeta. Si siguió la lista, no cambia nada. Nunca falla hacia
+   * afuera: si no se puede, la lista queda como estaba.
+   */
+  const reordenarTrasVisita = async (actor: Usuario, camionId: string, fecha: string, facturaId: string): Promise<boolean> => {
+    const ctx = await cargar(actor, camionId, fecha);
+    if (!ctx.ok) return false;
+    const { guardada, items } = ctx.value;
+    if (!guardada) return false;
+    const lugar = guardada.orden.indexOf(facturaId);
+    if (lugar < 0) return false;
+    const pendientes = new Set(items.map((f) => f.facturaId));
+    if (!guardada.orden.slice(0, lugar).some((id) => pendientes.has(id))) return false;
+    const { problema, sinPin } = problemaDe(ctx.value, fecha, guardada.salidaMin, guardada.fijas);
+    const orden = guardada.orden.filter((id) => pendientes.has(id));
+    const estado = ordenarPendientes({ problema, orden }, { presupuesto: presupuesto() });
+    const r = await guardarYVer(actor, ctx.value, camionId, fecha, guardada.salidaMin, { ...estado, modo: guardada.modo }, sinPin, { tipo: 'ordenar' }, guardada.version);
+    return r.ok;
+  };
+
+  return { ver, planificar, operar, reordenarTrasVisita };
 };
