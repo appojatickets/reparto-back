@@ -1,5 +1,7 @@
 # 0027 — Mover una parada arrastrándola (operación «mover»)
 
+> Nota (ADR 0029): desde el mismo día, lo que queda **debajo** de la parada soltada se vuelve a ordenar solo; la parada y todo lo de arriba quedan como las dejó la persona. Lo demás de este ADR sigue igual. La pantalla está en el ADR 0016 del front.
+
 Estado: aceptada. Pedido del dueño, 2026-10-07: «presionar el botón y subir y bajar como un scroll y, al soltarlo, que se posicione en la lista».
 
 ## Decisiones

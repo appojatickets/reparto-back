@@ -154,7 +154,7 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] **Decidir:** los 33 pines exactos que pegaste desde enlaces de Google Maps también se ajustan con el camión hasta que los verifiques. ¿Los verifico todos de una vez con un botón? (dime sí o no).
 - [ ] **ANALÍTICA** (menú del admin): mira cuántos avisos con ubicación hay, cuántas llegadas dedujo del recorrido, los pines verificados / por verificar / sin pin y «La siguiente parada fue la que mostraba la ruta». **ANALIZAR AHORA** lo recalcula.
 - [ ] **Ruta que prefiere lo cercano:** calcula una ruta con varias paradas y comprueba si ahora la siguiente parada coincide más con lo que tú harías. Si todavía mueves paradas, anota cuáles y por qué (es la tarea 3 de arriba).
-- [ ] **Mover paradas:** hoy solo sube o baja de a un lugar (un chofer usó SUBIR 59 veces para 13 paradas). Dime si necesitas «mover a la posición N» o arrastrar.
+- [x] **Mover paradas:** resuelto: ahora se arrastra con el dedo (ver A20).
 
 ### A19-6. Distancias por calles (decisión tuya)
 La ruta hoy mide en línea recta × 1,35. Es óptima en esa medida, pero no ve sentidos de calle, líneas de tren ni la Panamericana.
@@ -162,6 +162,14 @@ La ruta hoy mide en línea recta × 1,35. Es óptima en esa medida, pero no ve s
 - [ ] Cuando la hayas cargado, avísame «listo» (sin la clave): compruebo en los registros que ya consulta (la tabla de caché ya está creada en tu base).
 - [x] **Google Maps: descartado por ti (2026-10-07).** Habría costado con tarjeta (≈ US$95 al mes con 3 camiones de 20 paradas, más con rutas largas) y no permite guardar los tiempos. No se usa.
 - [ ] **Alternativa propia (más adelante):** servidor de rutas propio con datos de OpenStreetMap. Necesita un plan de Render más grande que el Starter (costo extra): no lo haré sin tu autorización.
+
+### A20. Mover paradas arrastrándolas (ADR 0027 del back, ADR 0016 del front)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. La migración ya está aplicada en Supabase.
+- [ ] En **RUTAS** o **MI RUTA**, cada parada trae un botón **↕ MOVER** (ya no hay SUBIR ni BAJAR). **Mantén el dedo apoyado en MOVER y arrastra hacia arriba o abajo**: la parada sigue tu dedo y las otras se corren para abrirle el hueco. **Suelta**: la parada queda en ese lugar.
+- [ ] **Lista larga:** arrastra una parada hasta el borde de arriba o de abajo de la pantalla y quédate ahí: la lista debe **desplazarse sola**. Suelta cuando llegues al lugar que quieres.
+- [ ] Apoyar MOVER y soltar sin mover no cambia nada. La parada queda en su lugar al instante y, al confirmar, lo que está **debajo** se ordena solo (ADR 0029); lo de arriba queda como lo dejaste.
+- [ ] Sin señal: arrastra una parada con el celular en modo avión. Debe **volver a su sitio** y avisar que no se pudo.
+- [ ] Anota si se te cruza con el scroll normal de la página (por ejemplo, si al querer desplazar la lista tocas MOVER sin querer): lo ajusto.
 
 ## B. Antes de usar el sistema con choferes reales
 
