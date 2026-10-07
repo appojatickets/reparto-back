@@ -190,6 +190,22 @@ describe('entregas: estados, avisos y pin colaborativo', () => {
     expect(await clientes.fijarPinSiFalta(otra.empresa, s.kiosko, -33.6, -70.8)).toBe(false); // otra empresa
   });
 
+  it('el pin se ajusta con las entregas mientras no esté verificado; uno verificado no se mueve; se puede quitar la verificación', async () => {
+    const s = await sembrar();
+    // Rabelo ya tenía un pin importado: por verificar, así que la entrega lo mueve.
+    expect(await clientes.ajustarPinPorEntrega(s.empresa, s.rabelo, { lat: -33.41, lng: -70.61 })).toBe(true);
+    expect(await db.selectFrom('local').select(['lat', 'lng', 'pin_estado', 'pin_fuente']).where('id', '=', s.rabelo).executeTakeFirstOrThrow()).toEqual({ lat: -33.41, lng: -70.61, pin_estado: 'sugerido', pin_fuente: 'chofer' });
+    expect(await clientes.ajustarPinPorEntrega(s.empresa, s.rabelo, { lat: -33.41001, lng: -70.61001 })).toBe(false); // menos de 10 m: no se reescribe
+    expect(await clientes.verificarPin(s.empresa, s.rabelo, { por: s.usuario, en: new Date('2026-10-05T12:00:00Z') })).toBe('OK');
+    expect((await clientes.obtenerLocal(s.empresa, s.rabelo))?.pinVerificado).toBe(true);
+    expect(await clientes.ajustarPinPorEntrega(s.empresa, s.rabelo, { lat: -33.5, lng: -70.7 })).toBe(false); // verificado: no se mueve
+    expect(await clientes.verificarPin(s.empresa, s.rabelo, undefined)).toBe('OK');
+    expect(await clientes.ajustarPinPorEntrega(s.empresa, s.rabelo, { lat: -33.5, lng: -70.7 })).toBe(true); // vuelve a ajustarse
+    expect(await clientes.contarPines(s.empresa)).toMatchObject({ verificados: 0 });
+    const otra = await sembrar();
+    expect(await clientes.verificarPin(otra.empresa, s.rabelo, undefined)).toBe('NO_ENCONTRADO');
+  });
+
   it('la última posición del camión ese día (hora de Chile) y nada de otros días ni camiones', async () => {
     const s = await sembrar();
     const f = await facturas.crear(s.empresa, { localId: s.rabelo, fecha: '2026-10-05', camionId: s.camion.id, urgente: false, creadoPor: s.usuario });

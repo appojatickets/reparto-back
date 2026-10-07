@@ -17,6 +17,9 @@ export const fakeClientes = (locales: LocalDetalle[] = []) => {
     obtenerLocal: vi.fn<ClienteRepository['obtenerLocal']>((empresaId, id) => Promise.resolve(empresaId === 'empresa-1' ? locales.find((l) => l.id === id) : undefined)),
     actualizarLocal: vi.fn<ClienteRepository['actualizarLocal']>((empresaId, id) => Promise.resolve(empresaId === 'empresa-1' && locales.some((l) => l.id === id))),
     fijarPinSiFalta: vi.fn<ClienteRepository['fijarPinSiFalta']>(() => Promise.resolve(true)),
+    ajustarPinPorEntrega: vi.fn<ClienteRepository['ajustarPinPorEntrega']>(() => Promise.resolve(true)),
+    verificarPin: vi.fn<ClienteRepository['verificarPin']>((empresaId, id) => Promise.resolve(empresaId === 'empresa-1' && locales.some((l) => l.id === id) ? 'OK' : 'NO_ENCONTRADO')),
+    contarPines: vi.fn<ClienteRepository['contarPines']>(() => Promise.resolve({ verificados: 0, porVerificar: 0, sinPin: 0 })),
     exportarLocales: vi.fn<ClienteRepository['exportarLocales']>(() => Promise.resolve([])),
     quitarFoto: vi.fn<ClienteRepository['quitarFoto']>(() => Promise.resolve(true)),
     marcarFotoVerificada: vi.fn<ClienteRepository['marcarFotoVerificada']>((empresaId, id, fotoPath) => Promise.resolve(empresaId === 'empresa-1' && locales.some((l) => l.id === id && l.fotoPath === fotoPath))),
@@ -36,6 +39,7 @@ export const localDe = (extra: Partial<LocalDetalle> = {}): LocalDetalle => ({
   direccion: 'Av. Providencia 1234',
   comuna: 'Providencia',
   pinEstado: 'pendiente',
+  pinVerificado: false,
   ...extra,
 });
 

@@ -13,8 +13,8 @@ const ev = (facturaId: string, localId: string, tipo: EventoObs['tipo'], min: nu
 
 const datos = (): DatosAnalisis => ({
   locales: [
-    ...[1, 2, 3, 4, 5].map((n) => ({ id: `l${n}`, comuna: 'San Bernardo', direccion: `Calle ${n}`, lat: -33.5 + n * 0.01, lng: -70.7 })),
-    { id: 'lp', comuna: 'Buin', direccion: 'Pasaje Mal Pinchado 1', lat: -33.7, lng: -70.7 },
+    ...[1, 2, 3, 4, 5].map((n) => ({ id: `l${n}`, comuna: 'San Bernardo', direccion: `Calle ${n}`, lat: -33.5 + n * 0.01, lng: -70.7, pinVerificado: true })),
+    { id: 'lp', comuna: 'Buin', direccion: 'Pasaje Mal Pinchado 1', lat: -33.7, lng: -70.7, pinVerificado: true },
   ],
   eventos: [
     ...[1, 2, 3, 4, 5].flatMap((n) => [ev(`f${n}`, `l${n}`, 'llegada', n * 30), ev(`f${n}`, `l${n}`, 'entregado', n * 30 + 8)]),

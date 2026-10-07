@@ -22,7 +22,7 @@ export class PostgresAprendizajeRepository implements AprendizajeRepository {
     const localIds = [...new Set(eventos.map((e) => e.local_id))];
     const locales = localIds.length === 0
       ? []
-      : await this.db.selectFrom('local as l').select(['l.id', 'l.comuna', 'l.direccion', 'l.lat', 'l.lng', 'l.pin_fuente']).where('l.empresa_id', '=', empresaId).where('l.id', 'in', localIds).execute();
+      : await this.db.selectFrom('local as l').select(['l.id', 'l.comuna', 'l.direccion', 'l.lat', 'l.lng', 'l.pin_fuente', 'l.pin_verificado_en']).where('l.empresa_id', '=', empresaId).where('l.id', 'in', localIds).execute();
     return {
       eventos: eventos.map((e): EventoObs => ({
         facturaId: e.factura_id, localId: e.local_id, tipo: e.tipo, creadoEn: e.creado_en,
@@ -32,7 +32,7 @@ export class PostgresAprendizajeRepository implements AprendizajeRepository {
         ...(e.lat !== null && e.lng !== null ? { lat: e.lat, lng: e.lng } : {}),
         ...(e.precision_m !== null ? { precisionM: e.precision_m } : {}),
       })),
-      locales: locales.map((l) => ({ id: l.id, comuna: l.comuna, direccion: l.direccion, ...(l.lat !== null && l.lng !== null ? { lat: l.lat, lng: l.lng } : {}), ...(l.pin_fuente !== null ? { pinFuente: l.pin_fuente } : {}) })),
+      locales: locales.map((l) => ({ id: l.id, comuna: l.comuna, direccion: l.direccion, ...(l.lat !== null && l.lng !== null ? { lat: l.lat, lng: l.lng } : {}), ...(l.pin_fuente !== null ? { pinFuente: l.pin_fuente } : {}), pinVerificado: l.pin_verificado_en !== null })),
       jornadas: jornadas.map((j) => ({ id: j.id, camionId: j.camion_id, fecha: j.fecha, desde: j.desde, ...(j.hasta !== null ? { hasta: j.hasta } : {}) })),
       resumenes: resumenes.map((r) => ({ jornadaId: r.jornada_id, camionId: r.camion_id, fecha: r.fecha, atendidas: r.entregadas + r.no_entregadas, ...(r.duracion_min !== null ? { duracionMin: r.duracion_min } : {}) })),
       posiciones: posiciones.map((p) => ({ camionId: p.camion_id, lat: p.lat, lng: p.lng, ...(p.precision_m !== null ? { precisionM: p.precision_m } : {}), tomadoEn: p.tomado_en })),

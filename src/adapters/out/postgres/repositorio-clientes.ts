@@ -278,7 +278,7 @@ export class PostgresClienteRepository implements ClienteRepository {
     const f = await this.db
       .selectFrom('local as l')
       .innerJoin('cliente as c', 'c.id', 'l.cliente_id')
-      .select(['l.id', 'l.cliente_id', 'c.razon_social', 'c.rut', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng', 'l.pin_estado', 'l.pin_fuente', 'l.foto_path', 'l.streetview_rumbo', 'l.nota'])
+      .select(['l.id', 'l.cliente_id', 'c.razon_social', 'c.rut', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng', 'l.pin_estado', 'l.pin_fuente', 'l.pin_verificado_en', 'l.foto_path', 'l.streetview_rumbo', 'l.nota'])
       .where('l.id', '=', localId)
       .where('l.empresa_id', '=', empresaId)
       .executeTakeFirst();
@@ -293,6 +293,7 @@ export class PostgresClienteRepository implements ClienteRepository {
       ...(f.lat !== null && f.lng !== null ? { lat: f.lat, lng: f.lng } : {}),
       pinEstado: f.pin_estado,
       ...(f.pin_fuente !== null ? { pinFuente: f.pin_fuente } : {}),
+      pinVerificado: f.pin_verificado_en !== null,
       ...(f.foto_path !== null ? { fotoPath: f.foto_path } : {}),
       ...(f.streetview_rumbo !== null ? { streetviewRumbo: f.streetview_rumbo } : {}),
       ...(f.nota !== null ? { nota: f.nota } : {}),
@@ -333,6 +334,45 @@ export class PostgresClienteRepository implements ClienteRepository {
       .where((eb) => eb.or([eb('lat', 'is', null), eb.and([eb('pin_fuente', '=', 'geocodificador'), eb(sql<number>`coalesce(pin_confianza, 0)`, '<', 0.7)])]))
       .executeTakeFirst();
     return r.numUpdatedRows > 0n;
+  }
+
+  async ajustarPinPorEntrega(empresaId: string, localId: string, punto: { readonly lat: number; readonly lng: number }): Promise<boolean> {
+    const r = await this.db
+      .updateTable('local')
+      .set({ lat: punto.lat, lng: punto.lng, pin_estado: 'sugerido', pin_fuente: 'chofer', pin_confianza: null })
+      .where('id', '=', localId)
+      .where('empresa_id', '=', empresaId)
+      .where('pin_verificado_en', 'is', null)
+      // Solo si se movió de verdad (más de ~10 m): no se reescribe el mismo pin en cada entrega.
+      .where((eb) => eb.or([eb('lat', 'is', null), eb(sql<number>`abs(lat - ${punto.lat})`, '>', 0.00009), eb(sql<number>`abs(lng - ${punto.lng})`, '>', 0.00011)]))
+      .executeTakeFirst();
+    return r.numUpdatedRows > 0n;
+  }
+
+  async verificarPin(empresaId: string, localId: string, verificacion: { readonly por: string; readonly en: Date } | undefined): Promise<'OK' | 'SIN_PIN' | 'NO_ENCONTRADO'> {
+    const l = await this.db.selectFrom('local').select(['lat']).where('id', '=', localId).where('empresa_id', '=', empresaId).executeTakeFirst();
+    if (!l) return 'NO_ENCONTRADO';
+    if (verificacion !== undefined && l.lat === null) return 'SIN_PIN';
+    await this.db
+      .updateTable('local')
+      .set({ pin_verificado_por: verificacion?.por ?? null, pin_verificado_en: verificacion?.en ?? null, ...(verificacion ? { pin_estado: 'validado' as const } : {}) })
+      .where('id', '=', localId)
+      .where('empresa_id', '=', empresaId)
+      .execute();
+    return 'OK';
+  }
+
+  async contarPines(empresaId: string): Promise<{ readonly verificados: number; readonly porVerificar: number; readonly sinPin: number }> {
+    const r = await this.db
+      .selectFrom('local')
+      .select([
+        sql<string>`count(*) filter (where lat is not null and pin_verificado_en is not null)`.as('verificados'),
+        sql<string>`count(*) filter (where lat is not null and pin_verificado_en is null)`.as('por_verificar'),
+        sql<string>`count(*) filter (where lat is null)`.as('sin_pin'),
+      ])
+      .where('empresa_id', '=', empresaId)
+      .executeTakeFirst();
+    return { verificados: Number(r?.verificados ?? 0), porVerificar: Number(r?.por_verificar ?? 0), sinPin: Number(r?.sin_pin ?? 0) };
   }
 
   async exportarLocales(empresaId: string, filtro: FiltroExportacion, limite: number): Promise<readonly FilaExportacion[]> {

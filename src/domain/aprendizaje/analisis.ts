@@ -34,7 +34,7 @@ export type EventoObs = {
   readonly creadoEn: Date;
 };
 
-export type LocalObs = { readonly id: string; readonly comuna: string; readonly lat?: number; readonly lng?: number; readonly pinFuente?: string };
+export type LocalObs = { readonly id: string; readonly comuna: string; readonly lat?: number; readonly lng?: number; readonly pinFuente?: string; readonly pinVerificado?: boolean };
 
 /** Un punto del recorrido del camión. */
 export type PosicionObs = { readonly camionId: string; readonly lat: number; readonly lng: number; readonly precisionM?: number; readonly tomadoEn: Date };
@@ -289,7 +289,8 @@ export const pinesSugeridos = (eventos: readonly EventoObs[], locales: ReadonlyM
   const llegadas = eventos.filter((e) => (e.tipo === 'llegada' || e.tipo === 'entregado') && e.lat !== undefined && e.lng !== undefined && (e.precisionM === undefined || e.precisionM <= PRECISION_VISITA_M));
   for (const [localId, evs] of porClave(llegadas, (e) => e.localId)) {
     const l = locales.get(localId);
-    if (!l?.lat || !l.lng) continue;
+    // Un pin por verificar se ajusta solo con las entregas; solo se propone mover uno que una persona verificó.
+    if (!l?.lat || !l.lng || l.pinVerificado !== true) continue;
     const dias = new Set(evs.map((e) => dia(e.creadoEn)));
     if (evs.length < MINIMO_VISITAS_PIN || dias.size < 2) continue;
     const lat = mediana(evs.map((e) => e.lat ?? 0));
@@ -401,15 +402,16 @@ export const DISTANCIA_PIN_DUDOSO_M = 150;
 const PRECISION_PIN_DUDOSO_M = 50;
 
 /**
- * Locales donde se avisó ENTREGADO con buen GPS lejos de su pin: o el pin está mal, o se avisó desde otro lado. Es lo primero que
- * conviene revisar de un pin; con ≥ 3 visitas coherentes el sistema además propone el pin nuevo.
+ * Locales con pin verificado donde se avisó ENTREGADO con buen GPS lejos de ese pin: o el pin está mal, o se avisó desde otro lado.
+ * Es lo primero que conviene revisar; con ≥ 3 visitas coherentes el sistema además propone el pin nuevo.
  */
 export const pinesDudosos = (eventos: readonly EventoObs[], locales: ReadonlyMap<string, LocalObs>): readonly PinDudoso[] => {
   const salida: PinDudoso[] = [];
   const entregas = eventos.filter((e) => e.tipo === 'entregado' && e.lat !== undefined && e.lng !== undefined && (e.precisionM === undefined || e.precisionM <= PRECISION_PIN_DUDOSO_M));
   for (const [localId, evs] of porClave(entregas, (e) => e.localId)) {
     const l = locales.get(localId);
-    if (l?.lat === undefined || l.lng === undefined) continue;
+    // Los pines por verificar ya se corrigen solos con cada entrega: aquí solo importan los verificados.
+    if (l?.lat === undefined || l.lng === undefined || l.pinVerificado !== true) continue;
     const distancias = evs.map((e) => distanciaKm({ lat: e.lat ?? 0, lng: e.lng ?? 0 }, { lat: l.lat ?? 0, lng: l.lng ?? 0 }) * 1000);
     const lejos = distancias.filter((d) => d > DISTANCIA_PIN_DUDOSO_M);
     if (lejos.length === 0) continue;

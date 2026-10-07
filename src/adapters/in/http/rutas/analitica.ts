@@ -31,6 +31,7 @@ export const rutasAnalitica = ({ app, casos, guard }: ContextoRutas): void => {
               jornadas: z.number(), jornadasTerminadas: z.number(), avisos: z.number(), avisosConGps: z.number(), avisosAutomaticos: z.number(), paradasConLlegada: z.number(),
               paradasResueltas: z.number(), puntosGps: z.number(), ultimoPuntoGps: z.string().optional(), operacionesRuta: z.number(), correccionesManuales: z.number(),
             }),
+            pines: z.object({ verificados: z.number(), porVerificar: z.number(), sinPin: z.number() }),
             porDia: z.array(z.object({ fecha: z.string(), jornadas: z.number(), atendidas: z.number(), sinHacer: z.number() })),
             calidad: z.array(z.object({ fecha: z.string(), camionId: z.string(), camion: z.string().optional(), distSugeridaM: z.number(), distRealM: z.number(), inversiones: z.number() })),
             aprendido: z.object({
@@ -52,6 +53,7 @@ export const rutasAnalitica = ({ app, casos, guard }: ContextoRutas): void => {
       return reply.send({
         desde: p.desde.toISOString(),
         cobertura: { ...cobertura, ...(ultimoPuntoGps ? { ultimoPuntoGps: ultimoPuntoGps.toISOString() } : {}) },
+        pines: p.pines,
         porDia: [...p.porDia],
         calidad: [...p.calidad],
         aprendido: {

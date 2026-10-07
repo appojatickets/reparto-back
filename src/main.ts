@@ -7,6 +7,7 @@ import { crearGuardarConfigEmpresa, crearObtenerConfigEmpresa } from './applicat
 import { crearServiciosDeRuta } from './application/use-cases/rutas.js';
 import { crearGuardarHorario, crearObtenerHorario } from './application/use-cases/horarios.js';
 import { crearIniciarJornada, crearMiJornada, crearResolverCamion, crearTerminarJornada } from './application/use-cases/jornada.js';
+import { crearVerificarPin } from './application/use-cases/pin-verificado.js';
 import { crearVerAnalitica } from './application/use-cases/analitica.js';
 import { crearAnalizarAprendizaje } from './application/use-cases/analizar-aprendizaje.js';
 import { crearRegistrarPosiciones } from './application/use-cases/seguimiento.js';
@@ -134,6 +135,7 @@ const casos: CasosDeUso = {
   reportarFoto: crearReportarFoto({ clientes, reportes: reportesFoto }),
   fotosParaRevision: crearFotosParaRevision({ reportes: reportesFoto }),
   verificarFoto: crearVerificarFoto({ clientes, clock }),
+  verificarPin: crearVerificarPin({ clientes, clock }),
   resolverReporteFoto: crearResolverReporteFoto({ clientes, reportes: reportesFoto, almacen, clock }),
   exportarLocales: crearExportarLocales({ clientes }),
   obtenerUrlFoto: crearObtenerUrlFoto({ clientes, almacen }),
@@ -159,7 +161,7 @@ const casos: CasosDeUso = {
     analizarPronto();
     return resumen;
   },
-  verAnalitica: crearVerAnalitica({ analitica, aprendizaje, camiones, clock }),
+  verAnalitica: crearVerAnalitica({ analitica, aprendizaje, camiones, clientes, clock }),
   ejecutarAnalisis: analizarAprendizaje,
   registrarPosiciones: crearRegistrarPosiciones({ registro, rutas, entregas, resolverCamion, clock }),
   registrarEvento: crearRegistrarEvento({ facturas, entregas, clientes, rutas, resolverCamion }),

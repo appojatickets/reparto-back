@@ -1,6 +1,7 @@
 import type { Usuario } from '../../domain/entidades/usuario.js';
 import { esDeCamion } from '../../domain/permisos.js';
 import { estadoTras, puedeFijarPin, validarEvento, type EventoCrudo } from '../../domain/entidades/entrega.js';
+import { ENTREGAS_PARA_PIN, pinPorEntregas, posicionSirveParaPin } from '../../domain/entidades/pin-por-entregas.js';
 import { err, ok, type Result } from '../../domain/shared/result.js';
 import { errorApp, type ErrorApp } from '../errores.js';
 import type { ClienteRepository } from '../ports/out/clientes.js';
@@ -13,8 +14,9 @@ export type ResultadoEvento = { readonly estado: EstadoFactura; readonly pinFija
 
 /**
  * Lo que el chofer avisa desde la parada: llegué, entregué, está cerrado, espero N minutos, no se entregó, vuelvo más tarde.
- * Un chofer (o ayudante) solo avisa sobre facturas de su camión de hoy. Al llegar a un local sin pin, la posición se vuelve su
- * pin (colaborativo); si ya tiene, queda como evidencia.
+ * Un chofer (o ayudante) solo avisa sobre facturas de su camión de hoy. Al avisar ENTREGADO con buen GPS, el lugar de la entrega pasa a ser
+ * el pin del local mientras ese pin no esté verificado (se va ajustando con cada entrega); uno verificado no se mueve. Al llegar o
+ * encontrarlo cerrado, un local sin pin toma esa posición.
  */
 export const crearRegistrarEvento = ({ facturas, entregas, clientes, rutas, resolverCamion }: { facturas: FacturaRepository; entregas: EntregaRepository; clientes: ClienteRepository; rutas: RutaRepository; resolverCamion: ResolverCamion }) =>
   async (actor: Usuario, facturaId: string, entrada: EventoCrudo): Promise<Result<ResultadoEvento, ErrorApp>> => {
@@ -49,7 +51,11 @@ export const crearRegistrarEvento = ({ facturas, entregas, clientes, rutas, reso
     });
 
     let pinFijado = false;
-    if (puedeFijarPin(evento, f.local.tienePin) && evento.lat !== undefined && evento.lng !== undefined) {
+    if (evento.tipo === 'entregado' && evento.lat !== undefined && evento.lng !== undefined && posicionSirveParaPin({ lat: evento.lat, lng: evento.lng, ...(evento.precisionM !== undefined ? { precisionM: evento.precisionM } : {}) })) {
+      // Donde de verdad se entrega manda sobre el pin que hay, mientras nadie lo haya verificado (ya queda registrada esta entrega).
+      const punto = pinPorEntregas(await entregas.posicionesDeEntrega(actor.empresaId, f.local.id, ENTREGAS_PARA_PIN));
+      if (punto) pinFijado = await clientes.ajustarPinPorEntrega(actor.empresaId, f.local.id, punto);
+    } else if (puedeFijarPin(evento, f.local.tienePin) && evento.lat !== undefined && evento.lng !== undefined) {
       pinFijado = await clientes.fijarPinSiFalta(actor.empresaId, f.local.id, evento.lat, evento.lng);
     }
     return ok({ estado: nuevoEstado ?? f.estado, pinFijado });

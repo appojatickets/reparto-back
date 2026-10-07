@@ -139,7 +139,7 @@ describe('calidad de la ruta: lo sugerido frente a lo manejado', () => {
 });
 
 describe('pines corregidos por las visitas', () => {
-  const locales = new Map([['l-p', local('l-p', -33.5, -70.7)]]);
+  const locales = new Map<string, LocalObs>([['l-p', { ...local('l-p', -33.5, -70.7), pinVerificado: true }]]);
   const visita = (dias: number, dLat = 0.012, extra: Partial<EventoObs> = {}): EventoObs => ({ facturaId: `p${dias}`, localId: 'l-p', tipo: 'llegada', lat: -33.5 + dLat, lng: -70.7, precisionM: 10, creadoEn: en(dias * 1440), usuarioId: 'u-1', ...extra });
 
   it('tres visitas coherentes en días distintos y lejos del pin proponen moverlo', () => {
@@ -147,6 +147,11 @@ describe('pines corregidos por las visitas', () => {
     expect(r).toHaveLength(1);
     expect(r[0]).toMatchObject({ localId: 'l-p', visitas: 3, usuarioId: 'u-1' });
     expect(r[0]?.desplazamientoM).toBeGreaterThan(1000);
+  });
+
+  it('un pin por verificar no se propone: se ajusta solo con las entregas', () => {
+    const porVerificar = new Map<string, LocalObs>([['l-p', local('l-p', -33.5, -70.7)]]);
+    expect(pinesSugeridos([visita(0), visita(1), visita(2)], porVerificar)).toEqual([]);
   });
 
   it('no propone si las visitas son pocas, del mismo día, imprecisas, dispersas o ya coinciden con el pin', () => {
@@ -236,12 +241,13 @@ describe('visitas que se deducen del recorrido', () => {
 });
 
 describe('entregas avisadas lejos del pin', () => {
-  const locales = new Map<string, LocalObs>([['l-x', { id: 'l-x', comuna: 'Buin', lat: -33.5, lng: -70.7, pinFuente: 'geocodificador' }], ['l-y', local('l-y', -33.5, -70.7)]]);
+  const locales = new Map<string, LocalObs>([['l-x', { id: 'l-x', comuna: 'Buin', lat: -33.5, lng: -70.7, pinFuente: 'manual', pinVerificado: true }], ['l-y', { ...local('l-y', -33.5, -70.7), pinVerificado: true }], ['l-z', local('l-z', -33.5, -70.7)]]);
   const entrega = (id: string, localId: string, dLat: number, extra: Partial<EventoObs> = {}): EventoObs => ({ facturaId: id, localId, camionId: 'cam-1', tipo: 'entregado', lat: -33.5 + dLat, lng: -70.7, precisionM: 10, creadoEn: en(0), ...extra });
 
   it('lista los locales donde se entregó a más de 150 m del pin, con la distancia y de dónde vino el pin', () => {
     const r = pinesDudosos([entrega('a', 'l-x', 0.0162), entrega('b', 'l-x', 0.0001), entrega('c', 'l-y', 0.0002)], locales);
-    expect(r).toEqual([{ localId: 'l-x', distanciaM: 1801, visitas: 2, fuente: 'geocodificador' }]);
+    expect(r).toEqual([{ localId: 'l-x', distanciaM: 1801, visitas: 2, fuente: 'manual' }]);
+    expect(pinesDudosos([entrega('a', 'l-z', 0.0162)], locales)).toEqual([]); // por verificar: ya se corrige solo
   });
 
   it('ignora el GPS impreciso y los locales sin pin', () => {

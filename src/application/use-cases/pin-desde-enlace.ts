@@ -34,7 +34,7 @@ export const crearFijarPinDesdeEnlace = ({ clientes, pines, resolvedor }: { clie
     const local = await clientes.obtenerLocal(actor.empresaId, localId);
     if (!local) return err(errorApp('NO_ENCONTRADO', 'El local no existe.'));
 
-    const protegido = local.pinEstado === 'validado' && local.pinFuente !== 'enlace';
+    const protegido = local.pinVerificado || (local.pinEstado === 'validado' && local.pinFuente !== 'enlace');
     if (protegido) {
       const distancia = local.lat !== undefined && local.lng !== undefined ? Math.round(distanciaKm({ lat: local.lat, lng: local.lng }, punto) * 1000) : undefined;
       await pines.crearLote(actor.empresaId, actor.id, [

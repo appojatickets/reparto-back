@@ -14,7 +14,7 @@ const pos = { lat: -33.45, lng: -70.66, precisionM: 15 };
 const montar = (factura = facturaDe({ camion: { id: 'cam-1', patente: 'ABCD12' }, local: { id: 'l-1', razonSocial: 'Rabelo', direccion: 'Av. Colón 765', comuna: 'San Bernardo', tienePin: false } }), jornada = JORNADA) => {
   const facturas = fakeFacturas();
   facturas.obtener.mockResolvedValue(factura);
-  const entregas = { registrar: vi.fn<EntregaRepository['registrar']>(() => Promise.resolve()), ultimaPosicion: vi.fn<EntregaRepository['ultimaPosicion']>(() => Promise.resolve(undefined)), conLlegada: vi.fn<EntregaRepository['conLlegada']>(() => Promise.resolve(new Set<string>())) };
+  const entregas = { registrar: vi.fn<EntregaRepository['registrar']>(() => Promise.resolve()), ultimaPosicion: vi.fn<EntregaRepository['ultimaPosicion']>(() => Promise.resolve(undefined)), conLlegada: vi.fn<EntregaRepository['conLlegada']>(() => Promise.resolve(new Set<string>())), posicionesDeEntrega: vi.fn<EntregaRepository['posicionesDeEntrega']>(() => Promise.resolve([])) };
   const clientes = fakeClientes();
   const rutas = fakeRutas();
   const registrar = crearRegistrarEvento({ facturas, entregas, clientes, rutas: rutas.repo, resolverCamion: resolverDePrueba(jornada) });
@@ -43,6 +43,43 @@ describe('registrar evento de entrega', () => {
     expect(r.ok && r.value.pinFijado).toBe(false);
     expect(t.clientes.fijarPinSiFalta).not.toHaveBeenCalled();
     expect(t.entregas.registrar).toHaveBeenCalledTimes(1);
+  });
+
+  it('ENTREGADO con buen GPS deja el pin donde se entregó, por sobre el que había (mientras no esté verificado)', async () => {
+    const t = montar(facturaDe({ camion: { id: 'cam-1', patente: 'ABCD12' } })); // el local ya tiene pin
+    t.entregas.posicionesDeEntrega.mockResolvedValue([{ lat: -33.45, lng: -70.66, precisionM: 15 }]);
+    const r = await t.registrar(chofer, 'f-1', { tipo: 'entregado', ...pos });
+    expect(r.ok && r.value).toEqual({ estado: 'entregada', pinFijado: true });
+    expect(t.entregas.posicionesDeEntrega).toHaveBeenCalledWith('empresa-1', 'l-1', 5);
+    expect(t.clientes.ajustarPinPorEntrega).toHaveBeenCalledWith('empresa-1', 'l-1', { lat: -33.45, lng: -70.66 });
+    expect(t.clientes.fijarPinSiFalta).not.toHaveBeenCalled();
+  });
+
+  it('con varias entregas el pin queda donde coinciden las demás: una avisada desde otro lado no lo arrastra', async () => {
+    const t = montar(facturaDe({ camion: { id: 'cam-1', patente: 'ABCD12' } }));
+    t.entregas.posicionesDeEntrega.mockResolvedValue([{ lat: -33.5, lng: -70.7, precisionM: 10 }, { lat: -33.4999, lng: -70.7, precisionM: 12 }, { lat: -33.45, lng: -70.66, precisionM: 9 }]);
+    await t.registrar(chofer, 'f-1', { tipo: 'entregado', lat: -33.5, lng: -70.7, precisionM: 10 });
+    const llamada = t.clientes.ajustarPinPorEntrega.mock.calls[0]?.[2];
+    expect(llamada?.lat).toBeCloseTo(-33.49995, 5);
+  });
+
+  it('si el pin está verificado el repositorio no lo mueve (pinFijado queda en false) y la entrega igual se registra', async () => {
+    const t = montar(facturaDe({ camion: { id: 'cam-1', patente: 'ABCD12' } }));
+    t.entregas.posicionesDeEntrega.mockResolvedValue([{ lat: -33.45, lng: -70.66, precisionM: 15 }]);
+    t.clientes.ajustarPinPorEntrega.mockResolvedValueOnce(false);
+    const r = await t.registrar(chofer, 'f-1', { tipo: 'entregado', ...pos });
+    expect(r.ok && r.value.pinFijado).toBe(false);
+    expect(t.entregas.registrar).toHaveBeenCalledTimes(1);
+  });
+
+  it('ENTREGADO con GPS de más de 50 m no mueve un pin que ya existe; si el local no tiene pin, vale hasta 100 m', async () => {
+    const conPin = montar(facturaDe({ camion: { id: 'cam-1', patente: 'ABCD12' } }));
+    await conPin.registrar(chofer, 'f-1', { tipo: 'entregado', lat: -33.45, lng: -70.66, precisionM: 80 });
+    expect(conPin.clientes.ajustarPinPorEntrega).not.toHaveBeenCalled();
+    const sinPin = montar();
+    const r = await sinPin.registrar(chofer, 'f-1', { tipo: 'entregado', lat: -33.45, lng: -70.66, precisionM: 80 });
+    expect(r.ok && r.value.pinFijado).toBe(true);
+    expect(sinPin.clientes.fijarPinSiFalta).toHaveBeenCalledWith('empresa-1', 'l-1', -33.45, -70.66);
   });
 
   it('una posición imprecisa no fija el pin, pero el aviso se guarda', async () => {

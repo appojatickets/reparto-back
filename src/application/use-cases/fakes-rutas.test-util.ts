@@ -75,4 +75,5 @@ export const fakeEntregasRuta = () =>
     registrar: vi.fn<EntregaRepository['registrar']>(() => Promise.resolve()),
     ultimaPosicion: vi.fn<EntregaRepository['ultimaPosicion']>(() => Promise.resolve(undefined)),
     conLlegada: vi.fn<EntregaRepository['conLlegada']>(() => Promise.resolve(new Set<string>())),
+    posicionesDeEntrega: vi.fn<EntregaRepository['posicionesDeEntrega']>(() => Promise.resolve([])),
   }) satisfies EntregaRepository;

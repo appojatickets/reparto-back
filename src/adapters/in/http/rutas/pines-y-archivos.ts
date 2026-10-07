@@ -141,6 +141,25 @@ export const rutasPinesYArchivos = ({ app, casos, guard }: ContextoRutas): void 
     },
   );
 
+  a.put(
+    '/v1/locales/:id/pin/verificacion',
+    {
+      preHandler: guard('pines:revisar'),
+      schema: {
+        tags: ['pines'],
+        summary: 'Verificar el pin de un local (admin o despachador): un pin verificado ya no se mueve solo con las entregas; con verificado=false vuelve a «por verificar» y se sigue ajustando',
+        security: SEGURIDAD,
+        params: idParam,
+        body: z.object({ verificado: z.boolean() }),
+        response: { 204: z.null(), ...RESPUESTAS_ERROR },
+      },
+    },
+    async (req, reply) => {
+      const r = await casos.verificarPin(actor(req), req.params.id, req.body.verificado);
+      return r.ok ? reply.code(204).send(null) : enviarError(reply, r.error);
+    },
+  );
+
   const estadoBusqueda = z.object({ sinPin: z.number(), enCola: z.number(), enMarcha: z.boolean() });
 
   a.post(

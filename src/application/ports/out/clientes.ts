@@ -56,6 +56,8 @@ export type LocalDetalle = {
   readonly lng?: number;
   readonly pinEstado: EstadoPin;
   readonly pinFuente?: FuentePin;
+  /** Una persona confirmó este pin: ya no se mueve solo. Mientras no, está «por verificar» y las entregas lo van ajustando. */
+  readonly pinVerificado: boolean;
   readonly fotoPath?: string;
   readonly streetviewRumbo?: number;
   readonly nota?: string;
@@ -117,6 +119,18 @@ export interface ClienteRepository {
   actualizarLocal(empresaId: string, localId: string, cambios: CambiosLocal): Promise<boolean>;
   /** Colaborativo: fija el pin solo si el local todavía no tiene (como «sugerido», fuente chofer). Devuelve si lo fijó. */
   fijarPinSiFalta(empresaId: string, localId: string, lat: number, lng: number): Promise<boolean>;
+  /**
+   * El lugar donde se entrega manda sobre el pin que hay, mientras el pin no esté verificado: lo deja en `punto` («sugerido», fuente chofer).
+   * Devuelve si lo movió (no lo mueve si está verificado o si ya está a menos de ~10 m).
+   */
+  ajustarPinPorEntrega(empresaId: string, localId: string, punto: { readonly lat: number; readonly lng: number }): Promise<boolean>;
+  /**
+   * Marca (o, sin `verificacion`, desmarca) el pin del local como verificado por una persona.
+   * `SIN_PIN`: no hay nada que verificar. `NO_ENCONTRADO`: el local no existe.
+   */
+  verificarPin(empresaId: string, localId: string, verificacion: { readonly por: string; readonly en: Date } | undefined): Promise<'OK' | 'SIN_PIN' | 'NO_ENCONTRADO'>;
+  /** Cuántos locales tienen pin verificado, pin por verificar y ningún pin. */
+  contarPines(empresaId: string): Promise<{ readonly verificados: number; readonly porVerificar: number; readonly sinPin: number }>;
   /** Locales sin pin a los que todavía no se les buscó la dirección (o cuya última búsqueda fue antes de `intentadosAntesDe`). */
   /** Los locales de la empresa con los datos de su cliente, en orden de comuna y nombre (hasta `limite`). */
   exportarLocales(empresaId: string, filtro: FiltroExportacion, limite: number): Promise<readonly FilaExportacion[]>;

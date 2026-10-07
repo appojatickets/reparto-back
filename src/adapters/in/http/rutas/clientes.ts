@@ -106,6 +106,8 @@ export const rutasClientes = ({ app, casos, guard }: ContextoRutas): void => {
     lat: z.number().optional(),
     lng: z.number().optional(),
     pinEstado,
+    pinFuente: z.enum(['geocodificador', 'manual', 'importado', 'aprendido', 'chofer', 'enlace']).optional(),
+    pinVerificado: z.boolean(),
     fotoPath: z.string().optional(),
     streetviewRumbo: z.number().optional(),
     nota: z.string().optional(),
