@@ -2,7 +2,7 @@ import { resolverHorario, ventanasParaRuta, type HorarioLocal } from '../entidad
 import type { Fecha } from '../shared/fechas.js';
 import { diaDeSemana } from '../shared/fechas.js';
 import type { Coordenada } from '../valor/coordenada.js';
-import { PARAMETROS_POR_DEFECTO, SERVICIO_POR_DEFECTO_MIN } from './parametros.js';
+import { EPS_LLEGADA_CALIBRADO, PARAMETROS_POR_DEFECTO, SERVICIO_POR_DEFECTO_MIN } from './parametros.js';
 import { crearTiemposHaversine, DEPOSITO, ORIGEN } from './tiempos.js';
 import type { ParadaRuta, ProblemaRuta } from './tipos.js';
 
@@ -68,7 +68,7 @@ export const armarProblema = (d: DatosProblema): { readonly problema: ProblemaRu
       fijas: (d.fijas ?? []).filter((id) => ids.has(id)),
       tiempos: crearTiemposHaversine(coordenadas),
       ritmo: d.ritmo ?? 1,
-      parametros: { ...PARAMETROS_POR_DEFECTO, horaLimiteRegresoMin: d.horaLimiteRegresoMin },
+      parametros: { ...PARAMETROS_POR_DEFECTO, epsLlegada: EPS_LLEGADA_CALIBRADO, horaLimiteRegresoMin: d.horaLimiteRegresoMin },
     },
   };
 };

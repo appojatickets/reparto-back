@@ -1,11 +1,11 @@
 import type { Compilado } from './compilar.js';
 
 /**
- * Costo de una ruta: C = Σ viaje·ritmo + Σ(riesgo + μ·atraso) + ω·Σ espera (+ término de prioridad).
+ * Costo de una ruta: C = Σ viaje·ritmo + Σ(riesgo + μ·atraso) + ω·Σ espera (+ términos de prioridad y de llegada temprana).
  * Todos los términos son ≥ 0, así que se puede cortar en cuanto se supera `corte` (poda para la búsqueda local).
  */
 export const evaluar = (c: Compilado, orden: ArrayLike<number>, largo: number, corte = Infinity): number => {
-  const { mu, omega, penalizacionRiesgo, epsPrioridad } = c.problema.parametros;
+  const { mu, omega, penalizacionRiesgo, epsPrioridad, epsLlegada } = c.problema.parametros;
   let t = c.salida;
   let previo = c.origen;
   let costo = 0;
@@ -35,6 +35,7 @@ export const evaluar = (c: Compilado, orden: ArrayLike<number>, largo: number, c
       }
     }
     if (c.prioridad[j] === 1) costo += epsPrioridad * (llegada - c.salida);
+    if (epsLlegada > 0) costo += epsLlegada * (llegada - c.salida);
     if (costo >= corte) return Infinity;
 
     t = inicio + (c.servicio[j] ?? 0);

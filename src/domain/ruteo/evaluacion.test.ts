@@ -27,6 +27,13 @@ describe('evaluación de una ruta', () => {
     expect(it.regreso).toBe(555);
   });
 
+  it('con costo por llegada, cada parada suma ε por cada minuto que tarda en llegar (visitar antes lo cercano sale más barato)', () => {
+    const sinEps = compilar(problemaPlano([parada('B'), parada('C')]));
+    const conEps = compilar({ ...problemaPlano([parada('B'), parada('C')]), parametros: { ...problemaPlano([]).parametros, epsLlegada: 0.5 } });
+    // B llega a +10 min y C a +25 min (10 de viaje + 5 de servicio + 10 de viaje): 0,5·(10 + 25) = 17,5
+    expect(evaluar(conEps, [0, 1], 2) - evaluar(sinEps, [0, 1], 2)).toBeCloseTo(17.5, 9);
+  });
+
   it('detallar y evaluar coinciden', () => {
     expect(detallar(c, [1, 0]).costo).toBe(evaluar(c, [1, 0], 2));
   });

@@ -76,6 +76,6 @@ export class PostgresAprendizajeRepository implements AprendizajeRepository {
   async ultimaEjecucion(empresaId: string): Promise<EjecucionAnalisis | undefined> {
     const f = await this.db.selectFrom('aprendizaje_ejecucion').selectAll().where('empresa_id', '=', empresaId).orderBy('terminado_en', 'desc').limit(1).executeTakeFirst();
     // Los análisis guardados antes de que existieran algunos campos no los traen.
-    return f && { iniciadoEn: f.iniciado_en, terminadoEn: f.terminado_en, resumen: { ...(f.resumen as Partial<ResumenAnalisis>), llegadasDeducidas: (f.resumen as Partial<ResumenAnalisis>).llegadasDeducidas ?? 0, pinesDudosos: (f.resumen as Partial<ResumenAnalisis>).pinesDudosos ?? [] } as ResumenAnalisis };
+    return f && { iniciadoEn: f.iniciado_en, terminadoEn: f.terminado_en, resumen: { ...(f.resumen as Partial<ResumenAnalisis>), llegadasDeducidas: (f.resumen as Partial<ResumenAnalisis>).llegadasDeducidas ?? 0, pinesDudosos: (f.resumen as Partial<ResumenAnalisis>).pinesDudosos ?? [], seguimientoRuta: (f.resumen as Partial<ResumenAnalisis>).seguimientoRuta ?? { entregas: 0, primeraDeLaLista: 0, conRutaDelSistema: 0, primeraDeLaRutaDelSistema: 0 } } as ResumenAnalisis };
   }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { atenciones, calidadDeJornada, capacidadAprendida, cierresFrecuentes, completarConVisitas, mediana, resumenesDelDia, pinesDudosos, pinesSugeridos, ritmoAprendido, servicioAprendido, tramosDeViaje, visitasDeducidas, type EventoObs, type LocalObs, type OperacionObs, type PosicionObs } from './analisis.js';
+import { atenciones, calidadDeJornada, capacidadAprendida, cierresFrecuentes, completarConVisitas, mediana, resumenesDelDia, seguimientoDeLaRuta, pinesDudosos, pinesSugeridos, ritmoAprendido, servicioAprendido, tramosDeViaje, visitasDeducidas, type EventoObs, type LocalObs, type OperacionObs, type PosicionObs } from './analisis.js';
 
 const T0 = Date.parse('2026-10-05T13:00:00Z'); // 10:00 en Chile (verano)
 const en = (min: number): Date => new Date(T0 + min * 60_000);
@@ -258,5 +258,31 @@ describe('entregas avisadas lejos del pin', () => {
   it('ignora el GPS impreciso y los locales sin pin', () => {
     expect(pinesDudosos([entrega('a', 'l-x', 0.0162, { precisionM: 300 })], locales)).toEqual([]);
     expect(pinesDudosos([entrega('a', 'sin-pin', 0.0162)], new Map())).toEqual([]);
+  });
+});
+
+describe('¿se siguió lo que mostraba la ruta?', () => {
+  const op = (min: number, orden: string[], modo: 'sugerida' | 'manual' = 'sugerida'): OperacionObs => ({ camionId: 'cam-1', fecha: '2026-10-05', tipo: modo === 'sugerida' ? 'planificar' : 'subir', modo, orden, creadoEn: en(min) });
+  const entrega = (id: string, min: number) => ev(id, 'entregado', min);
+
+  it('cuenta cuántas veces la entrega fue la primera que quedaba en la lista, sin contar las ya hechas', () => {
+    const r = seguimientoDeLaRuta([entrega('a', 10), entrega('c', 20), entrega('b', 30)], [op(0, ['a', 'b', 'c'])]);
+    // a: primera ✓ · c: quedaban b y c, la primera era b ✗ · b: quedaba b ✓
+    expect(r).toEqual({ entregas: 3, primeraDeLaLista: 2, conRutaDelSistema: 3, primeraDeLaRutaDelSistema: 2 });
+  });
+
+  it('si la persona movió la ruta, la lista ya refleja lo que quería: cuenta como seguida, pero no como seguimiento de la ruta del sistema', () => {
+    const r = seguimientoDeLaRuta([entrega('c', 10), entrega('a', 20), entrega('b', 30)], [op(0, ['a', 'b', 'c']), op(5, ['c', 'a', 'b'], 'manual')]);
+    expect(r).toEqual({ entregas: 3, primeraDeLaLista: 3, conRutaDelSistema: 0, primeraDeLaRutaDelSistema: 0 });
+  });
+
+  it('usa la ruta que se veía en ese momento: un cambio posterior no cuenta para una entrega anterior', () => {
+    const r = seguimientoDeLaRuta([entrega('b', 10), entrega('a', 50)], [op(0, ['a', 'b']), op(30, ['b', 'a'], 'manual')]);
+    expect(r).toMatchObject({ entregas: 2, primeraDeLaLista: 1, conRutaDelSistema: 1, primeraDeLaRutaDelSistema: 0 });
+  });
+
+  it('no cuenta lo que no estaba en la ruta que se veía (una entrega agregada después) ni días sin ruta guardada', () => {
+    expect(seguimientoDeLaRuta([entrega('z', 10)], [op(0, ['a', 'b'])]).entregas).toBe(0);
+    expect(seguimientoDeLaRuta([entrega('a', 10)], [])).toEqual({ entregas: 0, primeraDeLaLista: 0, conRutaDelSistema: 0, primeraDeLaRutaDelSistema: 0 });
   });
 });

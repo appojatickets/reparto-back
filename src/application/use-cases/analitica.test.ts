@@ -28,7 +28,7 @@ describe('panel de analítica', () => {
       guardarParametros: vi.fn<AprendizajeRepository['guardarParametros']>(),
       guardarCalidad: vi.fn<AprendizajeRepository['guardarCalidad']>(),
       registrarEjecucion: vi.fn<AprendizajeRepository['registrarEjecucion']>(),
-      ultimaEjecucion: vi.fn<AprendizajeRepository['ultimaEjecucion']>(() => Promise.resolve({ iniciadoEn: new Date('2026-10-05T20:00:00Z'), terminadoEn: new Date('2026-10-05T20:00:02Z'), resumen: { eventos: 80, jornadas: 6, parametros: 5, jornadasComparadas: 1, pinesSugeridos: 0, pinesProponidos: 0, llegadasDeducidas: 12, cierresFrecuentes: [], pinesDudosos: [{ localId: 'l-1', distanciaM: 1800, visitas: 2, fuente: 'geocodificador' }] } })),
+      ultimaEjecucion: vi.fn<AprendizajeRepository['ultimaEjecucion']>(() => Promise.resolve({ iniciadoEn: new Date('2026-10-05T20:00:00Z'), terminadoEn: new Date('2026-10-05T20:00:02Z'), resumen: { eventos: 80, jornadas: 6, parametros: 5, jornadasComparadas: 1, pinesSugeridos: 0, pinesProponidos: 0, llegadasDeducidas: 12, seguimientoRuta: { entregas: 40, primeraDeLaLista: 30, conRutaDelSistema: 20, primeraDeLaRutaDelSistema: 10 }, cierresFrecuentes: [], pinesDudosos: [{ localId: 'l-1', distanciaM: 1800, visitas: 2, fuente: 'geocodificador' }] } })),
     } satisfies AprendizajeRepository;
     const p = await crearVerAnalitica({ analitica, aprendizaje, camiones: fakeCamionesRuta(), clientes: fakeClientes(), clock: crearReloj().clock })('empresa-1');
     expect(p.cobertura).toEqual(COBERTURA);

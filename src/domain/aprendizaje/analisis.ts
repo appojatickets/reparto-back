@@ -437,3 +437,52 @@ export const pinesDudosos = (eventos: readonly EventoObs[], locales: ReadonlyMap
   }
   return salida.sort((a, b) => b.distanciaM - a.distanciaM);
 };
+
+// ---------------------------------------------------------------- ¿se siguió lo que mostraba la ruta?
+
+export type SeguimientoRuta = {
+  /** Entregas que estaban en la ruta que se veía al hacerlas. */
+  readonly entregas: number;
+  /** En cuántas la entrega fue la primera de las que quedaban en la lista (la siguiente parada que mostraba la ruta). */
+  readonly primeraDeLaLista: number;
+  /** De las entregas hechas con la ruta tal como la ordenó el sistema (sin que una persona la hubiera movido)… */
+  readonly conRutaDelSistema: number;
+  /** …en cuántas fue la primera de la lista. */
+  readonly primeraDeLaRutaDelSistema: number;
+};
+
+/**
+ * Qué tanto se hace lo que la ruta muestra: en cada entrega, la ruta que se veía (la última guardada antes) y cuál era su siguiente parada.
+ * Si la persona la movió a mano, la lista ya refleja lo que quería; por eso aparte se cuenta cuánto se siguió mientras la ruta era la del sistema.
+ * Es el indicador de cuánto hay que corregir a mano: lo que se hace manda sobre lo sugerido.
+ */
+export const seguimientoDeLaRuta = (eventos: readonly EventoObs[], operaciones: readonly OperacionObs[]): SeguimientoRuta => {
+  const primerasEntregas = new Map<string, EventoObs>();
+  for (const e of [...eventos].sort((a, b) => ms(a.creadoEn) - ms(b.creadoEn))) {
+    if (e.tipo === 'entregado' && e.camionId !== undefined && !primerasEntregas.has(e.facturaId)) primerasEntregas.set(e.facturaId, e);
+  }
+  const opsPorDia = porClave(operaciones, (o) => `${o.camionId}|${o.fecha}`);
+  for (const lista of opsPorDia.values()) lista.sort((a, b) => ms(a.creadoEn) - ms(b.creadoEn));
+  const entregasPorDia = porClave([...primerasEntregas.values()], (e) => `${e.camionId ?? ''}|${dia(e.creadoEn)}`);
+
+  let entregas = 0, primeraDeLaLista = 0, conRutaDelSistema = 0, primeraDeLaRutaDelSistema = 0;
+  for (const [clave, lista] of entregasPorDia) {
+    const ops = opsPorDia.get(clave) ?? [];
+    const hechas = new Set<string>();
+    for (const e of [...lista].sort((a, b) => ms(a.creadoEn) - ms(b.creadoEn))) {
+      const vista = [...ops].reverse().find((o) => ms(o.creadoEn) <= ms(e.creadoEn));
+      const quedaban = vista?.orden.filter((id) => !hechas.has(id)) ?? [];
+      if (vista && quedaban.includes(e.facturaId)) {
+        entregas += 1;
+        const primera = quedaban[0] === e.facturaId;
+        if (primera) primeraDeLaLista += 1;
+        if (vista.modo === 'sugerida') {
+          conRutaDelSistema += 1;
+          if (primera) primeraDeLaRutaDelSistema += 1;
+        }
+      }
+      hechas.add(e.facturaId);
+    }
+  }
+  return { entregas, primeraDeLaLista, conRutaDelSistema, primeraDeLaRutaDelSistema };
+};

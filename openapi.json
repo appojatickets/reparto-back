@@ -15819,6 +15819,30 @@
                             "llegadasDeducidas": {
                               "type": "number"
                             },
+                            "seguimientoRuta": {
+                              "type": "object",
+                              "properties": {
+                                "entregas": {
+                                  "type": "number"
+                                },
+                                "primeraDeLaLista": {
+                                  "type": "number"
+                                },
+                                "conRutaDelSistema": {
+                                  "type": "number"
+                                },
+                                "primeraDeLaRutaDelSistema": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "entregas",
+                                "primeraDeLaLista",
+                                "conRutaDelSistema",
+                                "primeraDeLaRutaDelSistema"
+                              ],
+                              "additionalProperties": false
+                            },
                             "cierresFrecuentes": {
                               "type": "array",
                               "items": {
@@ -15862,6 +15886,7 @@
                             "pinesSugeridos",
                             "pinesProponidos",
                             "llegadasDeducidas",
+                            "seguimientoRuta",
                             "cierresFrecuentes"
                           ],
                           "additionalProperties": false
@@ -16125,6 +16150,30 @@
                     "llegadasDeducidas": {
                       "type": "number"
                     },
+                    "seguimientoRuta": {
+                      "type": "object",
+                      "properties": {
+                        "entregas": {
+                          "type": "number"
+                        },
+                        "primeraDeLaLista": {
+                          "type": "number"
+                        },
+                        "conRutaDelSistema": {
+                          "type": "number"
+                        },
+                        "primeraDeLaRutaDelSistema": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "entregas",
+                        "primeraDeLaLista",
+                        "conRutaDelSistema",
+                        "primeraDeLaRutaDelSistema"
+                      ],
+                      "additionalProperties": false
+                    },
                     "cierresFrecuentes": {
                       "type": "array",
                       "items": {
@@ -16168,6 +16217,7 @@
                     "pinesSugeridos",
                     "pinesProponidos",
                     "llegadasDeducidas",
+                    "seguimientoRuta",
                     "cierresFrecuentes"
                   ],
                   "additionalProperties": false
