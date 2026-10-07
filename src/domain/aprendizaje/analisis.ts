@@ -78,20 +78,26 @@ const TERMINALES = new Set<EventoObs['tipo']>(['entregado', 'no_entregado', 'cer
 
 export type Atencion = { readonly localId: string; readonly facturaId: string; readonly minutos: number; readonly cuando: Date };
 const ATENCION_MAXIMA_MIN = 60;
+/** Menos que esto es un aviso apretado al llegar, no una atención. */
+const ATENCION_MINIMA_MIN = 0.5;
 /** Con menos observaciones que esto no se publica el tiempo de un local. */
 export const MINIMO_ATENCIONES_LOCAL = 2;
 const PESO_RESPALDO_SERVICIO = 4;
 
-/** Minutos entre que el camión llegó y que entregó. Solo entregas exitosas: un local cerrado no mide cuánto cuesta atender. */
-export const atenciones = (eventos: readonly EventoObs[]): readonly Atencion[] => {
+/**
+ * Minutos que el camión estuvo en el local: desde que llegó hasta que se fue (si se conoce por el recorrido) o, si no, hasta que se
+ * avisó la entrega. Solo entregas exitosas: un local cerrado no mide cuánto cuesta atender.
+ */
+export const atenciones = (eventos: readonly EventoObs[], salidas: ReadonlyMap<string, Date> = new Map()): readonly Atencion[] => {
   const salida: Atencion[] = [];
   for (const [facturaId, evs] of porClave(eventos, (e) => e.facturaId)) {
     const ordenados = [...evs].sort((a, b) => ms(a.creadoEn) - ms(b.creadoEn));
     const llegada = ordenados.find((e) => e.tipo === 'llegada');
     const entrega = ordenados.find((e) => e.tipo === 'entregado');
-    if (!llegada || !entrega || ms(entrega.creadoEn) <= ms(llegada.creadoEn)) continue;
-    const minutos = (ms(entrega.creadoEn) - ms(llegada.creadoEn)) / 60_000;
-    if (minutos > ATENCION_MAXIMA_MIN) continue;
+    if (!llegada || !entrega) continue;
+    const fin = salidas.get(facturaId) ?? entrega.creadoEn;
+    const minutos = (ms(fin) - ms(llegada.creadoEn)) / 60_000;
+    if (minutos < ATENCION_MINIMA_MIN || minutos > ATENCION_MAXIMA_MIN) continue;
     salida.push({ localId: entrega.localId, facturaId, minutos, cuando: entrega.creadoEn });
   }
   return salida;
@@ -118,20 +124,21 @@ export type TramoDeViaje = TramoObservado & { readonly camionId: string; readonl
 const dia = (d: Date): string => fechaEnChile(d);
 
 /**
- * Los tramos reales entre una parada y la siguiente: desde el último aviso de la anterior hasta la llegada a la siguiente, comparados con
+ * Los tramos reales entre una parada y la siguiente: desde que el camión se fue de la anterior (o, si no se sabe, su último aviso) hasta la llegada a la siguiente, comparados con
  * lo que el motor había calculado para ese mismo trayecto. Exige pin en las dos paradas.
  */
-export const tramosDeViaje = (eventos: readonly EventoObs[], locales: ReadonlyMap<string, LocalObs>): readonly TramoDeViaje[] => {
+export const tramosDeViaje = (eventos: readonly EventoObs[], locales: ReadonlyMap<string, LocalObs>, salidas: ReadonlyMap<string, Date> = new Map()): readonly TramoDeViaje[] => {
   const salida: TramoDeViaje[] = [];
   const grupos = porClave(eventos, (e) => (e.camionId !== undefined ? `${e.camionId}|${dia(e.creadoEn)}` : undefined));
   for (const [, evs] of grupos) {
     const paradas = [...porClave(evs, (e) => e.facturaId).entries()].flatMap(([, lista]) => {
       const llegada = lista.filter((e) => e.tipo === 'llegada').sort((a, b) => ms(a.creadoEn) - ms(b.creadoEn))[0];
-      const fin = lista.filter((e) => TERMINALES.has(e.tipo)).sort((a, b) => ms(b.creadoEn) - ms(a.creadoEn))[0];
+      const aviso = lista.filter((e) => TERMINALES.has(e.tipo)).sort((a, b) => ms(b.creadoEn) - ms(a.creadoEn))[0];
+      const fin = salidas.get(lista[0]?.facturaId ?? '') ?? aviso?.creadoEn;
       const local = locales.get(lista[0]?.localId ?? '');
       const camionId = lista[0]?.camionId;
       return llegada && fin && local && camionId !== undefined && local.lat !== undefined && local.lng !== undefined
-        ? [{ llegada: llegada.creadoEn, fin: fin.creadoEn, local, camionId }]
+        ? [{ llegada: llegada.creadoEn, fin, local, camionId }]
         : [];
     });
     paradas.sort((a, b) => ms(a.fin) - ms(b.fin));
@@ -319,46 +326,72 @@ export const cierresFrecuentes = (eventos: readonly EventoObs[]): readonly Cierr
   return salida.sort((a, b) => b.cerrados - a.cerrados);
 };
 
-// ---------------------------------------------------------------- llegadas que se deducen del recorrido del camión
+// ---------------------------------------------------------------- visitas que se deducen del recorrido
 
 /** A cuántos metros del pin se considera que el camión estaba en el local. */
-export const RADIO_LLEGADA_INFERIDA_M = 80;
-const PRECISION_LLEGADA_INFERIDA_M = 60;
-const VENTANA_LLEGADA_INFERIDA_MIN = 40;
+export const RADIO_VISITA_M = 80;
+const PRECISION_VISITA_DEDUCIDA_M = 60;
+const VENTANA_VISITA_MIN = 40;
+/** Entre dos puntos del recorrido, más separados que esto no se sabe qué pasó (la app estuvo cerrada). */
+const HUECO_MAXIMO_MIN = 10;
+
+export type VisitaDeducida = { readonly facturaId: string; readonly localId: string; readonly camionId: string; readonly llegada: Date; readonly salida: Date };
+
+const mitad = (a: Date, b: Date): Date => new Date((ms(a) + ms(b)) / 2);
 
 /**
- * Los choferes avisan ENTREGADO pero casi nunca LLEGUÉ. Para medir cuánto se demora cada local y cuánto tarda el camión entre paradas
- * hace falta la hora de llegada: se deduce del recorrido. La llegada es el primer punto del último tramo seguido en que el camión
- * estuvo junto al pin, antes de avisar la entrega. Solo para entregas sin aviso de llegada y con pin; no se guarda, se recalcula.
+ * Los choferes avisan ENTREGADO apenas llegan y casi nunca LLEGUÉ: ni la atención ni el viaje se pueden medir con los avisos. Se miden con
+ * el recorrido del camión: la visita es el tramo seguido en que estuvo junto al pin. Llegó a mitad de camino entre el último punto lejos
+ * y el primero cerca; se fue a mitad de camino entre el último cerca y el primero lejos (así el error no se acumula hacia un lado).
+ * Solo para entregas con pin y recorrido; no se guarda, se recalcula siempre.
  */
-export const llegadasInferidas = (eventos: readonly EventoObs[], locales: ReadonlyMap<string, LocalObs>, posiciones: readonly PosicionObs[]): readonly EventoObs[] => {
-  const conLlegada = new Set(eventos.filter((e) => e.tipo === 'llegada').map((e) => e.facturaId));
-  const porCamion = porClave(posiciones, (p) => p.camionId);
-  const salida: EventoObs[] = [];
+export const visitasDeducidas = (eventos: readonly EventoObs[], locales: ReadonlyMap<string, LocalObs>, posiciones: readonly PosicionObs[]): readonly VisitaDeducida[] => {
+  const porCamion = new Map<string, PosicionObs[]>();
+  for (const [camionId, lista] of porClave(posiciones, (p) => p.camionId)) porCamion.set(camionId, [...lista].sort((a, b) => ms(a.tomadoEn) - ms(b.tomadoEn)));
+  const salida: VisitaDeducida[] = [];
   for (const e of eventos) {
-    if (e.tipo !== 'entregado' || conLlegada.has(e.facturaId) || e.camionId === undefined) continue;
+    if (e.tipo !== 'entregado' || e.camionId === undefined) continue;
     const l = locales.get(e.localId);
-    if (l?.lat === undefined || l.lng === undefined) continue;
+    const recorrido = porCamion.get(e.camionId);
+    if (l?.lat === undefined || l.lng === undefined || !recorrido) continue;
+    const pin = { lat: l.lat, lng: l.lng };
+    const cerca = recorrido.map((p) => (p.precisionM === undefined || p.precisionM <= PRECISION_VISITA_DEDUCIDA_M) && distanciaKm(p, pin) * 1000 <= RADIO_VISITA_M);
     const entrega = ms(e.creadoEn);
-    const ventana = (porCamion.get(e.camionId) ?? [])
-      .filter((p) => ms(p.tomadoEn) >= entrega - VENTANA_LLEGADA_INFERIDA_MIN * 60_000 && ms(p.tomadoEn) <= entrega + 60_000)
-      .sort((a, b) => ms(a.tomadoEn) - ms(b.tomadoEn));
-    let tramo: PosicionObs[] = [];
-    let ultimo: PosicionObs[] = [];
-    for (const p of ventana) {
-      const cerca = (p.precisionM === undefined || p.precisionM <= PRECISION_LLEGADA_INFERIDA_M) && distanciaKm(p, { lat: l.lat, lng: l.lng }) * 1000 <= RADIO_LLEGADA_INFERIDA_M;
-      if (cerca) tramo.push(p);
-      else {
-        if (tramo.length > 0) ultimo = tramo;
-        tramo = [];
+    // El último tramo junto al pin que empezó antes de avisar la entrega (y no mucho antes).
+    let desde = -1;
+    let hasta = -1;
+    for (let i = 0; i < recorrido.length; i += 1) {
+      if (!cerca[i]) continue;
+      let j = i;
+      while (j + 1 < recorrido.length && cerca[j + 1]) j += 1;
+      const inicio = ms(recorrido[i]?.tomadoEn ?? new Date(0));
+      const fin = ms(recorrido[j]?.tomadoEn ?? new Date(0));
+      if (inicio <= entrega + 60_000 && fin >= entrega - VENTANA_VISITA_MIN * 60_000) {
+        desde = i;
+        hasta = j;
       }
+      i = j;
     }
-    const elegido = tramo.length > 0 ? tramo : ultimo;
-    const primero = elegido[0];
-    if (!primero) continue;
-    salida.push({ facturaId: e.facturaId, localId: e.localId, camionId: e.camionId, tipo: 'llegada', creadoEn: primero.tomadoEn, lat: primero.lat, lng: primero.lng, ...(primero.precisionM !== undefined ? { precisionM: primero.precisionM } : {}) });
+    const primero = recorrido[desde];
+    const ultimo = recorrido[hasta];
+    if (!primero || !ultimo) continue;
+    const antes = recorrido[desde - 1];
+    const despues = recorrido[hasta + 1];
+    const llegada = antes && ms(primero.tomadoEn) - ms(antes.tomadoEn) <= HUECO_MAXIMO_MIN * 60_000 ? mitad(antes.tomadoEn, primero.tomadoEn) : primero.tomadoEn;
+    const fueSalida = despues && ms(despues.tomadoEn) - ms(ultimo.tomadoEn) <= HUECO_MAXIMO_MIN * 60_000 ? mitad(ultimo.tomadoEn, despues.tomadoEn) : ultimo.tomadoEn;
+    if (ms(fueSalida) <= ms(llegada)) continue;
+    salida.push({ facturaId: e.facturaId, localId: e.localId, camionId: e.camionId, llegada, salida: fueSalida });
   }
   return salida;
+};
+
+/** Los avisos de llegada que faltan (la mayoría) y la hora en que el camión se fue de cada parada, listos para medir atención y viaje. */
+export const completarConVisitas = (eventos: readonly EventoObs[], visitas: readonly VisitaDeducida[]): { readonly eventos: readonly EventoObs[]; readonly salidas: ReadonlyMap<string, Date>; readonly llegadasDeducidas: number } => {
+  const conLlegada = new Set(eventos.filter((e) => e.tipo === 'llegada').map((e) => e.facturaId));
+  const nuevas: EventoObs[] = visitas
+    .filter((v) => !conLlegada.has(v.facturaId))
+    .map((v) => ({ facturaId: v.facturaId, localId: v.localId, camionId: v.camionId, tipo: 'llegada' as const, creadoEn: v.llegada }));
+  return { eventos: [...eventos, ...nuevas], salidas: new Map(visitas.map((v) => [v.facturaId, v.salida])), llegadasDeducidas: nuevas.length };
 };
 
 // ---------------------------------------------------------------- entregas avisadas lejos del pin

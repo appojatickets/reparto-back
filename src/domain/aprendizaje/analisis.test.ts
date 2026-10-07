@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { atenciones, calidadDeJornada, capacidadAprendida, cierresFrecuentes, llegadasInferidas, mediana, pinesDudosos, pinesSugeridos, ritmoAprendido, servicioAprendido, tramosDeViaje, type EventoObs, type LocalObs, type OperacionObs, type PosicionObs } from './analisis.js';
+import { atenciones, calidadDeJornada, capacidadAprendida, cierresFrecuentes, completarConVisitas, mediana, pinesDudosos, pinesSugeridos, ritmoAprendido, servicioAprendido, tramosDeViaje, visitasDeducidas, type EventoObs, type LocalObs, type OperacionObs, type PosicionObs } from './analisis.js';
 
 const T0 = Date.parse('2026-10-05T13:00:00Z'); // 10:00 en Chile (verano)
 const en = (min: number): Date => new Date(T0 + min * 60_000);
@@ -171,36 +171,67 @@ describe('locales encontrados cerrados', () => {
   });
 });
 
-describe('llegadas que se deducen del recorrido', () => {
+describe('visitas que se deducen del recorrido', () => {
   const LOCAL = local('l-fa', -33.5, -70.7);
   const locales = new Map([['l-fa', LOCAL]]);
   const punto = (min: number, dLat: number, extra: Partial<PosicionObs> = {}): PosicionObs => ({ camionId: 'cam-1', lat: -33.5 + dLat, lng: -70.7, tomadoEn: en(min), ...extra });
-  const entrega = ev('fa', 'entregado', 10);
+  const LEJOS = 0.02;
+  const CERCA = 0.0002;
+  // El chofer toca ENTREGADO apenas llega (minuto 5) y se queda hasta el 11.
+  const entrega = ev('fa', 'entregado', 5);
 
-  it('toma el primer punto del último tramo junto al pin antes de avisar la entrega', () => {
-    const r = llegadasInferidas([entrega], locales, [punto(0, 0.02), punto(5, 0.0002), punto(7, 0.0003), punto(9, 0.0001)]);
-    expect(r).toHaveLength(1);
-    expect(r[0]).toMatchObject({ facturaId: 'fa', localId: 'l-fa', camionId: 'cam-1', tipo: 'llegada' });
-    expect(r[0]?.creadoEn.getTime()).toBe(en(5).getTime());
+  it('llegó a mitad de camino entre el último punto lejos y el primero cerca, y se fue a mitad entre el último cerca y el primero lejos', () => {
+    const v = visitasDeducidas([entrega], locales, [punto(0, LEJOS), punto(4, CERCA), punto(8, CERCA), punto(12, LEJOS)]);
+    expect(v).toHaveLength(1);
+    expect(v[0]?.llegada.getTime()).toBe(en(2).getTime());
+    expect(v[0]?.salida.getTime()).toBe(en(10).getTime());
+  });
+
+  it('con una entrega avisada al llegar, la atención sale del tiempo junto al pin y no de los segundos hasta el aviso', () => {
+    const v = visitasDeducidas([entrega], locales, [punto(0, LEJOS), punto(4, CERCA), punto(8, CERCA), punto(12, LEJOS)]);
+    const { eventos, salidas } = completarConVisitas([entrega], v);
+    expect(atenciones(eventos, salidas).map((a) => a.minutos)).toEqual([8]);
+    expect(atenciones(eventos).map((a) => a.minutos)).toEqual([3]); // sin recorrido solo se sabe hasta el aviso
   });
 
   it('si el camión pasó antes por el lugar y volvió, vale el último tramo', () => {
-    const r = llegadasInferidas([entrega], locales, [punto(1, 0.0002), punto(3, 0.02), punto(8, 0.0002), punto(9, 0.0002)]);
-    expect(r[0]?.creadoEn.getTime()).toBe(en(8).getTime());
+    const v = visitasDeducidas([ev('fa', 'entregado', 9)], locales, [punto(1, CERCA), punto(3, LEJOS), punto(7, CERCA), punto(9, CERCA), punto(13, LEJOS)]);
+    expect(v[0]?.llegada.getTime()).toBe(en(5).getTime());
+    expect(v[0]?.salida.getTime()).toBe(en(11).getTime());
   });
 
-  it('no inventa llegadas: con aviso de llegada, sin pin, sin recorrido cerca o con GPS impreciso no hace nada', () => {
-    const recorrido = [punto(5, 0.0002), punto(7, 0.0002)];
-    expect(llegadasInferidas([entrega, ev('fa', 'llegada', 4)], locales, recorrido)).toEqual([]);
-    expect(llegadasInferidas([entrega], new Map([['l-fa', { id: 'l-fa', comuna: 'X' }]]), recorrido)).toEqual([]);
-    expect(llegadasInferidas([entrega], locales, [punto(5, 0.02), punto(7, 0.02)])).toEqual([]);
-    expect(llegadasInferidas([entrega], locales, [punto(5, 0.0002, { precisionM: 300 })])).toEqual([]);
-    expect(llegadasInferidas([entrega], locales, [{ ...punto(5, 0.0002), camionId: 'otro' }])).toEqual([]);
+  it('con un hueco grande en el recorrido (la app estuvo cerrada) no inventa la mitad: usa el primer punto cerca', () => {
+    const v = visitasDeducidas([entrega], locales, [punto(-30, LEJOS), punto(4, CERCA), punto(8, CERCA), punto(40, LEJOS)]);
+    expect(v[0]?.llegada.getTime()).toBe(en(4).getTime());
+    expect(v[0]?.salida.getTime()).toBe(en(8).getTime());
   });
 
-  it('con las llegadas deducidas ya se puede medir cuánto se demora el local', () => {
-    const deducidas = llegadasInferidas([entrega], locales, [punto(4, 0.0002), punto(8, 0.0002)]);
-    expect(atenciones([entrega, ...deducidas]).map((a) => a.minutos)).toEqual([6]);
+  it('no inventa visitas: sin pin, sin recorrido cerca, con GPS impreciso, de otro camión o con un solo punto sin vecinos', () => {
+    const recorrido = [punto(0, LEJOS), punto(4, CERCA), punto(8, CERCA), punto(12, LEJOS)];
+    expect(visitasDeducidas([entrega], new Map([['l-fa', { id: 'l-fa', comuna: 'X' }]]), recorrido)).toEqual([]);
+    expect(visitasDeducidas([entrega], locales, [punto(0, LEJOS), punto(12, LEJOS)])).toEqual([]);
+    expect(visitasDeducidas([entrega], locales, [punto(4, CERCA, { precisionM: 300 }), punto(8, CERCA, { precisionM: 300 })])).toEqual([]);
+    expect(visitasDeducidas([entrega], locales, recorrido.map((p) => ({ ...p, camionId: 'otro' })))).toEqual([]);
+    expect(visitasDeducidas([entrega], locales, [punto(4, CERCA)])).toEqual([]);
+  });
+
+  it('respeta el aviso de llegada que dio una persona y solo agrega las que faltan', () => {
+    const v = visitasDeducidas([entrega, ev('fa', 'llegada', 3)], locales, [punto(0, LEJOS), punto(4, CERCA), punto(8, CERCA), punto(12, LEJOS)]);
+    const r = completarConVisitas([entrega, ev('fa', 'llegada', 3)], v);
+    expect(r.llegadasDeducidas).toBe(0);
+    expect(r.eventos.filter((e) => e.tipo === 'llegada')).toHaveLength(1);
+    expect(r.salidas.get('fa')?.getTime()).toBe(en(10).getTime());
+  });
+
+  it('el viaje entre paradas se mide desde que el camión se fue de la anterior, no desde que se avisó la entrega', () => {
+    const dos = new Map([['l-fa', LOCAL], ['l-fb', local('l-fb', -33.545, -70.7, 'Buin')]]);
+    const eventos = [ev('fa', 'entregado', 5), ev('fb', 'entregado', 40)];
+    const recorrido = [punto(0, LEJOS), punto(4, CERCA), punto(8, CERCA), punto(12, LEJOS), { camionId: 'cam-1', lat: -33.545 + 0.0002, lng: -70.7, tomadoEn: en(36) }, { camionId: 'cam-1', lat: -33.545 + 0.0002, lng: -70.7, tomadoEn: en(42) }, { camionId: 'cam-1', lat: -33.5, lng: -70.7, tomadoEn: en(60) }];
+    const { eventos: conLlegadas, salidas } = completarConVisitas(eventos, visitasDeducidas(eventos, dos, recorrido));
+    const t = tramosDeViaje(conLlegadas, dos, salidas);
+    expect(t).toHaveLength(1);
+    expect(t[0]?.minutosReales).toBeLessThan(30); // 10 → ~34 con las mitades: menos que los 35 min entre avisos
+    expect(tramosDeViaje(conLlegadas, dos)[0]?.minutosReales).toBeGreaterThan(t[0]?.minutosReales ?? Infinity);
   });
 });
 

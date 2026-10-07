@@ -66,16 +66,20 @@ describe('analizador de segundo plano', () => {
     expect(repetido.pines.crearLote).not.toHaveBeenCalled();
   });
 
-  it('deduce las llegadas del recorrido cuando nadie avisó LLEGUÉ, y con eso aprende cuánto demora cada local', async () => {
+  it('mide la atención con el recorrido cuando el chofer toca ENTREGADO al llegar y nunca avisa LLEGUÉ', async () => {
     const d = datos();
-    // Cinco entregas sin «llegué» (como en la realidad), con el camión parado 6 min junto al pin antes de entregar.
-    const sinLlegada = [1, 2, 3, 4, 5].flatMap((n) => [ev(`g${n}`, `l${n}`, 'entregado', 200 + n * 30)]);
-    const recorrido = [1, 2, 3, 4, 5].flatMap((n) => [200 + n * 30 - 6, 200 + n * 30 - 3].map((min) => ({ camionId: 'cam-1', lat: -33.5 + n * 0.01 + 0.0001, lng: -70.7, precisionM: 15, tomadoEn: en(min) })));
+    // Cinco entregas avisadas al llegar; el camión se queda 8 min junto al pin (puntos cada 4 min, llegando y yéndose).
+    const sinLlegada = [1, 2, 3, 4, 5].map((n) => ev(`g${n}`, `l${n}`, 'entregado', 200 + n * 30));
+    const recorrido = [1, 2, 3, 4, 5].flatMap((n) => {
+      const base = 200 + n * 30;
+      const cerca = -33.5 + n * 0.01 + 0.0001;
+      return [{ camionId: 'cam-1', lat: -33.5 + n * 0.01 + 0.03, lng: -70.7, precisionM: 15, tomadoEn: en(base - 4) }, { camionId: 'cam-1', lat: cerca, lng: -70.7, precisionM: 15, tomadoEn: en(base) }, { camionId: 'cam-1', lat: cerca, lng: -70.7, precisionM: 15, tomadoEn: en(base + 4) }, { camionId: 'cam-1', lat: -33.5 + n * 0.01 + 0.03, lng: -70.7, precisionM: 15, tomadoEn: en(base + 8) }];
+    });
     const t = montar({ ...d, eventos: sinLlegada, posiciones: recorrido });
     const r = await t.analizar('empresa-1');
     expect(r.llegadasDeducidas).toBe(5);
     const guardados = t.aprendizaje.guardarParametros.mock.calls[0]?.[1] ?? [];
-    expect(guardados.find((p) => p.clave === 'servicio_min' && p.ambito === 'global')).toMatchObject({ valor: 6, muestras: 5 });
+    expect(guardados.find((p) => p.clave === 'servicio_min' && p.ambito === 'global')).toMatchObject({ valor: 8, muestras: 5 });
   });
 
   it('avisa de los locales donde se entregó lejos del pin', async () => {
