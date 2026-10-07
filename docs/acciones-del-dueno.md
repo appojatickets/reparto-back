@@ -124,6 +124,13 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] **Fotos:** como chofer, abre una parada con foto y toca **REPORTAR ESTA FOTO** (elige un motivo). Como admin, menú **REVISAR FOTOS**: debe aparecer el reporte con quién reportó y quién subió; prueba **LA FOTO ESTÁ BIEN** y **ELIMINAR LA FOTO**.
 - [ ] La foto de Av. Providencia 2500 que ya subiste no tiene quién/cuándo (es anterior a este cambio); aparece al final de «Subidas hace poco».
 
+### A18. Fotos verificadas: por verificar y verificadas (ADR 0023 del back, ADR 0014 del front)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. La migración ya está aplicada en Supabase.
+- [ ] Menú del admin → **REVISAR FOTOS**: debe haber **Reportadas**, **Por verificar (N)** y **Verificadas (0)**. Todas las fotos que ya estaban subidas aparecen en «Por verificar».
+- [ ] Toca **✓ VERIFICADA** en una foto: sale de «Por verificar» y «Verificadas» sube a 1. Toca **VER LAS VERIFICADAS**: está ahí con tu nombre y la hora. Toca **VOLVER A POR VERIFICAR**: regresa a la primera lista.
+- [ ] Prueba **ELIMINAR LA FOTO** en una de «Por verificar» (pide confirmar).
+- [ ] Como chofer, sube una foto nueva (o cambia la de un local ya verificado): debe aparecer en «Por verificar», no en «Verificadas».
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos
