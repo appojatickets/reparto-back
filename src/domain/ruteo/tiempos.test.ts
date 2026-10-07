@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { crearCoordenada, distanciaKm, type Coordenada } from '../valor/coordenada.js';
-import { crearTiemposHaversine } from './tiempos.js';
+import { crearTiemposConViajes, crearTiemposHaversine } from './tiempos.js';
 
 const c = (lat: number, lng: number): Coordenada => {
   const r = crearCoordenada(lat, lng);
@@ -40,5 +40,24 @@ describe('crearTiemposHaversine', () => {
 
   it('una coordenada faltante es un error inesperado', () => {
     expect(() => t.tiempo('a', 'zzz', 600)).toThrow('Falta la coordenada');
+  });
+});
+
+describe('crearTiemposConViajes (tiempos por calles con respaldo en línea recta)', () => {
+  const coords = new Map<string, Coordenada>([['A', c(-33.45, -70.65)], ['B', c(-33.5, -70.7)], ['C', c(-33.55, -70.75)]]);
+  const recta = crearTiemposHaversine(coords);
+
+  it('usa el tiempo real donde se conoce y la línea recta donde falta', () => {
+    const t = crearTiemposConViajes(recta, (a, b) => (a === 'A' && b === 'B' ? 7.5 : undefined));
+    expect(t.tiempo('A', 'B', 600)).toBe(7.5);
+    expect(t.tiempo('B', 'C', 600)).toBe(recta.tiempo('B', 'C', 600));
+    expect(t.tiempo('A', 'A', 600)).toBe(0);
+    expect(t.cortes).toEqual(recta.cortes);
+  });
+
+  it('ignora un valor que no sirve (negativo o no numérico) y usa el respaldo', () => {
+    const t = crearTiemposConViajes(recta, () => -3);
+    expect(t.tiempo('A', 'B', 600)).toBe(recta.tiempo('A', 'B', 600));
+    expect(crearTiemposConViajes(recta, () => Number.NaN).tiempo('A', 'C', 600)).toBe(recta.tiempo('A', 'C', 600));
   });
 });

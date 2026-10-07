@@ -27,6 +27,9 @@ import type { CasosDeUso } from './adapters/in/http/casos-de-uso.js';
 import { createDb } from './adapters/out/postgres/client.js';
 import { PostgresDatabaseHealth } from './adapters/out/postgres/database-health.js';
 import { PostgresEmpresaRepository } from './adapters/out/postgres/repositorio-empresa.js';
+import { PostgresCacheDeViajes } from './adapters/out/postgres/repositorio-viajes.js';
+import { crearProveedorOrs } from './adapters/out/red/ors-viajes.js';
+import { crearViajesPorCalle } from './application/use-cases/viajes-por-calle.js';
 import { PostgresAnaliticaRepository } from './adapters/out/postgres/repositorio-analitica.js';
 import { PostgresAprendizajeRepository } from './adapters/out/postgres/repositorio-aprendizaje.js';
 import { PostgresRegistroAprendizajeRepository } from './adapters/out/postgres/repositorio-registro-aprendizaje.js';
@@ -88,7 +91,9 @@ const colaDePines = crearColaGeocodificacion({
 const programarPines = (empresaId: string, localIds: readonly string[]): void => { colaDePines.encolar(empresaId, localIds); };
 const aprendizaje = new PostgresAprendizajeRepository(db);
 const analitica = new PostgresAnaliticaRepository(db);
-const serviciosDeRuta = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas, jornadas, registro, aprendizaje, clock, resolverCamion, programarPines });
+// Tiempos por calles: solo si hay clave de OpenRouteService; sin ella la ruta mide en línea recta.
+const viajes = crearViajesPorCalle({ proveedor: env.ORS_API_KEY ? crearProveedorOrs(env.ORS_API_KEY) : undefined, cache: new PostgresCacheDeViajes(db) });
+const serviciosDeRuta = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas, jornadas, registro, aprendizaje, viajes, clock, resolverCamion, programarPines });
 const analizarAprendizaje = crearAnalizarAprendizaje({ aprendizaje, empresas, pines, clock });
 
 // El analizador corre en segundo plano: poco después de terminar una ruta (con calma, juntando varias) y cada pocas horas. Nunca bloquea una petición.

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { err } from '../../domain/shared/result.js';
 import { crearReloj, usuarioDe } from './fakes.test-util.js';
 import { fakeJornadas, fakeRegistro, resolverDePrueba } from './fakes-facturas.test-util.js';
@@ -214,6 +214,30 @@ describe('la ruta usa lo que el sistema aprendió', () => {
   it('si no se puede leer lo aprendido, la ruta se calcula igual con los valores de respaldo', async () => {
     const rutas = fakeRutas([paradaDe('A')]);
     const servicios = crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), entregas: fakeEntregasRuta(), jornadas: fakeJornadas(), registro: fakeRegistro(), aprendizaje: { parametros: () => Promise.reject(new Error('caído')) }, clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba() });
+    expect((await servicios.planificar(despachador, entrada)).ok).toBe(true);
+  });
+});
+
+describe('la ruta con tiempos por calles', () => {
+  it('pide los tiempos al servicio solo para el depósito, el origen y las paradas con pin, y usa lo que responde (sin el ritmo aprendido)', async () => {
+    const viajes = vi.fn(() => Promise.resolve({ minutos: () => 100, conCalles: true }));
+    const { facturaId, localId, razonSocial, direccion, comuna, urgente, horarios } = paradaDe('S');
+    const sinCoord = { facturaId, localId, razonSocial, direccion, comuna, urgente, horarios };
+    const rutas = fakeRutas([paradaDe('A', { lat: -33.45, lng: -70.65 }), paradaDe('B', { lat: -33.46, lng: -70.66 }), sinCoord]);
+    const aprendizaje = { parametros: () => Promise.resolve([{ clave: 'ritmo' as const, ambito: 'global', valor: 2, muestras: 50, confianza: 1 }]) };
+    const construir = (v?: typeof viajes) => crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), entregas: fakeEntregasRuta(), jornadas: fakeJornadas(), registro: fakeRegistro(), aprendizaje, ...(v ? { viajes: v } : {}), clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba() });
+    const conCalles = await construir(viajes).planificar(despachador, entrada);
+    const enLinea = await construir().planificar(despachador, entrada);
+    const nodos = (viajes.mock.calls[0] as unknown as [readonly { id: string; rol: string }[]])[0];
+    expect(nodos.map((n) => `${n.rol}:${n.id}`).sort()).toEqual(['deposito:__deposito__', 'origen:__origen__', 'parada:f-A', 'parada:f-B']);
+    // 100 min por tramo: depósito→A→B→depósito = tres tramos de 100 más dos servicios de 8 min, desde las 08:00 (480).
+    expect(conCalles.ok && conCalles.value.regreso).toBeGreaterThanOrEqual(480 + 300);
+    expect(enLinea.ok && enLinea.value.regreso).toBeLessThan(480 + 300);
+  });
+
+  it('si el servicio de calles falla, la ruta se calcula igual en línea recta', async () => {
+    const viajes = vi.fn(() => Promise.reject(new Error('sin red')));
+    const servicios = crearServiciosDeRuta({ rutas: fakeRutas([paradaDe('A')]).repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), entregas: fakeEntregasRuta(), jornadas: fakeJornadas(), registro: fakeRegistro(), viajes, clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba() });
     expect((await servicios.planificar(despachador, entrada)).ok).toBe(true);
   });
 });

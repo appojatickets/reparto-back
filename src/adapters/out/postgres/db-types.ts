@@ -156,6 +156,7 @@ export type Tabla = {
     tomado_en: Date;
     creado_en: Generated<Date>;
   };
+  viaje_par: { desde: string; hasta: string; segundos: number; metros: number; consultado_en: Generated<Date> };
   jornada_resumen: {
     jornada_id: string;
     empresa_id: string;

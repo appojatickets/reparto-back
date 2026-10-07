@@ -15,8 +15,10 @@ import type { EmpresaRepository } from '../ports/out/empresa.js';
 import type { EntregaRepository } from '../ports/out/entregas.js';
 import type { FacturaRepository } from '../ports/out/facturas.js';
 import type { JornadaRepository } from '../ports/out/jornadas.js';
+import type { ViajesDeLaRuta, ViajesPorCalle } from './viajes-por-calle.js';
 import { aprendidoParaRuta, SIN_APRENDIZAJE, type AprendidoParaRuta } from '../../domain/aprendizaje/uso.js';
 import type { AprendizajeRepository } from '../ports/out/aprendizaje.js';
+import { DEPOSITO, ORIGEN } from '../../domain/ruteo/tiempos.js';
 import type { RegistroAprendizajeRepository, TipoOperacionRuta } from '../ports/out/registro-aprendizaje.js';
 import type { FacturaParaRuta, ModoRuta, RutaGuardada, RutaRepository } from '../ports/out/rutas.js';
 import type { ResolverCamion } from './jornada.js';
@@ -95,6 +97,8 @@ type Dependencias = {
   readonly registro: RegistroAprendizajeRepository;
   /** Lo que el analizador aprendió (ritmo del camión, tiempo de atención por local). Sin esto la ruta usa sus valores de respaldo. */
   readonly aprendizaje?: Pick<AprendizajeRepository, 'parametros'>;
+  /** Tiempos de manejar por calles (si hay servicio de rutas configurado); sin esto, o si falla, la ruta mide en línea recta. */
+  readonly viajes?: ViajesPorCalle;
   readonly clock: Clock;
   readonly resolverCamion: ResolverCamion;
   /** Pide buscar el pin de estos locales por su dirección (en segundo plano; la ruta no espera). */
@@ -107,6 +111,7 @@ type Contexto = {
   readonly items: readonly FacturaParaRuta[];
   readonly guardada: RutaGuardada | undefined;
   readonly aprendido: AprendidoParaRuta;
+  readonly viajes: ViajesDeLaRuta;
   /** Solo si la ruta es de hoy: la hora actual (la ruta no puede empezar antes) y la última posición del camión. */
   readonly ahoraMin?: number;
   readonly origen?: Coordenada;
@@ -142,7 +147,7 @@ const entradaDe = (f: FacturaParaRuta, servicioMin?: number): EntradaParada => {
   };
 };
 
-export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entregas, jornadas, registro, aprendizaje, clock, resolverCamion, programarPines }: Dependencias) => {
+export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entregas, jornadas, registro, aprendizaje, viajes, clock, resolverCamion, programarPines }: Dependencias) => {
   const presupuesto = () => ({ reloj: () => clock.now().getTime(), limiteMs: LIMITE_OPTIMIZACION_MS });
 
   const cargar = async (actor: Usuario, camionId: string, fecha: string): Promise<Result<Contexto, ErrorApp>> => {
@@ -171,8 +176,17 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
         ? [{ facturaId: f.id, ...(f.folio !== undefined ? { folio: f.folio } : {}), localId: f.local.id, cliente: f.local.razonSocial, direccion: f.local.direccion, comuna: f.local.comuna, urgente: f.urgente, estado: f.estado }]
         : [],
     );
+    // Tiempos por calles entre el punto donde está el camión (o el depósito), las paradas con pin y el depósito; lo que falte queda en línea recta.
+    const origenReal = ultima ? { lat: ultima.lat, lng: ultima.lng } : config.deposito;
+    const viajesDeLaRuta: ViajesDeLaRuta = viajes
+      ? await viajes([
+          { id: ORIGEN, lat: origenReal.lat, lng: origenReal.lng, rol: 'origen' },
+          { id: DEPOSITO, lat: config.deposito.lat, lng: config.deposito.lng, rol: 'deposito' },
+          ...items.flatMap((f) => (f.lat !== undefined && f.lng !== undefined ? [{ id: f.facturaId, lat: f.lat, lng: f.lng, rol: 'parada' as const }] : [])),
+        ]).catch((): ViajesDeLaRuta => ({ minutos: () => undefined, conCalles: false }))
+      : { minutos: () => undefined, conCalles: false };
     return ok({
-      config, deposito: config.deposito, items, guardada, hechas, aprendido,
+      config, deposito: config.deposito, items, guardada, hechas, aprendido, viajes: viajesDeLaRuta,
       ...(esHoy ? { ahoraMin: minutosEnChile(clock.now()) } : {}),
       ...(ultima ? { origen: { lat: ultima.lat, lng: ultima.lng } } : {}),
     });
@@ -187,7 +201,9 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
       salida: ctx.ahoraMin !== undefined ? Math.max(salida, ctx.ahoraMin) : salida,
       horaLimiteRegresoMin: ctx.config.horaLimiteRegresoMin,
       entradas: ctx.items.map((f) => entradaDe(f, ctx.aprendido.servicioMin(f.localId))),
-      ritmo: ctx.aprendido.ritmo,
+      // Con tiempos por calles el ritmo aprendido (medido contra la línea recta) ya no aplica.
+      ritmo: ctx.viajes.conCalles ? 1 : ctx.aprendido.ritmo,
+      viajeMin: ctx.viajes.minutos,
       fijas,
     });
 

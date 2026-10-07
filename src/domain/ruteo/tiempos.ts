@@ -55,3 +55,16 @@ export const crearTiemposHaversine = (
     },
   };
 };
+
+/**
+ * Tiempos por calles: donde se conoce el tiempo real de manejar entre dos puntos (minutos, de un servicio de rutas) se usa ese; donde no,
+ * el cálculo en línea recta de respaldo. Así una consulta que falla o un par que falta nunca deja la ruta sin tiempos.
+ */
+export const crearTiemposConViajes = (respaldo: TiemposViaje, viajeMin: (desde: string, hasta: string) => number | undefined): TiemposViaje => ({
+  cortes: respaldo.cortes,
+  tiempo: (desde, hasta, minuto) => {
+    if (desde === hasta) return 0;
+    const m = viajeMin(desde, hasta);
+    return m !== undefined && Number.isFinite(m) && m >= 0 ? m : respaldo.tiempo(desde, hasta, minuto);
+  },
+});
