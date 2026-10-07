@@ -26,6 +26,11 @@ export type ParametrosRuteo = {
    * los choferes de verdad hacen (el orden que se hace manda sobre el sugerido).
    */
   readonly epsLlegada: number;
+  /**
+   * Costo por cada lugar que una parada se aleja del orden en que el chofer cargó las facturas (0 = no se considera). El orden de carga se
+   * parece al de entrega (correlación 0,8–0,9 en las rutas reales), así que es una pista de lo que el chofer piensa hacer.
+   */
+  readonly pesoOrdenCarga: number;
   /** Hora de regreso al depósito desde la cual se avisa (minutos del día). 21:00 por defecto. */
   readonly horaLimiteRegresoMin: number;
   /** Perturbaciones de la búsqueda local iterada. */
@@ -42,6 +47,7 @@ export const PARAMETROS_POR_DEFECTO: ParametrosRuteo = Object.freeze({
   omega: 0.3,
   epsPrioridad: 0.1,
   epsLlegada: 0,
+  pesoOrdenCarga: 0,
   horaLimiteRegresoMin: 21 * 60,
   reinicios: 6,
   semilla: 20261004,
@@ -57,3 +63,10 @@ export const SERVICIO_POR_DEFECTO_MIN = 8;
  * de las veces en vez del 54 %, y el recorrido total crece 1,7 %. El motor puro (`PARAMETROS_POR_DEFECTO`) no lo incluye.
  */
 export const EPS_LLEGADA_CALIBRADO = 0.5;
+
+/**
+ * Peso del orden de carga que usa la aplicación (minutos por lugar de diferencia). Calibrado con las mismas rutas reales (64 decisiones de
+ * 4 rutas, 6 y 7 de octubre): con los pines conocidos la siguiente parada sugerida coincide con la del chofer el 72 % de las veces en vez del
+ * 64 % (y está entre las 3 primeras el 86 % en vez del 77 %), con un recorrido que sigue siendo más corto que el manejado.
+ */
+export const PESO_ORDEN_CARGA_CALIBRADO = 1;

@@ -1,4 +1,4 @@
-import { DEPOSITO, ORIGEN } from './tiempos.js';
+import { DEPOSITO, ORIGEN, tiempoDeViaje } from './tiempos.js';
 import type { ProblemaRuta, Solucion } from './tipos.js';
 import { err, ok, type Result } from '../shared/result.js';
 import type { OpcionesOptimizacion } from './tipos.js';
@@ -32,7 +32,7 @@ export const verificarInvariantes = (problema: ProblemaRuta, solucion: Solucion)
   solucion.detalle.forEach((d, k) => {
     const parada = porId.get(d.id);
     if (!parada || solucion.orden[k] !== d.id) return;
-    const llegada = t + problema.tiempos.tiempo(previo, d.id, t) * problema.ritmo;
+    const llegada = t + tiempoDeViaje(problema.tiempos, previo, d.id, t, problema.ritmo);
     const tramo = parada.ventanas.find((w) => llegada <= w.cierre);
     const inicio = parada.ventanas.length === 0 || !tramo ? llegada : Math.max(llegada, tramo.apertura);
     const atraso = parada.ventanas.length > 0 && !tramo ? llegada - (parada.ventanas[parada.ventanas.length - 1]?.cierre ?? llegada) : 0;
@@ -47,7 +47,7 @@ export const verificarInvariantes = (problema: ProblemaRuta, solucion: Solucion)
   });
 
   // 5. El regreso es la última salida más el viaje al depósito.
-  const regreso = t + problema.tiempos.tiempo(previo, DEPOSITO, t) * problema.ritmo;
+  const regreso = t + tiempoDeViaje(problema.tiempos, previo, DEPOSITO, t, problema.ritmo);
   if (Math.abs(regreso - solucion.regreso) > TOL) fallas.push('Hora de regreso incoherente.');
   if (solucion.regresoTardio !== regreso > problema.parametros.horaLimiteRegresoMin) fallas.push('Alerta de regreso tardío incoherente.');
 

@@ -4,6 +4,7 @@ import { esFechaValida, fechaEnChile, minutosEnChile } from '../../domain/shared
 import type { Coordenada } from '../../domain/valor/coordenada.js';
 import { err, ok, type Result } from '../../domain/shared/result.js';
 import { armarProblema, type EntradaParada } from '../../domain/ruteo/armar-problema.js';
+import { ubicarPorOrdenDeCarga, type AnclaDeCarga } from '../../domain/ruteo/ubicacion-por-carga.js';
 import { insertarNuevas, moverAlFrente, moverAPosicion, moverParada, ordenarPendientes, posponer, type EstadoRuta, type ResultadoOperacion } from '../../domain/ruteo/operaciones.js';
 import { evaluarOrden, optimizar } from '../../domain/ruteo/optimizador.js';
 import type { Motivo, ProblemaRuta, Solucion, Sugerencia } from '../../domain/ruteo/tipos.js';
@@ -20,7 +21,7 @@ import { aprendidoParaRuta, SIN_APRENDIZAJE, type AprendidoParaRuta } from '../.
 import type { AprendizajeRepository } from '../ports/out/aprendizaje.js';
 import { DEPOSITO, ORIGEN } from '../../domain/ruteo/tiempos.js';
 import type { RegistroAprendizajeRepository, TipoOperacionRuta } from '../ports/out/registro-aprendizaje.js';
-import type { FacturaParaRuta, ModoRuta, RutaGuardada, RutaRepository } from '../ports/out/rutas.js';
+import type { FacturaParaRuta, HechaConUbicacion, ModoRuta, RutaGuardada, RutaRepository } from '../ports/out/rutas.js';
 import type { ResolverCamion } from './jornada.js';
 
 /** Tiempo máximo de cómputo del optimizador por pedido (válvula de seguridad; con ~50 paradas toma una fracción). */
@@ -118,6 +119,34 @@ type Contexto = {
   readonly ahoraMin?: number;
   readonly origen?: Coordenada;
   readonly hechas: readonly (ItemVista & { readonly estado: 'entregada' | 'no_entregada' })[];
+  /** Lugar de cada factura pendiente en el orden en que se cargaron (0 = la primera). */
+  readonly ordenCarga: ReadonlyMap<string, number>;
+  /** Ubicación aproximada de las pendientes sin pin, según las vecinas de carga con ubicación conocida. */
+  readonly estimadas: ReadonlyMap<string, Coordenada>;
+};
+
+/**
+ * El orden en que el chofer cargó las facturas del día (las pendientes y las ya hechas) y, para las pendientes sin pin, dónde están
+ * aproximadamente: entre las vecinas de carga con ubicación conocida (ver `ubicarPorOrdenDeCarga`).
+ */
+const ordenYEstimadas = (items: readonly FacturaParaRuta[], hechas: readonly HechaConUbicacion[]) => {
+  const conTiempo = items.every((f) => f.cargadaEn !== undefined);
+  const claves = conTiempo
+    ? [...items.map((f) => ({ id: f.facturaId, t: f.cargadaEn ?? 0 })), ...hechas.map((h, i) => ({ id: `hecha:${String(i)}`, t: h.cargadaEn }))]
+    : items.map((f, i) => ({ id: f.facturaId, t: i }));
+  const rango = new Map([...claves].sort((a, b) => a.t - b.t || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)).map((x, i) => [x.id, i]));
+  const anclas: AnclaDeCarga[] = [
+    ...items.flatMap((f) => (f.lat !== undefined && f.lng !== undefined ? [{ orden: rango.get(f.facturaId) ?? 0, comuna: f.comuna, coordenada: { lat: f.lat, lng: f.lng } }] : [])),
+    ...(conTiempo ? hechas.map((h, i) => ({ orden: rango.get(`hecha:${String(i)}`) ?? 0, comuna: h.comuna, coordenada: { lat: h.lat, lng: h.lng } })) : []),
+  ];
+  const estimadas = new Map<string, Coordenada>();
+  for (const f of items) {
+    if (f.lat !== undefined && f.lng !== undefined) continue;
+    const u = ubicarPorOrdenDeCarga({ orden: rango.get(f.facturaId) ?? 0, comuna: f.comuna }, anclas);
+    if (u) estimadas.set(f.facturaId, u);
+  }
+  const ordenCarga = new Map(items.map((f) => [f.facturaId, rango.get(f.facturaId) ?? 0]));
+  return { ordenCarga, estimadas };
 };
 
 const itemDe = (f: FacturaParaRuta): ItemVista => ({
@@ -134,9 +163,9 @@ const itemDe = (f: FacturaParaRuta): ItemVista => ({
   ...(f.nota !== undefined ? { nota: f.nota } : {}),
 });
 
-const entradaDe = (f: FacturaParaRuta, servicioMin?: number): EntradaParada => {
-  // Sin pin la ruta no se detiene: se ubica por el centro de la comuna hasta que haya un pin mejor.
-  const coordenada = f.lat !== undefined && f.lng !== undefined ? { lat: f.lat, lng: f.lng } : centroDeComuna(f.comuna);
+const entradaDe = (f: FacturaParaRuta, servicioMin?: number, estimada?: Coordenada, ordenCarga?: number): EntradaParada => {
+  // Sin pin la ruta no se detiene: se ubica entre sus vecinas de carga o, si no hay, por el centro de la comuna, hasta que haya un pin.
+  const coordenada = f.lat !== undefined && f.lng !== undefined ? { lat: f.lat, lng: f.lng } : (estimada ?? centroDeComuna(f.comuna));
   return {
     id: f.facturaId,
     nombre: f.razonSocial,
@@ -146,6 +175,7 @@ const entradaDe = (f: FacturaParaRuta, servicioMin?: number): EntradaParada => {
     ...(f.antesDeMin !== undefined ? { antesDeMin: f.antesDeMin } : {}),
     urgente: f.urgente,
     ...(servicioMin !== undefined ? { servicioMin } : {}),
+    ...(ordenCarga !== undefined ? { ordenCarga } : {}),
   };
 };
 
@@ -165,11 +195,12 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
     // Lo hecho solo cuenta desde que empezó la jornada vigente (o desde que terminó la última): al terminar la ruta la lista queda limpia.
     const jornada = await jornadas.ultimaDelCamion(actor.empresaId, camionId, fecha);
     const hechasDesde = jornada ? (jornada.hasta ?? jornada.desde) : undefined;
-    const [items, guardada, todas, ultima] = await Promise.all([
+    const [items, guardada, todas, ultima, hechasUbicadas] = await Promise.all([
       rutas.facturasPendientes(actor.empresaId, camionId, fecha),
       rutas.obtener(actor.empresaId, camionId, fecha),
       facturas.listar(actor.empresaId, { fecha, camionId, incluirHechas: true, ...(hechasDesde ? { hechasDesde } : {}) }),
       esHoy ? entregas.ultimaPosicion(actor.empresaId, camionId, fecha) : Promise.resolve(undefined),
+      rutas.hechasConUbicacion(actor.empresaId, camionId, fecha).catch((): readonly HechaConUbicacion[] => []),
     ]);
     const sinPinIds = [...new Set(items.filter((f) => f.lat === undefined).map((f) => f.localId))];
     if (sinPinIds.length > 0) programarPines?.(actor.empresaId, sinPinIds);
@@ -188,7 +219,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
         ]).catch((): ViajesDeLaRuta => ({ minutos: () => undefined, conCalles: false }))
       : { minutos: () => undefined, conCalles: false };
     return ok({
-      config, deposito: config.deposito, items, guardada, hechas, aprendido, viajes: viajesDeLaRuta,
+      config, deposito: config.deposito, items, guardada, hechas, aprendido, viajes: viajesDeLaRuta, ...ordenYEstimadas(items, hechasUbicadas),
       ...(esHoy ? { ahoraMin: minutosEnChile(clock.now()) } : {}),
       ...(ultima ? { origen: { lat: ultima.lat, lng: ultima.lng } } : {}),
     });
@@ -202,7 +233,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
       ...(ctx.origen ? { origen: ctx.origen } : {}),
       salida: ctx.ahoraMin !== undefined ? Math.max(salida, ctx.ahoraMin) : salida,
       horaLimiteRegresoMin: ctx.config.horaLimiteRegresoMin,
-      entradas: ctx.items.map((f) => entradaDe(f, ctx.aprendido.servicioMin(f.localId))),
+      entradas: ctx.items.map((f) => entradaDe(f, ctx.aprendido.servicioMin(f.localId), ctx.estimadas.get(f.facturaId), ctx.ordenCarga.get(f.facturaId))),
       // Con tiempos por calles el ritmo aprendido (medido contra la línea recta) ya no aplica.
       ritmo: ctx.viajes.conCalles ? 1 : ctx.aprendido.ritmo,
       viajeMin: ctx.viajes.minutos,

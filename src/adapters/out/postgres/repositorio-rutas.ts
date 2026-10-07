@@ -1,7 +1,7 @@
 import { sql } from 'kysely';
 import type { DiaSemana, HorarioLocal } from '../../../domain/entidades/horario.js';
 import { err, ok, type Result } from '../../../domain/shared/result.js';
-import type { FacturaParaRuta, GuardarRuta, RutaGuardada, RutaRepository } from '../../../application/ports/out/rutas.js';
+import type { FacturaParaRuta, GuardarRuta, RutaGuardada, RutaRepository, HechaConUbicacion } from '../../../application/ports/out/rutas.js';
 import type { Db } from './client.js';
 
 /** '08:30:00' → 510 */
@@ -40,7 +40,7 @@ export class PostgresRutaRepository implements RutaRepository {
       .selectFrom('factura as f')
       .innerJoin('local as l', 'l.id', 'f.local_id')
       .innerJoin('cliente as c', 'c.id', 'l.cliente_id')
-      .select(['f.id', 'f.folio', 'f.antes_de_min', 'f.urgente', 'f.nota', 'f.total', 'l.id as local_id', 'c.razon_social', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng', 'l.pin_fuente', 'l.pin_confianza', 'l.foto_path'])
+      .select(['f.id', 'f.folio', 'f.antes_de_min', 'f.urgente', 'f.nota', 'f.total', 'l.id as local_id', 'c.razon_social', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng', 'l.pin_fuente', 'l.pin_confianza', 'l.foto_path', 'f.creado_en'])
       .where('f.empresa_id', '=', empresaId)
       .where('f.camion_id', '=', camionId)
       .where('f.fecha_reparto', '=', fecha)
@@ -78,7 +78,23 @@ export class PostgresRutaRepository implements RutaRepository {
       ...(f.nota !== null ? { nota: f.nota } : {}),
       ...(f.total !== null ? { total: f.total } : {}),
       horarios: porLocal.get(f.local_id) ?? [],
+      cargadaEn: f.creado_en.getTime(),
     }));
+  }
+
+  async hechasConUbicacion(empresaId: string, camionId: string, fecha: string): Promise<readonly HechaConUbicacion[]> {
+    const filas = await this.db
+      .selectFrom('factura as f')
+      .innerJoin('local as l', 'l.id', 'f.local_id')
+      .select(['f.creado_en', 'l.comuna', 'l.lat', 'l.lng'])
+      .where('f.empresa_id', '=', empresaId)
+      .where('f.camion_id', '=', camionId)
+      .where('f.fecha_reparto', '=', fecha)
+      .where('f.estado', 'in', ['entregada', 'no_entregada'])
+      .where('l.lat', 'is not', null)
+      .where('l.lng', 'is not', null)
+      .execute();
+    return filas.flatMap((f) => (f.lat !== null && f.lng !== null ? [{ cargadaEn: f.creado_en.getTime(), comuna: f.comuna, lat: f.lat, lng: f.lng }] : []));
   }
 
   async guardar(empresaId: string, d: GuardarRuta): Promise<Result<RutaGuardada, 'VERSION_DESACTUALIZADA'>> {

@@ -12,12 +12,13 @@ Marca cada casilla al terminar. Nunca pegues claves secretas en el chat: cárgal
 Lo más importante primero. Marca cada casilla al terminar; el detalle de cada una está más abajo (A19).
 
 1. [ ] **Cargar los horarios de atención** (hoy hay 0): Importar clientes → **REVISAR LAS NOTAS CON HORARIOS** → **APLICAR**. Es lo más barato y hace que la ruta respete a quién le sirve cada hora.
-2. [ ] **Buscar los pines que faltan:** 591 de 751 locales no tienen pin. Importar clientes → **BUSCAR LOS PINES POR DIRECCIÓN** y deja la pantalla abierta ~15 minutos.
+2. [ ] **Buscar los pines que faltan:** 588 de 766 locales no tienen pin. Importar clientes → **BUSCAR LOS PINES POR DIRECCIÓN** y deja la pantalla abierta ~15 minutos. Es lo que más mejora la ruta: con los pines la siguiente parada coincide con la del chofer el 72 % de las veces; sin ellos, mucho menos. El buscador gratis encuentra ~1 de cada 3 direcciones; las demás se fijan solas con la primera entrega.
 3. [ ] **Contarme 3 paradas que moviste a mano y por qué** (cierra pronto, sentido de la calle, queda de paso, pedido del cliente…). Con eso afino cómo ordena la ruta.
 4. [ ] **Decidir las distancias por calles** (hoy la ruta mide en línea recta): ver A19-6. Recomendado: OpenRouteService, gratis.
 5. [ ] **Pegar el enlace que no funcionó** (`maps.app.goo.gl/tQsDTWhhRh9eyaTC8`) en un local con **PEGAR UBICACIÓN** y contarme el mensaje que sale.
 6. [ ] **Verificar pines** que ya sepas que están bien (ficha del local → **VERIFICAR PIN**): quedan fijos y las entregas dejan de moverlos.
 7. [ ] **Pedir a los choferes** que trabajen con la app abierta y la pantalla encendida: el recorrido y la llegada automática solo funcionan así.
+8. [ ] **Pedir a los choferes que carguen las facturas en el orden en que piensan entregarlas** (ya casi lo hacen: el orden de carga y el de entrega se parecen un 80–90 %). Desde el 7-oct la ruta usa ese orden como pista, sobre todo para ubicar las paradas que no tienen pin (ADR 0028 del back).
 
 ---
 

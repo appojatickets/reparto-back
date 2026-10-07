@@ -1,9 +1,12 @@
 import type { ParadaRuta, ProblemaRuta } from './tipos.js';
-import { DEPOSITO, ORIGEN } from './tiempos.js';
+import { DEPOSITO, ORIGEN, periodoDelMinuto, viajeConCambioDePeriodo } from './tiempos.js';
 
 /**
  * Representación numérica del problema para el motor: paradas = 0..n-1, origen = n, depósito = n+1.
  * Precalcula una matriz por período (ya multiplicada por el ritmo) para que evaluar una ruta no llame a nada externo.
+ *
+ * Un tramo que cruza un cambio de período avanza a la velocidad de cada período por la parte que le toca (modelo de Ichoua, Gendreau y
+ * Potvin): así salir más tarde nunca hace llegar antes, cosa que pasaba al usar la velocidad de la salida para todo el tramo.
  */
 export type Compilado = {
   readonly problema: ProblemaRuta;
@@ -12,6 +15,8 @@ export type Compilado = {
   readonly indice: ReadonlyMap<string, number>;
   readonly servicio: Float64Array;
   readonly prioridad: Uint8Array;
+  /** Lugar de cada parada en el orden de carga entre las de este problema (0..n-1), o -1 si no se sabe. */
+  readonly rangoCarga: Int32Array;
   readonly origen: number;
   readonly deposito: number;
   readonly salida: number;
@@ -37,12 +42,18 @@ export const compilar = (problema: ProblemaRuta): Compilado => {
     caches.push(matriz);
   }
 
-  const periodoDe = (minuto: number): number => {
-    const m = ((minuto % 1440) + 1440) % 1440;
-    let p = 0;
-    while (p < cortes.length && (cortes[p] ?? Infinity) <= m) p++;
-    return p;
+  const viaje = (de: number, a: number, minuto: number): number => {
+    const k = de * nodos + a;
+    const p = periodoDelMinuto(cortes, minuto);
+    const directo = caches[p]?.[k] ?? 0;
+    // Lo común: el tramo termina dentro del mismo período (no hace falta repartirlo).
+    if (periodos === 1 || directo <= 0 || minuto + directo <= minuto - (((minuto % 1440) + 1440) % 1440) + (cortes[p] ?? 1440)) return directo;
+    return viajeConCambioDePeriodo(cortes, minuto, (q) => caches[q]?.[k] ?? 0);
   };
+
+  const rangoCarga = new Int32Array(n).fill(-1);
+  const conCarga = problema.paradas.flatMap((p, i) => (p.ordenCarga !== undefined ? [{ i, orden: p.ordenCarga }] : [])).sort((a, b) => a.orden - b.orden || a.i - b.i);
+  conCarga.forEach((x, rango) => { rangoCarga[x.i] = rango; });
 
   return {
     problema,
@@ -51,10 +62,11 @@ export const compilar = (problema: ProblemaRuta): Compilado => {
     indice: new Map(problema.paradas.map((p, i) => [p.id, i])),
     servicio: Float64Array.from(problema.paradas, (p) => p.servicioMin),
     prioridad: Uint8Array.from(problema.paradas, (p) => (p.prioridad ? 1 : 0)),
+    rangoCarga,
     origen: n,
     deposito: n + 1,
     salida: problema.salida,
-    viaje: (de, a, minuto) => caches[periodoDe(minuto)]?.[de * nodos + a] ?? 0,
+    viaje,
   };
 };
 

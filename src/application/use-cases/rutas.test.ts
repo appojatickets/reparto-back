@@ -222,6 +222,27 @@ describe('la ruta usa lo que el sistema aprendió', () => {
   });
 });
 
+describe('el orden en que el chofer cargó las facturas', () => {
+  it('una factura sin pin queda entre las que se cargaron justo antes y justo después (y no en el centro de la comuna)', async () => {
+    const { facturaId, localId, razonSocial, direccion, comuna, urgente, horarios } = paradaDe('X');
+    const sinCoord = { facturaId, localId, razonSocial, direccion, comuna, urgente, horarios, cargadaEn: 2000 };
+    // El centro de Santiago (-70.66) queda junto al depósito (-70.7): ahí la parada iría primera o última, no entre A y B.
+    const oeste = paradaDe('A', { lat: -33.45, lng: -71.0, cargadaEn: 1000 });
+    const este = paradaDe('B', { lat: -33.45, lng: -70.9, cargadaEn: 3000 });
+    const s = montar({ pendientes: [este, sinCoord, oeste] });
+    const r = await s.planificar(despachador, entrada);
+    expect(r.ok && ids(r.value).indexOf('f-X')).toBe(1);
+    expect(r.ok && r.value.paradas.find((x) => x.facturaId === 'f-X')).toMatchObject({ ubicacionAproximada: true });
+    expect(s.rutas.repo.hechasConUbicacion).toHaveBeenCalled();
+  });
+
+  it('si no se pueden leer las ya entregadas, la ruta se calcula igual', async () => {
+    const s = montar({ pendientes: [paradaDe('A', { cargadaEn: 1 }), paradaDe('B', { cargadaEn: 2 })] });
+    s.rutas.repo.hechasConUbicacion.mockRejectedValueOnce(new Error('caída'));
+    expect((await s.planificar(despachador, entrada)).ok).toBe(true);
+  });
+});
+
 describe('la ruta con tiempos por calles', () => {
   it('pide los tiempos al servicio solo para el depósito, el origen y las paradas con pin, y usa lo que responde (sin el ritmo aprendido)', async () => {
     const viajes = vi.fn(() => Promise.resolve({ minutos: () => 100, conCalles: true }));
