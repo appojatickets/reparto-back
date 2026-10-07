@@ -9392,7 +9392,7 @@
     },
     "/v1/fotos/revision": {
       "get": {
-        "summary": "Fotos para revisar (solo admin): las reportadas y las subidas hace poco, con quién y cuándo",
+        "summary": "Fotos para revisar (solo admin): las reportadas, las que faltan por verificar y las ya verificadas, con quién y cuándo",
         "tags": [
           "archivos"
         ],
@@ -9466,12 +9466,15 @@
                         "additionalProperties": false
                       }
                     },
-                    "recientes": {
+                    "porVerificar": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "properties": {
                           "localId": {
+                            "type": "string"
+                          },
+                          "fotoPath": {
                             "type": "string"
                           },
                           "razonSocial": {
@@ -9492,9 +9495,54 @@
                         },
                         "required": [
                           "localId",
+                          "fotoPath",
                           "razonSocial",
                           "direccion",
                           "comuna"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "verificadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "localId": {
+                            "type": "string"
+                          },
+                          "fotoPath": {
+                            "type": "string"
+                          },
+                          "razonSocial": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "subidaPor": {
+                            "type": "string"
+                          },
+                          "subidaEn": {
+                            "type": "string"
+                          },
+                          "verificadaPor": {
+                            "type": "string"
+                          },
+                          "verificadaEn": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "localId",
+                          "fotoPath",
+                          "razonSocial",
+                          "direccion",
+                          "comuna",
+                          "verificadaEn"
                         ],
                         "additionalProperties": false
                       }
@@ -9502,9 +9550,266 @@
                   },
                   "required": [
                     "reportadas",
-                    "recientes"
+                    "porVerificar",
+                    "verificadas"
                   ],
                   "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/locales/{id}/foto/verificacion": {
+      "put": {
+        "summary": "Verificar la foto de un local (solo admin): sale de «por verificar» y pasa a «verificadas»; con verificada=false vuelve. Se indica la foto vista para no verificar otra que la cambiaron",
+        "tags": [
+          "archivos"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fotoPath": {
+                    "type": "string",
+                    "maxLength": 300
+                  },
+                  "verificada": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "fotoPath",
+                  "verificada"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    null
+                  ]
                 }
               }
             }

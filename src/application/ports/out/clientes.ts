@@ -120,8 +120,13 @@ export interface ClienteRepository {
   /** Locales sin pin a los que todavía no se les buscó la dirección (o cuya última búsqueda fue antes de `intentadosAntesDe`). */
   /** Los locales de la empresa con los datos de su cliente, en orden de comuna y nombre (hasta `limite`). */
   exportarLocales(empresaId: string, filtro: FiltroExportacion, limite: number): Promise<readonly FilaExportacion[]>;
-  /** Deja el local sin foto. Devuelve true si el local existe en esa empresa. */
+  /** Deja el local sin foto (y sin verificación). Devuelve true si el local existe en esa empresa. */
   quitarFoto(empresaId: string, localId: string): Promise<boolean>;
+  /**
+   * Marca (o, sin `verificacion`, desmarca) como verificada la foto `fotoPath` del local. Devuelve false si el local ya no tiene esa foto
+   * (la cambiaron o la quitaron): nunca se verifica una foto distinta de la que el admin vio. Cambiar la foto borra la verificación.
+   */
+  marcarFotoVerificada(empresaId: string, localId: string, fotoPath: string, verificacion: { readonly por: string; readonly en: Date } | undefined): Promise<boolean>;
   localesSinPin(empresaId: string, limite: number, intentadosAntesDe: Date): Promise<readonly LocalSinPin[]>;
   contarLocalesSinPin(empresaId: string): Promise<number>;
   /** Anota que se buscó la dirección de este local (con o sin éxito), para no repetir la búsqueda cada vez. */

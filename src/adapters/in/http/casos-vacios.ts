@@ -32,6 +32,7 @@ export const casosVacios = (): CasosDeUso => {
     quitarFotoLocal: sinImplementar,
     reportarFoto: sinImplementar,
     fotosParaRevision: sinImplementar,
+    verificarFoto: sinImplementar,
     resolverReporteFoto: sinImplementar,
     exportarLocales: sinImplementar,
     obtenerUrlFoto: sinImplementar,

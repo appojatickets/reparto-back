@@ -19,6 +19,7 @@ export const fakeClientes = (locales: LocalDetalle[] = []) => {
     fijarPinSiFalta: vi.fn<ClienteRepository['fijarPinSiFalta']>(() => Promise.resolve(true)),
     exportarLocales: vi.fn<ClienteRepository['exportarLocales']>(() => Promise.resolve([])),
     quitarFoto: vi.fn<ClienteRepository['quitarFoto']>(() => Promise.resolve(true)),
+    marcarFotoVerificada: vi.fn<ClienteRepository['marcarFotoVerificada']>((empresaId, id, fotoPath) => Promise.resolve(empresaId === 'empresa-1' && locales.some((l) => l.id === id && l.fotoPath === fotoPath))),
     localesSinPin: vi.fn<ClienteRepository['localesSinPin']>(() => Promise.resolve([])),
     contarLocalesSinPin: vi.fn<ClienteRepository['contarLocalesSinPin']>(() => Promise.resolve(0)),
     marcarIntentoGeocodificacion: vi.fn<ClienteRepository['marcarIntentoGeocodificacion']>(() => Promise.resolve()),
@@ -69,7 +70,8 @@ export const fakeReportesFoto = () =>
   ({
     crear: vi.fn<FotoReporteRepository['crear']>(() => Promise.resolve()),
     abiertos: vi.fn<FotoReporteRepository['abiertos']>(() => Promise.resolve([])),
-    recientes: vi.fn<FotoReporteRepository['recientes']>(() => Promise.resolve([])),
+    porVerificar: vi.fn<FotoReporteRepository['porVerificar']>(() => Promise.resolve([])),
+    verificadas: vi.fn<FotoReporteRepository['verificadas']>(() => Promise.resolve([])),
     obtener: vi.fn<FotoReporteRepository['obtener']>(() => Promise.resolve({ id: 'r-1', localId: 'l-1', fotoPath: 'empresa-1/l-1/x.webp', abierto: true })),
     resolver: vi.fn<FotoReporteRepository['resolver']>(() => Promise.resolve()),
     resolverDeFoto: vi.fn<FotoReporteRepository['resolverDeFoto']>(() => Promise.resolve()),

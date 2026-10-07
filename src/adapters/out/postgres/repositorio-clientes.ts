@@ -300,17 +300,21 @@ export class PostgresClienteRepository implements ClienteRepository {
   }
 
   async actualizarLocal(empresaId: string, localId: string, c: CambiosLocal): Promise<boolean> {
-    const cambios = sinNulos({
-      nota: c.nota,
-      streetview_rumbo: c.streetviewRumbo,
-      foto_path: c.fotoPath,
-      foto_por: c.fotoPor,
-      foto_en: c.fotoEn,
-      lat: c.pin?.lat,
-      lng: c.pin?.lng,
-      pin_estado: c.pin?.estado,
-      pin_fuente: c.pin?.fuente,
-    });
+    const cambios = {
+      ...sinNulos({
+        nota: c.nota,
+        streetview_rumbo: c.streetviewRumbo,
+        foto_path: c.fotoPath,
+        foto_por: c.fotoPor,
+        foto_en: c.fotoEn,
+        lat: c.pin?.lat,
+        lng: c.pin?.lng,
+        pin_estado: c.pin?.estado,
+        pin_fuente: c.pin?.fuente,
+      }),
+      // Una foto nueva llega sin verificar: nadie del admin la vio todavía.
+      ...(c.fotoPath !== undefined ? { foto_verificada_por: null, foto_verificada_en: null } : {}),
+    };
     if (Object.keys(cambios).length === 0) {
       const existe = await this.db.selectFrom('local').select('id').where('id', '=', localId).where('empresa_id', '=', empresaId).executeTakeFirst();
       return existe !== undefined;
@@ -370,7 +374,18 @@ export class PostgresClienteRepository implements ClienteRepository {
   }
 
   async quitarFoto(empresaId: string, localId: string): Promise<boolean> {
-    const r = await this.db.updateTable('local').set({ foto_path: null }).where('id', '=', localId).where('empresa_id', '=', empresaId).executeTakeFirst();
+    const r = await this.db.updateTable('local').set({ foto_path: null, foto_verificada_por: null, foto_verificada_en: null }).where('id', '=', localId).where('empresa_id', '=', empresaId).executeTakeFirst();
+    return r.numUpdatedRows > 0n;
+  }
+
+  async marcarFotoVerificada(empresaId: string, localId: string, fotoPath: string, verificacion: { por: string; en: Date } | undefined): Promise<boolean> {
+    const r = await this.db
+      .updateTable('local')
+      .set({ foto_verificada_por: verificacion?.por ?? null, foto_verificada_en: verificacion?.en ?? null })
+      .where('id', '=', localId)
+      .where('empresa_id', '=', empresaId)
+      .where('foto_path', '=', fotoPath)
+      .executeTakeFirst();
     return r.numUpdatedRows > 0n;
   }
 

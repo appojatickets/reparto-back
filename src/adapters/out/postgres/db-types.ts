@@ -32,6 +32,8 @@ export type Tabla = {
     foto_path: string | null;
     foto_por: string | null;
     foto_en: Date | null;
+    foto_verificada_por: string | null;
+    foto_verificada_en: Date | null;
     streetview_rumbo: number | null;
     nota: string | null;
     geocod_intento_en: Date | null;

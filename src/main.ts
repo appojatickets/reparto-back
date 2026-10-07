@@ -33,7 +33,7 @@ import { PostgresRutaRepository } from './adapters/out/postgres/repositorio-ruta
 import { PostgresHorarioRepository } from './adapters/out/postgres/repositorio-horarios.js';
 import { PostgresJornadaRepository } from './adapters/out/postgres/repositorio-jornadas.js';
 import { PostgresEntregaRepository } from './adapters/out/postgres/repositorio-entregas.js';
-import { crearFotosParaRevision, crearReportarFoto, crearResolverReporteFoto } from './application/use-cases/fotos-revision.js';
+import { crearFotosParaRevision, crearReportarFoto, crearResolverReporteFoto, crearVerificarFoto } from './application/use-cases/fotos-revision.js';
 import { crearActualizarVendedor, crearCrearVendedor, crearListarVendedores } from './application/use-cases/vendedores.js';
 import { crearExportarLocales } from './application/use-cases/exportar-locales.js';
 import { crearBuscarPinesPendientes, crearEstadoBusquedaPines } from './application/use-cases/buscar-pines.js';
@@ -133,6 +133,7 @@ const casos: CasosDeUso = {
   quitarFotoLocal: crearQuitarFotoLocal({ clientes, almacen }),
   reportarFoto: crearReportarFoto({ clientes, reportes: reportesFoto }),
   fotosParaRevision: crearFotosParaRevision({ reportes: reportesFoto }),
+  verificarFoto: crearVerificarFoto({ clientes, clock }),
   resolverReporteFoto: crearResolverReporteFoto({ clientes, reportes: reportesFoto, almacen, clock }),
   exportarLocales: crearExportarLocales({ clientes }),
   obtenerUrlFoto: crearObtenerUrlFoto({ clientes, almacen }),
