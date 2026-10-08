@@ -182,7 +182,6 @@ export const rutasClientes = ({ app, casos, guard }: ContextoRutas): void => {
     streetviewRumbo: z.number().optional(),
     tieneFoto: z.boolean(),
     entregas: z.number(),
-    recaudado: z.number(),
   });
 
   a.get(
@@ -191,7 +190,7 @@ export const rutasClientes = ({ app, casos, guard }: ContextoRutas): void => {
       preHandler: guard('clientes:escribir'),
       schema: {
         tags: ['clientes'],
-        summary: 'Locales con los datos de su cliente y lo entregado: de una comuna o los que coinciden con un texto (razón social, RUT o dirección); primero los de pin por verificar',
+        summary: 'Locales con los datos de su cliente y cuántas entregas tiene: de una comuna o los que coinciden con un texto (razón social, RUT o dirección); primero los de pin por verificar',
         security: SEGURIDAD,
         querystring: z.object({ comuna: z.string().max(100).optional(), texto: z.string().max(100).optional(), limite: z.coerce.number().int().optional() }),
         response: { 200: z.object({ total: z.number(), locales: z.array(localParaLista) }), ...RESPUESTAS_ERROR },

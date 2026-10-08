@@ -195,13 +195,12 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 Probado por el dueño el 2026-10-08: funciona.
 Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. No hay migración.
 - [x] **Menú → LOCALES POR COMUNA** (admin, despachador y chofer editor). Elige una comuna: el selector dice cuántos locales tiene y cuántos sin pin.
-- [x] Los locales salen separados en **POR VERIFICAR (n)** —incluye los sin pin— y **VERIFICADOS (n)**. Cada uno muestra razón social, RUT, dirección, insignia del pin, lo entregado («Entregado: $… en N facturas») y la nota.
+- [x] Los locales salen separados en **POR VERIFICAR (n)** —incluye los sin pin— y **VERIFICADOS (n)**. Cada uno muestra razón social, RUT, dirección, insignia del pin, cuántas entregas tiene («N entregas hechas») y la nota.
 - [x] **Buscador:** escribe un nombre, RUT o parte de la dirección; busca en todas las comunas (o solo en la elegida).
 - [x] **EDITAR:** razón social, RUT, giro, dirección, comuna, nota y la ubicación del pin (pega el enlace de Google Maps o las coordenadas). Solo se guarda lo que cambiaste. **ELIMINAR ESTA DIRECCIÓN** pide confirmar; con entregas hechas no se deja.
 - [x] **VERIFICAR PIN**, **VER EN EL MAPA** y **VER FOTO** funcionan desde cada local.
 - [x] **COMPARTIR:** en el celular abre el menú de compartir con nombre, RUT, dirección y el enlace al pin (con la foto si el teléfono lo permite); si no, ofrece **ENVIAR POR WHATSAPP** y **COPIAR EL TEXTO**.
 - [x] **Se quitó «Proponer pines»** (la planilla). El menú ahora dice **PROPUESTAS DE PIN** y solo muestra lo que propone el sistema. Dime si también quieres sacar eso.
-- [x] «Recaudado» es la suma de los totales de las facturas **entregadas** a ese local: el sistema no registra cobros.
 
 ### A24. Última parada fija: volver a la empresa (ADR 0022 del front)
 Probado por el dueño el 2026-10-08: funciona.

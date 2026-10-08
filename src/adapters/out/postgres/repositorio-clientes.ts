@@ -524,13 +524,13 @@ export class PostgresClienteRepository implements ClienteRepository {
       ? []
       : await this.db
           .selectFrom('factura')
-          .select(['local_id', sql<string>`count(*)`.as('entregas'), sql<string>`coalesce(sum(total), 0)`.as('recaudado')])
+          .select(['local_id', sql<string>`count(*)`.as('entregas')])
           .where('empresa_id', '=', empresaId)
           .where('estado', '=', 'entregada')
           .where('local_id', 'in', ids)
           .groupBy('local_id')
           .execute();
-    const porLocal = new Map(entregado.map((e) => [e.local_id, { entregas: Number(e.entregas), recaudado: Number(e.recaudado) }]));
+    const porLocal = new Map(entregado.map((e) => [e.local_id, { entregas: Number(e.entregas) }]));
     return {
       total: Number(conteo?.n ?? 0),
       locales: filas.map((f) => ({
@@ -549,7 +549,6 @@ export class PostgresClienteRepository implements ClienteRepository {
         ...(f.streetview_rumbo !== null ? { streetviewRumbo: f.streetview_rumbo } : {}),
         tieneFoto: f.foto_path !== null,
         entregas: porLocal.get(f.local_id)?.entregas ?? 0,
-        recaudado: porLocal.get(f.local_id)?.recaudado ?? 0,
       })),
     };
   }

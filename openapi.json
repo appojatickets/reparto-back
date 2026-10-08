@@ -4272,7 +4272,7 @@
     },
     "/v1/locales": {
       "get": {
-        "summary": "Locales con los datos de su cliente y lo entregado: de una comuna o los que coinciden con un texto (razón social, RUT o dirección); primero los de pin por verificar",
+        "summary": "Locales con los datos de su cliente y cuántas entregas tiene: de una comuna o los que coinciden con un texto (razón social, RUT o dirección); primero los de pin por verificar",
         "tags": [
           "clientes"
         ],
@@ -4378,9 +4378,6 @@
                           },
                           "entregas": {
                             "type": "number"
-                          },
-                          "recaudado": {
-                            "type": "number"
                           }
                         },
                         "required": [
@@ -4391,8 +4388,7 @@
                           "comuna",
                           "pinVerificado",
                           "tieneFoto",
-                          "entregas",
-                          "recaudado"
+                          "entregas"
                         ],
                         "additionalProperties": false
                       }

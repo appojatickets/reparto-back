@@ -91,17 +91,17 @@ describe('listar los locales con lo entregado', () => {
     await clientes.actualizarLocal(s.empresa, s.k2.id, { pin: { lat: -33.5, lng: -70.7, estado: 'validado', fuente: 'manual' } });
     await clientes.verificarPin(s.empresa, s.k2.id, { por: s.usuario, en: new Date() });
     const entregada = await s.factura(s.k1.id);
-    await db.updateTable('factura').set({ total: 150000, estado: 'entregada' }).where('id', '=', entregada).execute();
+    await db.updateTable('factura').set({ estado: 'entregada' }).where('id', '=', entregada).execute();
     const otra = await s.factura(s.k1.id);
-    await db.updateTable('factura').set({ total: 50000, estado: 'entregada' }).where('id', '=', otra).execute();
+    await db.updateTable('factura').set({ estado: 'entregada' }).where('id', '=', otra).execute();
     const pendiente = await s.factura(s.k1.id);
     await db.updateTable('factura').set({ total: 999 }).where('id', '=', pendiente).execute();
 
     const r = await clientes.listarLocales(s.empresa, { comuna: 'Maipú' }, 100);
     expect(r.total).toBe(2);
     expect(r.locales.map((l) => l.direccion)).toEqual(['Calle 1 10', 'Calle 2 20']); // por verificar primero
-    expect(r.locales[0]).toMatchObject({ razonSocial: 'Kiosko Sol', rut: '77975918-0', pinVerificado: false, tieneFoto: false, entregas: 2, recaudado: 200000 });
-    expect(r.locales[1]).toMatchObject({ pinVerificado: true, pinVerificacion: 'persona', lat: -33.5, lng: -70.7, entregas: 0, recaudado: 0 });
+    expect(r.locales[0]).toMatchObject({ razonSocial: 'Kiosko Sol', rut: '77975918-0', pinVerificado: false, tieneFoto: false, entregas: 2 });
+    expect(r.locales[1]).toMatchObject({ pinVerificado: true, pinVerificacion: 'persona', lat: -33.5, lng: -70.7, entregas: 0 });
     expect(await clientes.listarLocales(await crearEmpresa(db), { comuna: 'Maipú' }, 100)).toEqual({ total: 0, locales: [] });
   });
 
