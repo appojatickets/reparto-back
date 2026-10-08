@@ -26,9 +26,10 @@ import type { crearCambiarEditorUsuario, crearCambiarEstadoUsuario, crearListarU
 import type { crearFotosParaRevision, crearReportarFoto, crearResolverReporteFoto, crearVerificarFoto } from '../../../application/use-cases/fotos-revision.js';
 import type { crearImportarClientes } from '../../../application/use-cases/importar-clientes.js';
 import type { crearIniciarSesion } from '../../../application/use-cases/iniciar-sesion.js';
-import type { crearCambiarRazonSocial, crearEliminarLocal } from '../../../application/use-cases/corregir-clientes.js';
+import type { crearCorregirCliente, crearEliminarLocal } from '../../../application/use-cases/corregir-clientes.js';
+import type { crearListarLocales, crearResumenComunas } from '../../../application/use-cases/listar-locales.js';
 import type { crearObtenerLocal } from '../../../application/use-cases/obtener-local.js';
-import type { crearImportarPines, crearListarPropuestasPin, crearResolverPropuestaPin } from '../../../application/use-cases/pines.js';
+import type { crearListarPropuestasPin, crearResolverPropuestaPin } from '../../../application/use-cases/pines.js';
 import type { crearRefrescarSesion } from '../../../application/use-cases/refrescar-sesion.js';
 
 /** Todo lo que el adaptador HTTP necesita del resto de la aplicación; `main` lo arma y lo inyecta. */
@@ -47,13 +48,14 @@ export type CasosDeUso = {
   readonly importarClientes: ReturnType<typeof crearImportarClientes>;
   readonly obtenerLocal: ReturnType<typeof crearObtenerLocal>;
   readonly actualizarLocal: ReturnType<typeof crearActualizarLocal>;
-  readonly importarPines: ReturnType<typeof crearImportarPines>;
   readonly listarPropuestasPin: ReturnType<typeof crearListarPropuestasPin>;
   readonly resolverPropuestaPin: ReturnType<typeof crearResolverPropuestaPin>;
   readonly solicitarUrlSubida: ReturnType<typeof crearSolicitarUrlSubida>;
   readonly registrarFotoLocal: ReturnType<typeof crearRegistrarFotoLocal>;
   readonly quitarFotoLocal: ReturnType<typeof crearQuitarFotoLocal>;
-  readonly cambiarRazonSocial: ReturnType<typeof crearCambiarRazonSocial>;
+  readonly corregirCliente: ReturnType<typeof crearCorregirCliente>;
+  readonly listarLocales: ReturnType<typeof crearListarLocales>;
+  readonly resumenComunas: ReturnType<typeof crearResumenComunas>;
   readonly eliminarLocal: ReturnType<typeof crearEliminarLocal>;
   readonly reportarFoto: ReturnType<typeof crearReportarFoto>;
   readonly reportarLocal: ReturnType<typeof crearReportarLocal>;

@@ -93,8 +93,6 @@ export type CambiosLocal = {
   readonly pin?: { readonly lat: number; readonly lng: number; readonly estado: EstadoPin; readonly fuente: FuentePin };
 };
 
-export type CoincidenciaLocal = { readonly localId: string; readonly lat?: number; readonly lng?: number };
-
 /** Una fila de la exportación de datos: un local con los datos de su cliente. */
 export type FilaExportacion = {
   readonly localId: string;
@@ -122,6 +120,33 @@ export type FiltroExportacion = {
   readonly foto?: 'con' | 'sin';
   readonly texto?: string;
 };
+
+/** Una fila de la sección «Locales»: todo lo que se ve y se edita de un local, con lo entregado por él. */
+export type LocalParaLista = {
+  readonly localId: string;
+  readonly clienteId: string;
+  readonly razonSocial: string;
+  readonly rut?: string;
+  readonly giro?: string;
+  readonly direccion: string;
+  readonly comuna: string;
+  readonly lat?: number;
+  readonly lng?: number;
+  readonly pinFuente?: FuentePin;
+  readonly pinVerificado: boolean;
+  readonly pinVerificacion?: 'persona' | 'entregas';
+  readonly nota?: string;
+  readonly streetviewRumbo?: number;
+  readonly tieneFoto: boolean;
+  /** Facturas entregadas a este local y la suma de sus totales (el sistema no registra cobros: es lo facturado y entregado). */
+  readonly entregas: number;
+  readonly recaudado: number;
+};
+
+export type ResumenComuna = { readonly comuna: string; readonly total: number; readonly verificados: number; readonly sinPin: number };
+
+/** `null` borra el dato (RUT o giro); sin la clave, no se toca. */
+export type CambiosCliente = { readonly razonSocial?: string; readonly rut?: string | null; readonly giro?: string | null };
 
 export type LocalSinPin = { readonly id: string; readonly direccion: string; readonly comuna: string };
 
@@ -161,8 +186,17 @@ export interface ClienteRepository {
   /** Locales sin pin a los que todavía no se les buscó la dirección (o cuya última búsqueda fue antes de `intentadosAntesDe`). */
   /** Los locales de la empresa con los datos de su cliente, en orden de comuna y nombre (hasta `limite`). */
   exportarLocales(empresaId: string, filtro: FiltroExportacion, limite: number): Promise<readonly FilaExportacion[]>;
-  /** Cambia la razón social del cliente (corregir un error de tipeo). Devuelve false si no existe en esa empresa. */
-  renombrarCliente(empresaId: string, clienteId: string, razonSocial: string): Promise<boolean>;
+  /** Corrige datos del cliente (razón social, RUT, giro). `RUT_DUPLICADO`: ya hay otro cliente con ese RUT. */
+  corregirCliente(empresaId: string, clienteId: string, cambios: CambiosCliente): Promise<'OK' | 'NO_ENCONTRADO' | 'RUT_DUPLICADO'>;
+  /**
+   * Corrige la dirección y la comuna del local. `DUPLICADO`: ese cliente ya tiene un local con esa dirección. Si el pin lo había puesto el
+   * buscador por la dirección anterior y nadie lo verificó, se borra para que se busque de nuevo con la dirección corregida.
+   */
+  corregirDireccion(empresaId: string, localId: string, datos: { readonly direccion: string; readonly comuna: string }): Promise<'OK' | 'NO_ENCONTRADO' | 'DUPLICADO'>;
+  /** Locales con los datos de su cliente y lo entregado, primero los de pin por verificar; `total` cuenta todos los que cumplen el filtro. */
+  listarLocales(empresaId: string, filtro: { readonly comuna?: string; readonly texto?: string }, limite: number): Promise<{ readonly total: number; readonly locales: readonly LocalParaLista[] }>;
+  /** Por comuna: cuántos locales hay, cuántos con pin verificado y cuántos sin pin. */
+  resumenPorComuna(empresaId: string): Promise<readonly ResumenComuna[]>;
   /**
    * Elimina la dirección equivocada con sus facturas pendientes, y el cliente si se queda sin direcciones. Si la dirección ya tiene entregas
    * hechas no se toca nada (`CON_ENTREGAS`): el historial no se borra.
@@ -181,6 +215,4 @@ export interface ClienteRepository {
   marcarIntentoGeocodificacion(empresaId: string, localId: string, ahora: Date): Promise<void>;
   /** Pin hallado por la dirección («sugerido», fuente geocodificador). Solo si el local no tiene un pin mejor. Devuelve si lo fijó. */
   fijarPinGeocodificado(empresaId: string, localId: string, lat: number, lng: number, confianza: number): Promise<boolean>;
-  /** Con RUT busca ese cliente; sin RUT solo hay coincidencia si la dirección identifica un único local. */
-  coincidenciaDeDireccion(empresaId: string, rut: string | undefined, direccion: string): Promise<CoincidenciaLocal | undefined>;
 }

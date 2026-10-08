@@ -43,9 +43,10 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'GET', url: '/v1/clientes/buscar?q=rabe', permiso: 'clientes:leer', caso: 'buscarClientes' },
   { metodo: 'POST', url: '/v1/clientes', body: filaCliente, permiso: 'clientes:crear', caso: 'crearClienteNuevo' },
   { metodo: 'POST', url: '/v1/clientes/importaciones', body: { filas: [filaCliente] }, permiso: 'clientes:importar', caso: 'importarClientes' },
+  { metodo: 'GET', url: '/v1/locales?comuna=Maip%C3%BA&texto=rabelo', permiso: 'clientes:escribir', caso: 'listarLocales' },
+  { metodo: 'GET', url: '/v1/locales/comunas', permiso: 'clientes:escribir', caso: 'resumenComunas' },
   { metodo: 'GET', url: `/v1/locales/${UUID}`, permiso: 'clientes:leer', caso: 'obtenerLocal' },
   { metodo: 'PATCH', url: `/v1/locales/${UUID}`, body: { nota: 'portón verde' }, permiso: 'clientes:escribir', caso: 'actualizarLocal' },
-  { metodo: 'POST', url: '/v1/pines/importaciones', body: { pines: [{ direccion: 'x', lat: -33.4, lng: -70.6 }] }, permiso: 'pines:proponer', caso: 'importarPines' },
   { metodo: 'GET', url: '/v1/pines/propuestas', permiso: 'pines:revisar', caso: 'listarPropuestasPin' },
   { metodo: 'POST', url: `/v1/pines/propuestas/${UUID}/resolver`, body: { accion: 'aceptar' }, permiso: 'pines:revisar', caso: 'resolverPropuestaPin' },
   { metodo: 'POST', url: '/v1/archivos/url-subida', body: { localId: UUID, tipo: 'webp' }, permiso: 'archivos:subir', caso: 'solicitarUrlSubida' },
@@ -59,7 +60,7 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'GET', url: '/v1/locales/buscar-pines', permiso: 'pines:revisar', caso: 'estadoBusquedaPines' },
   { metodo: 'GET', url: '/v1/exportaciones/locales', permiso: 'datos:exportar', caso: 'exportarLocales' },
   { metodo: 'DELETE', url: `/v1/locales/${UUID}/foto`, permiso: 'clientes:escribir', caso: 'quitarFotoLocal' },
-  { metodo: 'PATCH', url: `/v1/clientes/${UUID}`, body: { razonSocial: 'Botillería El Sol' }, permiso: 'clientes:escribir', caso: 'cambiarRazonSocial' },
+  { metodo: 'PATCH', url: `/v1/clientes/${UUID}`, body: { razonSocial: 'Botillería El Sol' }, permiso: 'clientes:escribir', caso: 'corregirCliente' },
   { metodo: 'DELETE', url: `/v1/locales/${UUID}`, permiso: 'locales:eliminar', caso: 'eliminarLocal' },
   { metodo: 'GET', url: '/v1/vendedores', permiso: 'vendedores:leer', caso: 'listarVendedores' },
   { metodo: 'POST', url: '/v1/vendedores', body: { codigo: 'V01', nombre: 'Ana' }, permiso: 'vendedores:gestionar', caso: 'crearVendedor' },
@@ -128,9 +129,9 @@ describe('permisos: cada ruta exige su permiso y no llega al caso de uso sin él
 
   it('un chofer con permiso de editor corrige y elimina; sin el permiso recibe 403 en lo mismo; y el permiso no le abre lo del admin', async () => {
     const eliminarLocal = vi.fn(() => Promise.resolve(ok(undefined)));
-    const cambiarRazonSocial = vi.fn(() => Promise.resolve(ok(undefined)));
+    const corregirCliente = vi.fn(() => Promise.resolve(ok(undefined)));
     const quitarFotoLocal = vi.fn(() => Promise.resolve(ok(undefined)));
-    const app = await construir({ eliminarLocal, cambiarRazonSocial, quitarFotoLocal });
+    const app = await construir({ eliminarLocal, corregirCliente, quitarFotoLocal });
     const como = (token: string) => ({ authorization: `Bearer ${token}` });
     for (const [metodo, url, payload] of [['DELETE', `/v1/locales/${UUID}`, undefined], ['PATCH', `/v1/clientes/${UUID}`, { razonSocial: 'Kiosko Sol' }], ['DELETE', `/v1/locales/${UUID}/foto`, undefined]] as const) {
       const sin = await app.inject({ method: metodo, url, headers: como('t-chofer'), ...(payload ? { payload } : {}) });
@@ -139,7 +140,7 @@ describe('permisos: cada ruta exige su permiso y no llega al caso de uso sin él
       expect(con.statusCode, `${metodo} ${url} como editor`).toBe(204);
     }
     expect(eliminarLocal).toHaveBeenCalledTimes(1);
-    expect(cambiarRazonSocial).toHaveBeenCalledWith(expect.objectContaining({ id: 'u-ce' }), UUID, 'Kiosko Sol');
+    expect(corregirCliente).toHaveBeenCalledWith(expect.objectContaining({ id: 'u-ce' }), UUID, { razonSocial: 'Kiosko Sol' });
     expect(quitarFotoLocal).toHaveBeenCalledTimes(1);
     // Ser editor no da acceso a lo del admin.
     for (const [metodo, url] of [['GET', '/v1/usuarios'], ['GET', '/v1/fotos/revision'], ['GET', '/v1/analitica']] as const) {

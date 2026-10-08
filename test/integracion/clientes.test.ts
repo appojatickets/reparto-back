@@ -180,8 +180,6 @@ describe('aislamiento entre empresas (nadie ve datos de otra empresa)', () => {
     expect(await repo.obtenerLocal(a, localId)).toMatchObject({ razonSocial: 'Secreto SpA' });
     expect(await repo.actualizarLocal(b, localId, { nota: 'hackeado' })).toBe(false);
     expect((await repo.obtenerLocal(a, localId))?.nota).toBeUndefined();
-    expect(await repo.coincidenciaDeDireccion(b, '55555555-5', 'Calle 1 100')).toBeUndefined();
-    expect(await repo.coincidenciaDeDireccion(a, '55555555-5', 'calle 1 100')).toMatchObject({ localId });
   });
 
   it('actualizarLocal guarda nota, rumbo y foto', async () => {
@@ -191,15 +189,6 @@ describe('aislamiento entre empresas (nadie ve datos de otra empresa)', () => {
     expect(await repo.actualizarLocal(e, localId, { nota: 'portón verde', streetviewRumbo: 120, fotoPath: `${e}/${localId}/x.webp` })).toBe(true);
     expect(await repo.obtenerLocal(e, localId)).toMatchObject({ nota: 'portón verde', streetviewRumbo: 120, fotoPath: `${e}/${localId}/x.webp` });
     expect(await repo.actualizarLocal(e, '00000000-0000-0000-0000-000000000000', { nota: 'x' })).toBe(false);
-  });
-
-  it('sin RUT, una dirección que identifica a dos locales no se asigna sola', async () => {
-    const e = await crearEmpresa(db);
-    const mismaDir = (n: number): ClienteImportable => cliente(n, { locales: [{ claveLocal: `d${n}`, direccion: 'Plaza Central 1', comuna: 'Maipú', indices: [n] }] });
-    await repo.importar(e, [mismaDir(1)]);
-    expect(await repo.coincidenciaDeDireccion(e, undefined, 'plaza central 1')).toBeDefined();
-    await repo.importar(e, [mismaDir(2)]);
-    expect(await repo.coincidenciaDeDireccion(e, undefined, 'plaza central 1')).toBeUndefined();
   });
 });
 

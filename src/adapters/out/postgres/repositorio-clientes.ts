@@ -3,17 +3,19 @@ import type { ClienteImportable } from '../../../domain/importacion/fila-cliente
 import { normalizarTexto } from '../../../domain/entidades/local.js';
 import { err, ok, type Result } from '../../../domain/shared/result.js';
 import type {
+  CambiosCliente,
   CambiosLocal,
   ClienteRepository,
-  CoincidenciaLocal,
   ConsultaBusqueda,
   EstadoPin,
   FilaExportacion,
   FiltroExportacion,
   LocalDetalle,
+  LocalParaLista,
   LocalSinPin,
   NuevoClienteConLocal,
   ResultadoBusqueda,
+  ResumenComuna,
   ResumenImportacion,
   LocalConPin,
 } from '../../../application/ports/out/clientes.js';
@@ -454,9 +456,118 @@ export class PostgresClienteRepository implements ClienteRepository {
     }));
   }
 
-  async renombrarCliente(empresaId: string, clienteId: string, razonSocial: string): Promise<boolean> {
-    const r = await this.db.updateTable('cliente').set({ razon_social: razonSocial }).where('id', '=', clienteId).where('empresa_id', '=', empresaId).executeTakeFirst();
-    return r.numUpdatedRows > 0n;
+  async corregirCliente(empresaId: string, clienteId: string, cambios: CambiosCliente): Promise<'OK' | 'NO_ENCONTRADO' | 'RUT_DUPLICADO'> {
+    const set = {
+      ...(cambios.razonSocial !== undefined ? { razon_social: cambios.razonSocial } : {}),
+      ...(cambios.rut !== undefined ? { rut: cambios.rut } : {}),
+      ...(cambios.giro !== undefined ? { giro: cambios.giro } : {}),
+    };
+    try {
+      const r = await this.db.updateTable('cliente').set(set).where('id', '=', clienteId).where('empresa_id', '=', empresaId).executeTakeFirst();
+      return r.numUpdatedRows > 0n ? 'OK' : 'NO_ENCONTRADO';
+    } catch (e) {
+      if (esViolacionUnica(e)) return 'RUT_DUPLICADO';
+      throw e;
+    }
+  }
+
+  async corregirDireccion(empresaId: string, localId: string, datos: { readonly direccion: string; readonly comuna: string }): Promise<'OK' | 'NO_ENCONTRADO' | 'DUPLICADO'> {
+    try {
+      return await this.db.transaction().execute(async (trx) => {
+        const l = await trx.selectFrom('local').select(['direccion', 'comuna', 'pin_fuente', 'pin_verificado_en', 'lat']).where('id', '=', localId).where('empresa_id', '=', empresaId).forUpdate().executeTakeFirst();
+        if (!l) return 'NO_ENCONTRADO' as const;
+        const cambio = l.direccion !== datos.direccion || l.comuna !== datos.comuna;
+        // El pin que halló el buscador por la dirección anterior ya no sirve: se borra para buscarlo con la corregida. Uno verificado o puesto por una persona o por entregas se conserva.
+        const pinDelBuscador = cambio && l.lat !== null && l.pin_fuente === 'geocodificador' && l.pin_verificado_en === null;
+        await trx
+          .updateTable('local')
+          .set({
+            direccion: datos.direccion,
+            comuna: datos.comuna,
+            ...(pinDelBuscador ? { lat: null, lng: null, pin_estado: 'pendiente' as const, pin_fuente: null, pin_confianza: null } : {}),
+            ...(cambio ? { geocod_intento_en: null } : {}),
+          })
+          .where('id', '=', localId)
+          .where('empresa_id', '=', empresaId)
+          .execute();
+        return 'OK' as const;
+      });
+    } catch (e) {
+      if (esViolacionUnica(e)) return 'DUPLICADO';
+      throw e;
+    }
+  }
+
+  async listarLocales(empresaId: string, filtro: { readonly comuna?: string; readonly texto?: string }, limite: number): Promise<{ readonly total: number; readonly locales: readonly LocalParaLista[] }> {
+    const base = () => {
+      let q = this.db.selectFrom('local as l').innerJoin('cliente as c', 'c.id', 'l.cliente_id').where('l.empresa_id', '=', empresaId);
+      if (filtro.comuna !== undefined && filtro.comuna !== '') q = q.where('l.comuna', '=', filtro.comuna);
+      if (filtro.texto !== undefined && filtro.texto.trim() !== '') {
+        const patron = `%${normalizarTexto(filtro.texto)}%`;
+        const digitos = filtro.texto.replace(/\D/g, '');
+        // El RUT solo cuenta si lo escrito trae números (con «%%» coincidiría con todos los que tienen RUT).
+        q = q.where((eb) => eb.or([eb('c.razon_social_norm', 'like', patron), eb('l.direccion_norm', 'like', patron), ...(digitos !== '' ? [eb('c.rut', 'like', `%${digitos}%`)] : [])]));
+      }
+      return q;
+    };
+    const conteo = await base().select(sql<string>`count(*)`.as('n')).executeTakeFirst();
+    const filas = await base()
+      .select(['l.id as local_id', 'c.id as cliente_id', 'c.razon_social', 'c.rut', 'c.giro', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng', 'l.pin_fuente', 'l.pin_verificado_por', 'l.pin_verificado_en', 'l.nota', 'l.streetview_rumbo', 'l.foto_path'])
+      .orderBy(sql`l.pin_verificado_en is not null`)
+      .orderBy('l.comuna')
+      .orderBy('c.razon_social_norm')
+      .orderBy('l.direccion_norm')
+      .limit(limite)
+      .execute();
+    const ids = filas.map((f) => f.local_id);
+    const entregado = ids.length === 0
+      ? []
+      : await this.db
+          .selectFrom('factura')
+          .select(['local_id', sql<string>`count(*)`.as('entregas'), sql<string>`coalesce(sum(total), 0)`.as('recaudado')])
+          .where('empresa_id', '=', empresaId)
+          .where('estado', '=', 'entregada')
+          .where('local_id', 'in', ids)
+          .groupBy('local_id')
+          .execute();
+    const porLocal = new Map(entregado.map((e) => [e.local_id, { entregas: Number(e.entregas), recaudado: Number(e.recaudado) }]));
+    return {
+      total: Number(conteo?.n ?? 0),
+      locales: filas.map((f) => ({
+        localId: f.local_id,
+        clienteId: f.cliente_id,
+        razonSocial: f.razon_social,
+        ...(f.rut !== null ? { rut: f.rut } : {}),
+        ...(f.giro !== null ? { giro: f.giro } : {}),
+        direccion: f.direccion,
+        comuna: f.comuna,
+        ...(f.lat !== null && f.lng !== null ? { lat: f.lat, lng: f.lng } : {}),
+        ...(f.pin_fuente !== null ? { pinFuente: f.pin_fuente } : {}),
+        pinVerificado: f.pin_verificado_en !== null,
+        ...(f.pin_verificado_en !== null ? { pinVerificacion: f.pin_verificado_por === null ? ('entregas' as const) : ('persona' as const) } : {}),
+        ...(f.nota !== null ? { nota: f.nota } : {}),
+        ...(f.streetview_rumbo !== null ? { streetviewRumbo: f.streetview_rumbo } : {}),
+        tieneFoto: f.foto_path !== null,
+        entregas: porLocal.get(f.local_id)?.entregas ?? 0,
+        recaudado: porLocal.get(f.local_id)?.recaudado ?? 0,
+      })),
+    };
+  }
+
+  async resumenPorComuna(empresaId: string): Promise<readonly ResumenComuna[]> {
+    const filas = await this.db
+      .selectFrom('local')
+      .select([
+        'comuna',
+        sql<string>`count(*)`.as('total'),
+        sql<string>`count(*) filter (where pin_verificado_en is not null)`.as('verificados'),
+        sql<string>`count(*) filter (where lat is null)`.as('sin_pin'),
+      ])
+      .where('empresa_id', '=', empresaId)
+      .groupBy('comuna')
+      .orderBy('comuna')
+      .execute();
+    return filas.map((f) => ({ comuna: f.comuna, total: Number(f.total), verificados: Number(f.verificados), sinPin: Number(f.sin_pin) }));
   }
 
   async eliminarLocal(empresaId: string, localId: string): Promise<'ELIMINADO' | 'NO_ENCONTRADO' | 'CON_ENTREGAS'> {
@@ -529,21 +640,5 @@ export class PostgresClienteRepository implements ClienteRepository {
       .where('lat', 'is', null)
       .executeTakeFirst();
     return r.numUpdatedRows > 0n;
-  }
-
-  async coincidenciaDeDireccion(empresaId: string, rut: string | undefined, direccion: string): Promise<CoincidenciaLocal | undefined> {
-    const norma = normalizarTexto(direccion);
-    let consulta = this.db
-      .selectFrom('local as l')
-      .innerJoin('cliente as c', 'c.id', 'l.cliente_id')
-      .select(['l.id', 'l.lat', 'l.lng'])
-      .where('l.empresa_id', '=', empresaId)
-      .where('l.direccion_norm', '=', norma)
-      .limit(2);
-    if (rut !== undefined) consulta = consulta.where('c.rut', '=', rut);
-    const filas = await consulta.execute();
-    // Sin RUT solo vale si la dirección identifica a un único local; si hay dos, se deja «sin local» para revisión humana.
-    const f = rut === undefined && filas.length > 1 ? undefined : filas[0];
-    return f ? { localId: f.id, ...(f.lat !== null && f.lng !== null ? { lat: f.lat, lng: f.lng } : {}) } : undefined;
   }
 }

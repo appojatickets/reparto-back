@@ -3749,7 +3749,7 @@
         }
       },
       "patch": {
-        "summary": "Nota, rumbo de Street View (solo la referencia) y pin del local",
+        "summary": "Dirección y comuna, nota, rumbo de Street View (solo la referencia) y pin del local",
         "tags": [
           "clientes"
         ],
@@ -3760,6 +3760,14 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "direccion": {
+                    "type": "string",
+                    "maxLength": 600
+                  },
+                  "comuna": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
                   "nota": {
                     "type": "string",
                     "maxLength": 1000
@@ -4007,7 +4015,7 @@
     },
     "/v1/clientes/{id}": {
       "patch": {
-        "summary": "Corregir la razón social del cliente (error de tipeo)",
+        "summary": "Corregir los datos del cliente: razón social, RUT y giro (RUT o giro vacíos los borran)",
         "tags": [
           "clientes"
         ],
@@ -4021,11 +4029,16 @@
                   "razonSocial": {
                     "type": "string",
                     "maxLength": 400
+                  },
+                  "rut": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "giro": {
+                    "type": "string",
+                    "maxLength": 300
                   }
-                },
-                "required": [
-                  "razonSocial"
-                ]
+                }
               }
             }
           }
@@ -4257,67 +4270,42 @@
         }
       }
     },
-    "/v1/pines/importaciones": {
-      "post": {
-        "summary": "Proponer pines (quedan pendientes de revisión; nada cambia solo)",
+    "/v1/locales": {
+      "get": {
+        "summary": "Locales con los datos de su cliente y lo entregado: de una comuna o los que coinciden con un texto (razón social, RUT o dirección); primero los de pin por verificar",
         "tags": [
-          "pines"
+          "clientes"
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "pines": {
-                    "minItems": 1,
-                    "maxItems": 500,
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "rut": {
-                          "type": "string",
-                          "maxLength": 20
-                        },
-                        "direccion": {
-                          "type": "string",
-                          "maxLength": 600
-                        },
-                        "lat": {
-                          "anyOf": [
-                            {
-                              "type": "number"
-                            },
-                            {
-                              "type": "string",
-                              "maxLength": 40
-                            }
-                          ]
-                        },
-                        "lng": {
-                          "anyOf": [
-                            {
-                              "type": "number"
-                            },
-                            {
-                              "type": "string",
-                              "maxLength": 40
-                            }
-                          ]
-                        }
-                      }
-                    }
-                  }
-                },
-                "required": [
-                  "pines"
-                ]
-              }
-            }
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "in": "query",
+            "name": "comuna",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "in": "query",
+            "name": "texto",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "in": "query",
+            "name": "limite",
+            "required": false
           }
-        },
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -4331,56 +4319,338 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "recibidas": {
+                    "total": {
                       "type": "number"
                     },
-                    "pendientes": {
-                      "type": "number"
-                    },
-                    "sinLocal": {
-                      "type": "number"
-                    },
-                    "errores": {
+                    "locales": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "properties": {
-                          "fila": {
+                          "localId": {
+                            "type": "string"
+                          },
+                          "clienteId": {
+                            "type": "string"
+                          },
+                          "razonSocial": {
+                            "type": "string"
+                          },
+                          "rut": {
+                            "type": "string"
+                          },
+                          "giro": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "lat": {
                             "type": "number"
                           },
-                          "errores": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "codigo": {
-                                  "type": "string"
-                                },
-                                "mensaje": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "codigo",
-                                "mensaje"
-                              ],
-                              "additionalProperties": false
-                            }
+                          "lng": {
+                            "type": "number"
+                          },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
+                          },
+                          "nota": {
+                            "type": "string"
+                          },
+                          "streetviewRumbo": {
+                            "type": "number"
+                          },
+                          "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "entregas": {
+                            "type": "number"
+                          },
+                          "recaudado": {
+                            "type": "number"
                           }
                         },
                         "required": [
-                          "fila",
-                          "errores"
+                          "localId",
+                          "clienteId",
+                          "razonSocial",
+                          "direccion",
+                          "comuna",
+                          "pinVerificado",
+                          "tieneFoto",
+                          "entregas",
+                          "recaudado"
                         ],
                         "additionalProperties": false
                       }
                     }
                   },
                   "required": [
-                    "recibidas",
-                    "pendientes",
-                    "sinLocal",
-                    "errores"
+                    "total",
+                    "locales"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/locales/comunas": {
+      "get": {
+        "summary": "Por comuna: cuántos locales hay, cuántos con pin verificado y cuántos sin pin",
+        "tags": [
+          "clientes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "comunas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "total": {
+                            "type": "number"
+                          },
+                          "verificados": {
+                            "type": "number"
+                          },
+                          "sinPin": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "comuna",
+                          "total",
+                          "verificados",
+                          "sinPin"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "comunas"
                   ],
                   "additionalProperties": false
                 }

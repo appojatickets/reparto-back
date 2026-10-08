@@ -189,6 +189,17 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] Abre una de esas paradas: dice **«No se encontró esta dirección en el mapa y no tiene pin»** (o «Todavía no tiene pin: se está buscando» si aún no se busca) y recomienda pegar la ubicación del vendedor (botón **UBICACIÓN DEL VENDEDOR**) o fijar el pin.
 - [ ] Marca **ENTREGADO** en la puerta de una parada sin pin: la ruta avisa **«La ubicación de … quedó guardada con tu GPS»**, la insignia naranja desaparece en la siguiente visita y lo que queda se reordena.
 
+### A23. Locales por comuna: ver, buscar, editar y compartir (ADR 0035 del back, ADR 0022 del front)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. No hay migración.
+- [ ] **Menú → LOCALES POR COMUNA** (admin, despachador y chofer editor). Elige una comuna: el selector dice cuántos locales tiene y cuántos sin pin.
+- [ ] Los locales salen separados en **POR VERIFICAR (n)** —incluye los sin pin— y **VERIFICADOS (n)**. Cada uno muestra razón social, RUT, dirección, insignia del pin, lo entregado («Entregado: $… en N facturas») y la nota.
+- [ ] **Buscador:** escribe un nombre, RUT o parte de la dirección; busca en todas las comunas (o solo en la elegida).
+- [ ] **EDITAR:** razón social, RUT, giro, dirección, comuna, nota y la ubicación del pin (pega el enlace de Google Maps o las coordenadas). Solo se guarda lo que cambiaste. **ELIMINAR ESTA DIRECCIÓN** pide confirmar; con entregas hechas no se deja.
+- [ ] **VERIFICAR PIN**, **VER EN EL MAPA** y **VER FOTO** funcionan desde cada local.
+- [ ] **COMPARTIR:** en el celular abre el menú de compartir con nombre, RUT, dirección y el enlace al pin (con la foto si el teléfono lo permite); si no, ofrece **ENVIAR POR WHATSAPP** y **COPIAR EL TEXTO**.
+- [ ] **Se quitó «Proponer pines»** (la planilla). El menú ahora dice **PROPUESTAS DE PIN** y solo muestra lo que propone el sistema. Dime si también quieres sacar eso.
+- [ ] «Recaudado» es la suma de los totales de las facturas **entregadas** a ese local: el sistema no registra cobros.
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos

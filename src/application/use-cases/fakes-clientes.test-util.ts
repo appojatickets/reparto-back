@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import { err, ok } from '../../domain/shared/result.js';
 import type { AlmacenArchivos } from '../ports/out/archivos.js';
-import type { ClienteRepository, CoincidenciaLocal, LocalDetalle, ResumenImportacion } from '../ports/out/clientes.js';
+import type { ClienteRepository, LocalDetalle, ResumenImportacion } from '../ports/out/clientes.js';
 import type { FotoReporteRepository } from '../ports/out/fotos.js';
 import type { IdGenerator } from '../ports/out/id-generator.js';
 import type { PropuestaPinRepository } from '../ports/out/pines.js';
@@ -24,14 +24,16 @@ export const fakeClientes = (locales: LocalDetalle[] = []) => {
     contarPines: vi.fn<ClienteRepository['contarPines']>(() => Promise.resolve({ verificados: 0, porVerificar: 0, sinPin: 0 })),
     exportarLocales: vi.fn<ClienteRepository['exportarLocales']>(() => Promise.resolve([])),
     quitarFoto: vi.fn<ClienteRepository['quitarFoto']>(() => Promise.resolve(true)),
-    renombrarCliente: vi.fn<ClienteRepository['renombrarCliente']>(() => Promise.resolve(true)),
+    corregirCliente: vi.fn<ClienteRepository['corregirCliente']>(() => Promise.resolve('OK')),
+    corregirDireccion: vi.fn<ClienteRepository['corregirDireccion']>(() => Promise.resolve('OK')),
+    listarLocales: vi.fn<ClienteRepository['listarLocales']>(() => Promise.resolve({ total: 0, locales: [] })),
+    resumenPorComuna: vi.fn<ClienteRepository['resumenPorComuna']>(() => Promise.resolve([])),
     eliminarLocal: vi.fn<ClienteRepository['eliminarLocal']>((empresaId, id) => Promise.resolve(empresaId === 'empresa-1' && locales.some((l) => l.id === id) ? 'ELIMINADO' : 'NO_ENCONTRADO')),
     marcarFotoVerificada: vi.fn<ClienteRepository['marcarFotoVerificada']>((empresaId, id, fotoPath) => Promise.resolve(empresaId === 'empresa-1' && locales.some((l) => l.id === id && l.fotoPath === fotoPath))),
     localesSinPin: vi.fn<ClienteRepository['localesSinPin']>(() => Promise.resolve([])),
     contarLocalesSinPin: vi.fn<ClienteRepository['contarLocalesSinPin']>(() => Promise.resolve(0)),
     marcarIntentoGeocodificacion: vi.fn<ClienteRepository['marcarIntentoGeocodificacion']>(() => Promise.resolve()),
     fijarPinGeocodificado: vi.fn<ClienteRepository['fijarPinGeocodificado']>(() => Promise.resolve(true)),
-    coincidenciaDeDireccion: vi.fn<ClienteRepository['coincidenciaDeDireccion']>((): Promise<CoincidenciaLocal | undefined> => Promise.resolve(undefined)),
   } satisfies ClienteRepository;
   return repo;
 };

@@ -132,10 +132,17 @@ export const rutasClientes = ({ app, casos, guard }: ContextoRutas): void => {
     '/v1/clientes/:id',
     {
       preHandler: guard('clientes:escribir'),
-      schema: { tags: ['clientes'], summary: 'Corregir la razón social del cliente (error de tipeo)', security: SEGURIDAD, params: idParam, body: z.object({ razonSocial: z.string().max(400) }), response: { 204: z.null(), ...RESPUESTAS_ERROR } },
+      schema: {
+        tags: ['clientes'],
+        summary: 'Corregir los datos del cliente: razón social, RUT y giro (RUT o giro vacíos los borran)',
+        security: SEGURIDAD,
+        params: idParam,
+        body: z.object({ razonSocial: z.string().max(400).optional(), rut: z.string().max(40).optional(), giro: z.string().max(300).optional() }),
+        response: { 204: z.null(), ...RESPUESTAS_ERROR },
+      },
     },
     async (req, reply) => {
-      const r = await casos.cambiarRazonSocial(actor(req), req.params.id, req.body.razonSocial);
+      const r = await casos.corregirCliente(actor(req), req.params.id, req.body);
       return r.ok ? reply.code(204).send(null) : enviarError(reply, r.error);
     },
   );
@@ -158,16 +165,68 @@ export const rutasClientes = ({ app, casos, guard }: ContextoRutas): void => {
     },
   );
 
+  const localParaLista = z.object({
+    localId: z.string(),
+    clienteId: z.string(),
+    razonSocial: z.string(),
+    rut: z.string().optional(),
+    giro: z.string().optional(),
+    direccion: z.string(),
+    comuna: z.string(),
+    lat: z.number().optional(),
+    lng: z.number().optional(),
+    pinFuente: z.string().optional(),
+    pinVerificado: z.boolean(),
+    pinVerificacion: z.enum(['persona', 'entregas']).optional(),
+    nota: z.string().optional(),
+    streetviewRumbo: z.number().optional(),
+    tieneFoto: z.boolean(),
+    entregas: z.number(),
+    recaudado: z.number(),
+  });
+
+  a.get(
+    '/v1/locales',
+    {
+      preHandler: guard('clientes:escribir'),
+      schema: {
+        tags: ['clientes'],
+        summary: 'Locales con los datos de su cliente y lo entregado: de una comuna o los que coinciden con un texto (razón social, RUT o dirección); primero los de pin por verificar',
+        security: SEGURIDAD,
+        querystring: z.object({ comuna: z.string().max(100).optional(), texto: z.string().max(100).optional(), limite: z.coerce.number().int().optional() }),
+        response: { 200: z.object({ total: z.number(), locales: z.array(localParaLista) }), ...RESPUESTAS_ERROR },
+      },
+    },
+    async (req, reply) => {
+      const r = await casos.listarLocales(actor(req), { comuna: req.query.comuna, texto: req.query.texto }, req.query.limite);
+      return reply.send({ total: r.total, locales: [...r.locales] });
+    },
+  );
+
+  a.get(
+    '/v1/locales/comunas',
+    {
+      preHandler: guard('clientes:escribir'),
+      schema: {
+        tags: ['clientes'],
+        summary: 'Por comuna: cuántos locales hay, cuántos con pin verificado y cuántos sin pin',
+        security: SEGURIDAD,
+        response: { 200: z.object({ comunas: z.array(z.object({ comuna: z.string(), total: z.number(), verificados: z.number(), sinPin: z.number() })) }), ...RESPUESTAS_ERROR },
+      },
+    },
+    async (req, reply) => reply.send({ comunas: [...(await casos.resumenComunas(actor(req)))] }),
+  );
+
   a.patch(
     '/v1/locales/:id',
     {
       preHandler: guard('clientes:escribir'),
       schema: {
         tags: ['clientes'],
-        summary: 'Nota, rumbo de Street View (solo la referencia) y pin del local',
+        summary: 'Dirección y comuna, nota, rumbo de Street View (solo la referencia) y pin del local',
         security: SEGURIDAD,
         params: idParam,
-        body: z.object({ nota: z.string().max(1000).optional(), streetviewRumbo: z.number().optional(), lat: z.number().optional(), lng: z.number().optional() }),
+        body: z.object({ direccion: z.string().max(600).optional(), comuna: z.string().max(100).optional(), nota: z.string().max(1000).optional(), streetviewRumbo: z.number().optional(), lat: z.number().optional(), lng: z.number().optional() }),
         response: { 204: z.null(), ...RESPUESTAS_ERROR },
       },
     },

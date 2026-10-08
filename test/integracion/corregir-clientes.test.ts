@@ -37,15 +37,93 @@ const sembrar = async () => {
 const existeLocal = async (id: string) => (await db.selectFrom('local').select('id').where('id', '=', id).executeTakeFirst()) !== undefined;
 const existeCliente = async (id: string) => (await db.selectFrom('cliente').select('id').where('id', '=', id).executeTakeFirst()) !== undefined;
 
-describe('corregir la razón social', () => {
-  it('cambia el nombre del cliente (y se normaliza para buscarlo), solo dentro de su empresa', async () => {
+describe('corregir los datos del cliente', () => {
+  it('cambia el nombre (y se normaliza para buscarlo), solo dentro de su empresa', async () => {
     const s = await sembrar();
-    expect(await clientes.renombrarCliente(s.empresa, s.k1.cliente_id, 'Kiosko El Sol')).toBe(true);
+    expect(await clientes.corregirCliente(s.empresa, s.k1.cliente_id, { razonSocial: 'Kiosko El Sol' })).toBe('OK');
     const c = await db.selectFrom('cliente').select(['razon_social', 'razon_social_norm']).where('id', '=', s.k1.cliente_id).executeTakeFirstOrThrow();
     expect(c.razon_social).toBe('Kiosko El Sol');
     expect(c.razon_social_norm).toContain('el sol');
-    expect(await clientes.renombrarCliente(await crearEmpresa(db), s.k1.cliente_id, 'Hackeado')).toBe(false);
-    expect(await clientes.renombrarCliente(s.empresa, '00000000-0000-0000-0000-000000000000', 'X')).toBe(false);
+    expect(await clientes.corregirCliente(await crearEmpresa(db), s.k1.cliente_id, { razonSocial: 'Hackeado' })).toBe('NO_ENCONTRADO');
+    expect(await clientes.corregirCliente(s.empresa, '00000000-0000-0000-0000-000000000000', { razonSocial: 'X' })).toBe('NO_ENCONTRADO');
+  });
+
+  it('pone, cambia y borra el RUT y el giro; un RUT ya usado por otro cliente se rechaza', async () => {
+    const s = await sembrar();
+    expect(await clientes.corregirCliente(s.empresa, s.k1.cliente_id, { rut: '77975918-0', giro: 'Kiosko' })).toBe('OK');
+    expect(await db.selectFrom('cliente').select(['rut', 'giro']).where('id', '=', s.k1.cliente_id).executeTakeFirstOrThrow()).toEqual({ rut: '77975918-0', giro: 'Kiosko' });
+    expect(await clientes.corregirCliente(s.empresa, s.b1.cliente_id, { rut: '77975918-0' })).toBe('RUT_DUPLICADO');
+    expect(await clientes.corregirCliente(s.empresa, s.k1.cliente_id, { rut: null, giro: null })).toBe('OK');
+    expect(await db.selectFrom('cliente').select(['rut', 'giro']).where('id', '=', s.k1.cliente_id).executeTakeFirstOrThrow()).toEqual({ rut: null, giro: null });
+    expect(await clientes.corregirCliente(s.empresa, s.b1.cliente_id, { rut: '77975918-0' })).toBe('OK'); // ya quedó libre
+  });
+});
+
+describe('corregir la dirección y la comuna del local', () => {
+  it('cambia dirección y comuna; si el pin lo puso el buscador y nadie lo verificó, se borra para buscarlo de nuevo', async () => {
+    const s = await sembrar();
+    await clientes.fijarPinGeocodificado(s.empresa, s.k1.id, -33.51, -70.76, 0.6);
+    expect(await clientes.corregirDireccion(s.empresa, s.k1.id, { direccion: 'Calle Corregida 55', comuna: 'Ñuñoa' })).toBe('OK');
+    const l = await db.selectFrom('local').select(['direccion', 'direccion_norm', 'comuna', 'lat', 'lng', 'pin_fuente', 'geocod_intento_en']).where('id', '=', s.k1.id).executeTakeFirstOrThrow();
+    expect(l).toMatchObject({ direccion: 'Calle Corregida 55', comuna: 'Ñuñoa', lat: null, lng: null, pin_fuente: null, geocod_intento_en: null });
+    expect(l.direccion_norm).toContain('corregida 55');
+  });
+
+  it('un pin verificado o puesto a mano se conserva aunque cambie la dirección', async () => {
+    const s = await sembrar();
+    await clientes.actualizarLocal(s.empresa, s.k1.id, { pin: { lat: -33.5, lng: -70.7, estado: 'validado', fuente: 'manual' } });
+    await clientes.corregirDireccion(s.empresa, s.k1.id, { direccion: 'Calle Corregida 55', comuna: 'Maipú' });
+    expect(await db.selectFrom('local').select(['lat', 'pin_fuente']).where('id', '=', s.k1.id).executeTakeFirstOrThrow()).toEqual({ lat: -33.5, pin_fuente: 'manual' });
+  });
+
+  it('una dirección que el mismo cliente ya tiene es DUPLICADO; un local ajeno, NO_ENCONTRADO', async () => {
+    const s = await sembrar();
+    expect(await clientes.corregirDireccion(s.empresa, s.k1.id, { direccion: 'calle 2 20', comuna: 'Maipú' })).toBe('DUPLICADO');
+    expect(await clientes.corregirDireccion(s.empresa, s.b1.id, { direccion: 'Calle 1 10', comuna: 'Ñuñoa' })).toBe('OK'); // otro cliente: se permite
+    expect(await clientes.corregirDireccion(await crearEmpresa(db), s.k1.id, { direccion: 'X 1', comuna: 'Maipú' })).toBe('NO_ENCONTRADO');
+  });
+});
+
+describe('listar los locales con lo entregado', () => {
+  it('por comuna: primero los de pin por verificar, con RUT, pin, foto y lo entregado; lo ajeno no aparece', async () => {
+    const s = await sembrar();
+    await clientes.corregirCliente(s.empresa, s.k1.cliente_id, { rut: '77975918-0' });
+    await clientes.actualizarLocal(s.empresa, s.k2.id, { pin: { lat: -33.5, lng: -70.7, estado: 'validado', fuente: 'manual' } });
+    await clientes.verificarPin(s.empresa, s.k2.id, { por: s.usuario, en: new Date() });
+    const entregada = await s.factura(s.k1.id);
+    await db.updateTable('factura').set({ total: 150000, estado: 'entregada' }).where('id', '=', entregada).execute();
+    const otra = await s.factura(s.k1.id);
+    await db.updateTable('factura').set({ total: 50000, estado: 'entregada' }).where('id', '=', otra).execute();
+    const pendiente = await s.factura(s.k1.id);
+    await db.updateTable('factura').set({ total: 999 }).where('id', '=', pendiente).execute();
+
+    const r = await clientes.listarLocales(s.empresa, { comuna: 'Maipú' }, 100);
+    expect(r.total).toBe(2);
+    expect(r.locales.map((l) => l.direccion)).toEqual(['Calle 1 10', 'Calle 2 20']); // por verificar primero
+    expect(r.locales[0]).toMatchObject({ razonSocial: 'Kiosko Sol', rut: '77975918-0', pinVerificado: false, tieneFoto: false, entregas: 2, recaudado: 200000 });
+    expect(r.locales[1]).toMatchObject({ pinVerificado: true, pinVerificacion: 'persona', lat: -33.5, lng: -70.7, entregas: 0, recaudado: 0 });
+    expect(await clientes.listarLocales(await crearEmpresa(db), { comuna: 'Maipú' }, 100)).toEqual({ total: 0, locales: [] });
+  });
+
+  it('busca por razón social, RUT o dirección en todas las comunas, y respeta el límite sin perder el total', async () => {
+    const s = await sembrar();
+    await clientes.corregirCliente(s.empresa, s.k1.cliente_id, { rut: '77975918-0' });
+    expect((await clientes.listarLocales(s.empresa, { texto: 'bazar' }, 10)).locales.map((l) => l.razonSocial)).toEqual(['Bazar Luna']);
+    expect((await clientes.listarLocales(s.empresa, { texto: '77.975.918' }, 10)).total).toBe(2);
+    expect((await clientes.listarLocales(s.empresa, { texto: 'calle 3' }, 10)).locales).toHaveLength(1);
+    const limitada = await clientes.listarLocales(s.empresa, {}, 1);
+    expect(limitada.total).toBe(3);
+    expect(limitada.locales).toHaveLength(1);
+  });
+
+  it('el resumen por comuna cuenta locales, verificados y sin pin', async () => {
+    const s = await sembrar();
+    await clientes.actualizarLocal(s.empresa, s.k1.id, { pin: { lat: -33.5, lng: -70.7, estado: 'validado', fuente: 'manual' } });
+    await clientes.verificarPin(s.empresa, s.k1.id, { por: s.usuario, en: new Date() });
+    expect(await clientes.resumenPorComuna(s.empresa)).toEqual([
+      { comuna: 'Maipú', total: 2, verificados: 1, sinPin: 1 },
+      { comuna: 'Ñuñoa', total: 1, verificados: 0, sinPin: 1 },
+    ]);
   });
 });
 

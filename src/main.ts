@@ -22,9 +22,10 @@ import { crearCrearUsuario } from './application/use-cases/crear-usuario.js';
 import { crearCambiarEditorUsuario, crearCambiarEstadoUsuario, crearListarUsuarios, crearResetearPin } from './application/use-cases/gestionar-usuarios.js';
 import { crearImportarClientes } from './application/use-cases/importar-clientes.js';
 import { crearIniciarSesion } from './application/use-cases/iniciar-sesion.js';
-import { crearCambiarRazonSocial, crearEliminarLocal } from './application/use-cases/corregir-clientes.js';
+import { crearCorregirCliente, crearEliminarLocal } from './application/use-cases/corregir-clientes.js';
+import { crearListarLocales, crearResumenComunas } from './application/use-cases/listar-locales.js';
 import { crearObtenerLocal } from './application/use-cases/obtener-local.js';
-import { crearImportarPines, crearListarPropuestasPin, crearResolverPropuestaPin } from './application/use-cases/pines.js';
+import { crearListarPropuestasPin, crearResolverPropuestaPin } from './application/use-cases/pines.js';
 import { crearRefrescarSesion } from './application/use-cases/refrescar-sesion.js';
 import { buildServer } from './adapters/in/http/server.js';
 import type { CasosDeUso } from './adapters/in/http/casos-de-uso.js';
@@ -137,14 +138,15 @@ const casos: CasosDeUso = {
   crearClienteNuevo: crearCrearClienteNuevo({ clientes }),
   importarClientes: crearImportarClientes({ clientes }),
   obtenerLocal: crearObtenerLocal({ clientes, entregas }),
-  actualizarLocal: crearActualizarLocal({ clientes }),
-  importarPines: crearImportarPines({ clientes, pines }),
+  actualizarLocal: crearActualizarLocal({ clientes, programarPines }),
   listarPropuestasPin: crearListarPropuestasPin({ pines }),
   resolverPropuestaPin: crearResolverPropuestaPin({ pines, clock }),
   solicitarUrlSubida: crearSolicitarUrlSubida({ clientes, almacen, ids: generadorDeIds }),
   registrarFotoLocal: crearRegistrarFotoLocal({ clientes, almacen, clock }),
   quitarFotoLocal: crearQuitarFotoLocal({ clientes, almacen }),
-  cambiarRazonSocial: crearCambiarRazonSocial({ clientes }),
+  corregirCliente: crearCorregirCliente({ clientes }),
+  listarLocales: crearListarLocales({ clientes }),
+  resumenComunas: crearResumenComunas({ clientes }),
   eliminarLocal: crearEliminarLocal({ clientes, almacen }),
   reportarFoto: crearReportarFoto({ clientes, reportes: reportesFoto }),
   reportarLocal: crearReportarLocal({ clientes, reportes: reportesLocal }),
