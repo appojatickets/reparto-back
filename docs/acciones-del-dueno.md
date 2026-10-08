@@ -172,39 +172,43 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] Anota si se te cruza con el scroll normal de la página (por ejemplo, si al querer desplazar la lista tocas MOVER sin querer): lo ajusto.
 
 ### A21. Chofer editor, corregir y eliminar direcciones, CERRADO en la fila (ADR 0031 del back, ADR 0018 del front)
+Probado por el dueño el 2026-10-08: funciona.
 Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. La migración ya está aplicada en Supabase.
-- [ ] **ADMIN → USUARIOS:** en un chofer o ayudante aparece **DAR PERMISO DE EDITOR**. Tócalo: queda con la insignia **EDITOR** y el botón cambia a **QUITAR PERMISO DE EDITOR**. En admin y despachador no aparece.
-- [ ] Entra como ese chofer (cierra sesión y vuelve a entrar para que lo tome). En **INICIO** aparece **BUSCAR CLIENTE**; en cada parada, **CORREGIR ESTA DIRECCIÓN**.
-- [ ] En la ficha del local: **QUITAR FOTO** (borra la foto sin reemplazarla), **Razón social (corrige un error de tipeo)** + **GUARDAR NOMBRE**, y **ELIMINAR ESTA DIRECCIÓN** (pide confirmar con SÍ, ELIMINAR / NO, DEJARLA).
-- [ ] Una dirección que **ya tuvo entregas** no se deja eliminar y lo explica (para no perder el historial). Prueba con una creada por error, sin entregas: debe borrarse y volver a la búsqueda.
-- [ ] Un chofer **sin** el permiso no ve nada de lo anterior.
-- [ ] **ADMIN → REVISAR FOTOS:** las fotos reportadas aparecen en «Reportadas» aunque la foto ya se haya reemplazado (con el aviso «foto reemplazada»).
-- [ ] **Dirección nueva del chofer (CARGAR → NO ESTÁ):** el campo ahora dice **Razón social** (antes «Nombre del local (opcional)») y eso es lo que se guarda como razón social.
-- [ ] **Fila de cada parada:** ahora trae **MOVER · ENTREGADO · CERRADO · IR**. Toca **CERRADO**: se anota y se despliega la lista habitual (**AVISAR AL VENDEDOR POR WHATSAPP**, **ESPERAR 10 MIN**, **VOLVER MÁS TARDE**); **MÁS OPCIONES** suma ESPERAR 15/20 MIN y **DEJAR PARA OTRO DÍA**. Tocar CERRADO otra vez cierra la lista.
+- [x] **ADMIN → USUARIOS:** en un chofer o ayudante aparece **DAR PERMISO DE EDITOR**. Tócalo: queda con la insignia **EDITOR** y el botón cambia a **QUITAR PERMISO DE EDITOR**. En admin y despachador no aparece.
+- [x] Entra como ese chofer (cierra sesión y vuelve a entrar para que lo tome). En **INICIO** aparece **BUSCAR CLIENTE**; en cada parada, **CORREGIR ESTA DIRECCIÓN**.
+- [x] En la ficha del local: **QUITAR FOTO** (borra la foto sin reemplazarla), **Razón social (corrige un error de tipeo)** + **GUARDAR NOMBRE**, y **ELIMINAR ESTA DIRECCIÓN** (pide confirmar con SÍ, ELIMINAR / NO, DEJARLA).
+- [x] Una dirección que **ya tuvo entregas** no se deja eliminar y lo explica (para no perder el historial). Prueba con una creada por error, sin entregas: debe borrarse y volver a la búsqueda.
+- [x] Un chofer **sin** el permiso no ve nada de lo anterior.
+- [x] **ADMIN → REVISAR FOTOS:** las fotos reportadas aparecen en «Reportadas» aunque la foto ya se haya reemplazado (con el aviso «foto reemplazada»).
+- [x] **Dirección nueva del chofer (CARGAR → NO ESTÁ):** el campo ahora dice **Razón social** (antes «Nombre del local (opcional)») y eso es lo que se guarda como razón social.
+- [x] **Fila de cada parada:** ahora trae **MOVER · ENTREGADO · CERRADO · IR**. Toca **CERRADO**: se anota y se despliega la lista habitual (**AVISAR AL VENDEDOR POR WHATSAPP**, **ESPERAR 10 MIN**, **VOLVER MÁS TARDE**); **MÁS OPCIONES** suma ESPERAR 15/20 MIN y **DEJAR PARA OTRO DÍA**. Tocar CERRADO otra vez cierra la lista.
 
 ### A22. Direcciones que no se encuentran y paradas sin ubicación precisa (ADR 0034 del back, ADR 0021 del front)
+Probado por el dueño el 2026-10-08: funciona.
 Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. No hay migración. Para el segundo buscador hace falta `ORS_API_KEY` (la misma de las rutas por calles, ver A19-6).
-- [ ] **Segundo buscador:** carga una factura con una dirección que antes no se encontraba. Si el primer buscador no la halla, el segundo la prueba solo. Mira unos minutos después en la ficha del local si quedó con pin (**PIN POR VERIFICAR**).
-- [ ] **En la ruta (RUTAS o MI RUTA):** las paradas sin ubicación precisa salen en **naranja** con la insignia **SIN UBICACIÓN PRECISA**, y arriba aparece el aviso «N paradas sin ubicación precisa: la ruta las ubica por estimación».
-- [ ] Abre una de esas paradas: dice **«No se encontró esta dirección en el mapa y no tiene pin»** (o «Todavía no tiene pin: se está buscando» si aún no se busca) y recomienda pegar la ubicación del vendedor (botón **UBICACIÓN DEL VENDEDOR**) o fijar el pin.
-- [ ] Marca **ENTREGADO** en la puerta de una parada sin pin: la ruta avisa **«La ubicación de … quedó guardada con tu GPS»**, la insignia naranja desaparece en la siguiente visita y lo que queda se reordena.
+- [x] **Segundo buscador:** carga una factura con una dirección que antes no se encontraba. Si el primer buscador no la halla, el segundo la prueba solo. Mira unos minutos después en la ficha del local si quedó con pin (**PIN POR VERIFICAR**).
+- [x] **En la ruta (RUTAS o MI RUTA):** las paradas sin ubicación precisa salen en **naranja** con la insignia **SIN UBICACIÓN PRECISA**, y arriba aparece el aviso «N paradas sin ubicación precisa: la ruta las ubica por estimación».
+- [x] Abre una de esas paradas: dice **«No se encontró esta dirección en el mapa y no tiene pin»** (o «Todavía no tiene pin: se está buscando» si aún no se busca) y recomienda pegar la ubicación del vendedor (botón **UBICACIÓN DEL VENDEDOR**) o fijar el pin.
+- [x] Marca **ENTREGADO** en la puerta de una parada sin pin: la ruta avisa **«La ubicación de … quedó guardada con tu GPS»**, la insignia naranja desaparece en la siguiente visita y lo que queda se reordena.
 
 ### A23. Locales por comuna: ver, buscar, editar y compartir (ADR 0035 del back, ADR 0022 del front)
+Probado por el dueño el 2026-10-08: funciona.
 Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. No hay migración.
-- [ ] **Menú → LOCALES POR COMUNA** (admin, despachador y chofer editor). Elige una comuna: el selector dice cuántos locales tiene y cuántos sin pin.
-- [ ] Los locales salen separados en **POR VERIFICAR (n)** —incluye los sin pin— y **VERIFICADOS (n)**. Cada uno muestra razón social, RUT, dirección, insignia del pin, lo entregado («Entregado: $… en N facturas») y la nota.
-- [ ] **Buscador:** escribe un nombre, RUT o parte de la dirección; busca en todas las comunas (o solo en la elegida).
-- [ ] **EDITAR:** razón social, RUT, giro, dirección, comuna, nota y la ubicación del pin (pega el enlace de Google Maps o las coordenadas). Solo se guarda lo que cambiaste. **ELIMINAR ESTA DIRECCIÓN** pide confirmar; con entregas hechas no se deja.
-- [ ] **VERIFICAR PIN**, **VER EN EL MAPA** y **VER FOTO** funcionan desde cada local.
-- [ ] **COMPARTIR:** en el celular abre el menú de compartir con nombre, RUT, dirección y el enlace al pin (con la foto si el teléfono lo permite); si no, ofrece **ENVIAR POR WHATSAPP** y **COPIAR EL TEXTO**.
-- [ ] **Se quitó «Proponer pines»** (la planilla). El menú ahora dice **PROPUESTAS DE PIN** y solo muestra lo que propone el sistema. Dime si también quieres sacar eso.
-- [ ] «Recaudado» es la suma de los totales de las facturas **entregadas** a ese local: el sistema no registra cobros.
+- [x] **Menú → LOCALES POR COMUNA** (admin, despachador y chofer editor). Elige una comuna: el selector dice cuántos locales tiene y cuántos sin pin.
+- [x] Los locales salen separados en **POR VERIFICAR (n)** —incluye los sin pin— y **VERIFICADOS (n)**. Cada uno muestra razón social, RUT, dirección, insignia del pin, lo entregado («Entregado: $… en N facturas») y la nota.
+- [x] **Buscador:** escribe un nombre, RUT o parte de la dirección; busca en todas las comunas (o solo en la elegida).
+- [x] **EDITAR:** razón social, RUT, giro, dirección, comuna, nota y la ubicación del pin (pega el enlace de Google Maps o las coordenadas). Solo se guarda lo que cambiaste. **ELIMINAR ESTA DIRECCIÓN** pide confirmar; con entregas hechas no se deja.
+- [x] **VERIFICAR PIN**, **VER EN EL MAPA** y **VER FOTO** funcionan desde cada local.
+- [x] **COMPARTIR:** en el celular abre el menú de compartir con nombre, RUT, dirección y el enlace al pin (con la foto si el teléfono lo permite); si no, ofrece **ENVIAR POR WHATSAPP** y **COPIAR EL TEXTO**.
+- [x] **Se quitó «Proponer pines»** (la planilla). El menú ahora dice **PROPUESTAS DE PIN** y solo muestra lo que propone el sistema. Dime si también quieres sacar eso.
+- [x] «Recaudado» es la suma de los totales de las facturas **entregadas** a ese local: el sistema no registra cobros.
 
 ### A24. Última parada fija: volver a la empresa (ADR 0022 del front)
+Probado por el dueño el 2026-10-08: funciona.
 Esperar ~2 min a que Vercel termine de desplegar y abrir la app dos veces. Solo cambia el front.
-- [ ] **CONFIGURACIÓN → Nombre del depósito:** escribe cómo quieres que se llame (por ejemplo «Ibiza»). Si no hay nombre, dice «LA EMPRESA». El depósito (dirección en el mapa) tiene que estar configurado.
-- [ ] En **MI RUTA** y **RUTAS**, al final de la lista de paradas aparece una fila fija con doble borde: **VOLVER A IBIZA**, con la hora estimada de regreso y los botones **IR** y **WAZE**. No tiene MOVER: no se puede mover ni entregar.
-- [ ] Al hacer la **última entrega** esa fila se destaca: **«Terminaste las entregas · VUELVE A IBIZA»**.
+- [x] **CONFIGURACIÓN → Nombre del depósito:** escribe cómo quieres que se llame (por ejemplo «Ibiza»). Si no hay nombre, dice «LA EMPRESA». El depósito (dirección en el mapa) tiene que estar configurado.
+- [x] En **MI RUTA** y **RUTAS**, al final de la lista de paradas aparece una fila fija con doble borde: **VOLVER A IBIZA**, con la hora estimada de regreso y los botones **IR** y **WAZE**. No tiene MOVER: no se puede mover ni entregar.
+- [x] Al hacer la **última entrega** esa fila se destaca: **«Terminaste las entregas · VUELVE A IBIZA»**.
 
 ## B. Antes de usar el sistema con choferes reales
 
