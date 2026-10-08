@@ -3254,6 +3254,13 @@
                     "pinVerificado": {
                       "type": "boolean"
                     },
+                    "pinVerificacion": {
+                      "type": "string",
+                      "enum": [
+                        "persona",
+                        "entregas"
+                      ]
+                    },
                     "pinRespaldo": {
                       "type": "object",
                       "properties": {

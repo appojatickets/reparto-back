@@ -173,7 +173,7 @@ const casos: CasosDeUso = {
   verAnalitica: crearVerAnalitica({ analitica, aprendizaje, camiones, clientes, clock }),
   ejecutarAnalisis: analizarAprendizaje,
   registrarPosiciones: crearRegistrarPosiciones({ registro, rutas, entregas, resolverCamion, clock }),
-  registrarEvento: crearRegistrarEvento({ facturas, entregas, clientes, rutas, resolverCamion, reordenarTrasVisita: serviciosDeRuta.reordenarTrasVisita }),
+  registrarEvento: crearRegistrarEvento({ facturas, entregas, clientes, rutas, resolverCamion, reloj: clock, reordenarTrasVisita: serviciosDeRuta.reordenarTrasVisita }),
   obtenerHorario: crearObtenerHorario({ horarios }),
   guardarHorario: crearGuardarHorario({ horarios }),
   obtenerConfigEmpresa: crearObtenerConfigEmpresa({ empresas }),

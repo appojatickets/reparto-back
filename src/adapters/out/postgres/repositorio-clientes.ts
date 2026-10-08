@@ -278,7 +278,7 @@ export class PostgresClienteRepository implements ClienteRepository {
     const f = await this.db
       .selectFrom('local as l')
       .innerJoin('cliente as c', 'c.id', 'l.cliente_id')
-      .select(['l.id', 'l.cliente_id', 'c.razon_social', 'c.rut', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng', 'l.pin_estado', 'l.pin_fuente', 'l.pin_verificado_en', 'l.foto_path', 'l.streetview_rumbo', 'l.nota'])
+      .select(['l.id', 'l.cliente_id', 'c.razon_social', 'c.rut', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng', 'l.pin_estado', 'l.pin_fuente', 'l.pin_verificado_en', 'l.pin_verificado_por', 'l.foto_path', 'l.streetview_rumbo', 'l.nota'])
       .where('l.id', '=', localId)
       .where('l.empresa_id', '=', empresaId)
       .executeTakeFirst();
@@ -294,6 +294,7 @@ export class PostgresClienteRepository implements ClienteRepository {
       pinEstado: f.pin_estado,
       ...(f.pin_fuente !== null ? { pinFuente: f.pin_fuente } : {}),
       pinVerificado: f.pin_verificado_en !== null,
+      ...(f.pin_verificado_en !== null ? { pinVerificacion: f.pin_verificado_por === null ? ('entregas' as const) : ('persona' as const) } : {}),
       ...(f.foto_path !== null ? { fotoPath: f.foto_path } : {}),
       ...(f.streetview_rumbo !== null ? { streetviewRumbo: f.streetview_rumbo } : {}),
       ...(f.nota !== null ? { nota: f.nota } : {}),
@@ -360,6 +361,19 @@ export class PostgresClienteRepository implements ClienteRepository {
       .where('empresa_id', '=', empresaId)
       .execute();
     return 'OK';
+  }
+
+  async verificarPinPorEntregas(empresaId: string, localId: string, en: Date): Promise<boolean> {
+    // Sin persona (`pin_verificado_por` nulo): así se distingue de una verificación hecha a mano.
+    const r = await this.db
+      .updateTable('local')
+      .set({ pin_verificado_por: null, pin_verificado_en: en, pin_estado: 'validado' })
+      .where('id', '=', localId)
+      .where('empresa_id', '=', empresaId)
+      .where('lat', 'is not', null)
+      .where('pin_verificado_en', 'is', null)
+      .executeTakeFirst();
+    return r.numUpdatedRows > 0n;
   }
 
   async contarPines(empresaId: string): Promise<{ readonly verificados: number; readonly porVerificar: number; readonly sinPin: number }> {

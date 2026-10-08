@@ -58,6 +58,8 @@ export type LocalDetalle = {
   readonly pinFuente?: FuentePin;
   /** Una persona confirmó este pin: ya no se mueve solo. Mientras no, está «por verificar» y las entregas lo van ajustando. */
   readonly pinVerificado: boolean;
+  /** Quién lo verificó: una persona, o el sistema solo porque las entregas lo confirmaron (ADR 0032). */
+  readonly pinVerificacion?: 'persona' | 'entregas';
   readonly fotoPath?: string;
   readonly streetviewRumbo?: number;
   readonly nota?: string;
@@ -129,6 +131,11 @@ export interface ClienteRepository {
    * `SIN_PIN`: no hay nada que verificar. `NO_ENCONTRADO`: el local no existe.
    */
   verificarPin(empresaId: string, localId: string, verificacion: { readonly por: string; readonly en: Date } | undefined): Promise<'OK' | 'SIN_PIN' | 'NO_ENCONTRADO'>;
+  /**
+   * Las entregas confirmaron el pin: queda verificado sin que lo mire nadie (no se mueve solo). Solo si tiene pin y todavía no está verificado.
+   * Devuelve si lo verificó.
+   */
+  verificarPinPorEntregas(empresaId: string, localId: string, en: Date): Promise<boolean>;
   /** Cuántos locales tienen pin verificado, pin por verificar y ningún pin. */
   contarPines(empresaId: string): Promise<{ readonly verificados: number; readonly porVerificar: number; readonly sinPin: number }>;
   /** Locales sin pin a los que todavía no se les buscó la dirección (o cuya última búsqueda fue antes de `intentadosAntesDe`). */

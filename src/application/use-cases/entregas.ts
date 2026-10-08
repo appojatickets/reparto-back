@@ -2,6 +2,7 @@ import type { Usuario } from '../../domain/entidades/usuario.js';
 import { esDeCamion } from '../../domain/permisos.js';
 import { estadoTras, puedeFijarPin, validarEvento, type EventoCrudo } from '../../domain/entidades/entrega.js';
 import { ENTREGAS_PARA_PIN, pinPorEntregas, posicionSirveParaPin } from '../../domain/entidades/pin-por-entregas.js';
+import { confirmaElPin } from '../../domain/entidades/verificacion-automatica.js';
 import { err, ok, type Result } from '../../domain/shared/result.js';
 import { errorApp, type ErrorApp } from '../errores.js';
 import type { ClienteRepository } from '../ports/out/clientes.js';
@@ -25,10 +26,15 @@ type DependenciasEvento = {
   readonly rutas: RutaRepository;
   readonly resolverCamion: ResolverCamion;
   /** Si la parada avisada no era la siguiente de la lista, lo que queda se reordena solo desde ahí (lo que se hace manda). */
+  /** Para anotar cuándo las entregas confirmaron un pin. Sin reloj no se verifica solo. */
+  readonly reloj?: { now(): Date };
   readonly reordenarTrasVisita?: (actor: Usuario, camionId: string, fecha: string, facturaId: string) => Promise<unknown>;
 };
 
-export const crearRegistrarEvento = ({ facturas, entregas, clientes, rutas, resolverCamion, reordenarTrasVisita }: DependenciasEvento) =>
+/** Cuántas de las últimas entregas se miran para saber si confirman el pin. */
+const ENTREGAS_PARA_CONFIRMAR = 20;
+
+export const crearRegistrarEvento = ({ facturas, entregas, clientes, rutas, resolverCamion, reordenarTrasVisita, reloj }: DependenciasEvento) =>
   async (actor: Usuario, facturaId: string, entrada: EventoCrudo): Promise<Result<ResultadoEvento, ErrorApp>> => {
     const v = validarEvento(entrada);
     if (!v.ok) return err(errorApp('VALIDACION', v.error.map((e) => e.mensaje).join(' '), { errores: v.error }));
@@ -62,9 +68,28 @@ export const crearRegistrarEvento = ({ facturas, entregas, clientes, rutas, reso
 
     let pinFijado = false;
     if (evento.tipo === 'entregado' && evento.lat !== undefined && evento.lng !== undefined && posicionSirveParaPin({ lat: evento.lat, lng: evento.lng, ...(evento.precisionM !== undefined ? { precisionM: evento.precisionM } : {}) })) {
-      // Donde de verdad se entrega manda sobre el pin que hay, mientras nadie lo haya verificado (ya queda registrada esta entrega).
-      const punto = pinPorEntregas(await entregas.posicionesDeEntrega(actor.empresaId, f.local.id, ENTREGAS_PARA_PIN));
-      if (punto) pinFijado = await clientes.ajustarPinPorEntrega(actor.empresaId, f.local.id, punto);
+      const entrega = { lat: evento.lat, lng: evento.lng, ...(evento.precisionM !== undefined ? { precisionM: evento.precisionM } : {}) };
+      // Un pin ya verificado (por una persona o por las entregas) no se toca. Si no, si esta entrega lo confirma, queda verificado tal cual;
+      // y si no, donde de verdad se entrega manda sobre el pin que hay (ya queda registrada esta entrega).
+      const local = await clientes.obtenerLocal(actor.empresaId, f.local.id);
+      if (local && !local.pinVerificado) {
+        const confirma = async (): Promise<boolean> => {
+          if (!reloj || local.lat === undefined || local.lng === undefined) return false;
+          const visitas = await entregas.visitasConGps(actor.empresaId, f.local.id, ENTREGAS_PARA_CONFIRMAR).catch(() => []);
+          return confirmaElPin({ lat: local.lat, lng: local.lng }, local.pinFuente, entrega, visitas) && (await clientes.verificarPinPorEntregas(actor.empresaId, f.local.id, reloj.now()));
+        };
+        if (!(await confirma().catch(() => false))) {
+          const punto = pinPorEntregas(await entregas.posicionesDeEntrega(actor.empresaId, f.local.id, ENTREGAS_PARA_PIN));
+          if (punto) {
+            pinFijado = await clientes.ajustarPinPorEntrega(actor.empresaId, f.local.id, punto);
+            // Tras moverlo, dos entregas en días distintos que coinciden junto al nuevo pin también lo confirman.
+            if (pinFijado && reloj) {
+              const visitas = await entregas.visitasConGps(actor.empresaId, f.local.id, ENTREGAS_PARA_CONFIRMAR).catch(() => []);
+              if (confirmaElPin(punto, 'chofer', entrega, visitas)) await clientes.verificarPinPorEntregas(actor.empresaId, f.local.id, reloj.now()).catch(() => false);
+            }
+          }
+        }
+      }
     } else if (puedeFijarPin(evento, f.local.tienePin) && evento.lat !== undefined && evento.lng !== undefined) {
       pinFijado = await clientes.fijarPinSiFalta(actor.empresaId, f.local.id, evento.lat, evento.lng);
     }

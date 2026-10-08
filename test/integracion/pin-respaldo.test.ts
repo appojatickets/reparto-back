@@ -64,3 +64,28 @@ describe('qué tan firme es el pin según las entregas (Postgres real)', () => {
     expect(conflicto.ok && conflicto.value.pinRespaldo?.nivel).toBe('en_conflicto');
   });
 });
+
+describe('verificación automática del pin (Postgres real)', () => {
+  it('verifica sin persona, solo si tiene pin y no estaba verificado, y la ficha dice que fue por las entregas', async () => {
+    const s = await sembrar();
+    const en = new Date('2026-10-08T15:00:00Z');
+    expect(await clientes.verificarPinPorEntregas(s.empresa, s.local, en)).toBe(true);
+    const ficha = await clientes.obtenerLocal(s.empresa, s.local);
+    expect(ficha).toMatchObject({ pinVerificado: true, pinVerificacion: 'entregas', pinEstado: 'validado' });
+    // Ya verificado: no se vuelve a verificar ni se pisa la fecha.
+    expect(await clientes.verificarPinPorEntregas(s.empresa, s.local, new Date('2026-10-09T15:00:00Z'))).toBe(false);
+    // Una persona puede quitarlo y volver a verificarlo; ahí la ficha dice «persona».
+    await clientes.verificarPin(s.empresa, s.local, undefined);
+    expect((await clientes.obtenerLocal(s.empresa, s.local))?.pinVerificado).toBe(false);
+    await clientes.verificarPin(s.empresa, s.local, { por: s.actor.id, en });
+    expect((await clientes.obtenerLocal(s.empresa, s.local))?.pinVerificacion).toBe('persona');
+  });
+
+  it('un local sin pin no se verifica, ni uno de otra empresa', async () => {
+    const s = await sembrar();
+    await db.updateTable('local').set({ lat: null, lng: null }).where('id', '=', s.local).execute();
+    expect(await clientes.verificarPinPorEntregas(s.empresa, s.local, new Date())).toBe(false);
+    const otra = await sembrar();
+    expect(await clientes.verificarPinPorEntregas(s.empresa, otra.local, new Date())).toBe(false);
+  });
+});
