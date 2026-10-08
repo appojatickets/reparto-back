@@ -171,6 +171,17 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] Sin señal: arrastra una parada con el celular en modo avión. Debe **volver a su sitio** y avisar que no se pudo.
 - [ ] Anota si se te cruza con el scroll normal de la página (por ejemplo, si al querer desplazar la lista tocas MOVER sin querer): lo ajusto.
 
+### A21. Chofer editor, corregir y eliminar direcciones, CERRADO en la fila (ADR 0031 del back, ADR 0018 del front)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. La migración ya está aplicada en Supabase.
+- [ ] **ADMIN → USUARIOS:** en un chofer o ayudante aparece **DAR PERMISO DE EDITOR**. Tócalo: queda con la insignia **EDITOR** y el botón cambia a **QUITAR PERMISO DE EDITOR**. En admin y despachador no aparece.
+- [ ] Entra como ese chofer (cierra sesión y vuelve a entrar para que lo tome). En **INICIO** aparece **BUSCAR CLIENTE**; en cada parada, **CORREGIR ESTA DIRECCIÓN**.
+- [ ] En la ficha del local: **QUITAR FOTO** (borra la foto sin reemplazarla), **Razón social (corrige un error de tipeo)** + **GUARDAR NOMBRE**, y **ELIMINAR ESTA DIRECCIÓN** (pide confirmar con SÍ, ELIMINAR / NO, DEJARLA).
+- [ ] Una dirección que **ya tuvo entregas** no se deja eliminar y lo explica (para no perder el historial). Prueba con una creada por error, sin entregas: debe borrarse y volver a la búsqueda.
+- [ ] Un chofer **sin** el permiso no ve nada de lo anterior.
+- [ ] **ADMIN → REVISAR FOTOS:** las fotos reportadas aparecen en «Reportadas» aunque la foto ya se haya reemplazado (con el aviso «foto reemplazada»).
+- [ ] **Dirección nueva del chofer (CARGAR → NO ESTÁ):** el campo ahora dice **Razón social** (antes «Nombre del local (opcional)») y eso es lo que se guarda como razón social.
+- [ ] **Fila de cada parada:** ahora trae **MOVER · ENTREGADO · CERRADO · IR**. Toca **CERRADO**: se anota y se despliega la lista habitual (**AVISAR AL VENDEDOR POR WHATSAPP**, **ESPERAR 10 MIN**, **VOLVER MÁS TARDE**); **MÁS OPCIONES** suma ESPERAR 15/20 MIN y **DEJAR PARA OTRO DÍA**. Tocar CERRADO otra vez cierra la lista.
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos
