@@ -10,8 +10,10 @@ Con 178 pines por verificar y ninguno verificado, nadie iba a revisarlos uno por
 ## Decisión
 Al avisar ENTREGADO con buen GPS (≤50 m de precisión), si el pin no está verificado:
 1. **Pin de otra fuente** (`geocodificador`, `enlace`, `importado`, `manual`) y la entrega queda a **≤60 m**: el pin queda **verificado por entregas**, tal cual (no se mueve a la entrega).
-2. **Pin que nació de una entrega** (`chofer`, `aprendido`): sigue ajustándose como en el ADR 0024. Cuando el respaldo lo confirma (≥2 entregas que coinciden, en ≥2 días distintos, a ≤60 m del pin), queda verificado por entregas.
+2. **Pin que nació de una entrega** (`chofer`, `aprendido`): sigue ajustándose como en el ADR 0024, y queda verificado cuando la entrega tiene **GPS firme (≤25 m)** y cae a ≤60 m del pin, o cuando hay **otra entrega** que coincide (≥2 a ≤60 m del pin, cualquier día).
 3. Si no se cumple ninguna, todo sigue como antes (se ajusta a donde se entrega).
+
+**Ajuste (2026-10-08, pedido del dueño: «entregado es predominante, deberían ser más»).** La primera versión exigía además dos días distintos para los pines nacidos de una entrega: con eso solo 1 de 94 pines de entrega y 12 de 14 de otra fuente quedaban verificados. En las entregas reales, 71 de esos 94 tienen una entrega con ≤25 m de precisión (34 con ≤15 m): con GPS firme una entrega basta; con 26–50 m hace falta una segunda. El respaldo de la ficha (ADR 0030) también pasa a pedir solo 2 entregas que coincidan, sin exigir días distintos.
 
 Un pin verificado, por una persona o por las entregas, **no se mueve solo**. Una entrega lejos de un pin verificado no lo cambia: esas entregas ya aparecen entre los «dudosos» de ANALÍTICA y el nivel de respaldo lo muestra.
 

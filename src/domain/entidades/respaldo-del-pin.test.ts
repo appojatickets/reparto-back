@@ -24,9 +24,9 @@ describe('respaldoDelPin', () => {
     expect(r.distanciaM).toBeLessThan(30);
   });
 
-  it('dos entregas el mismo día coinciden pero no son una confirmación independiente', () => {
+  it('dos entregas que coinciden junto al pin bastan, aunque sean el mismo día: entregado manda', () => {
     const r = respaldoDelPin(PIN, false, [visita(AQUI, '2026-10-06'), visita(0.0001, '2026-10-06')]);
-    expect(r).toMatchObject({ nivel: 'sin_respaldo', entregas: 2, dias: 1 });
+    expect(r).toMatchObject({ nivel: 'respaldado', entregas: 2, dias: 1 });
   });
 
   it('los días se cuentan en hora de Chile, no en UTC', () => {

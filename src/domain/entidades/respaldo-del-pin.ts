@@ -25,7 +25,7 @@ export type RespaldoDelPin = {
 
 /** Para respaldar un pin hacen falta al menos estas entregas que coincidan, en al menos estos días distintos. */
 export const MINIMO_ENTREGAS_RESPALDO = 2;
-export const MINIMO_DIAS_RESPALDO = 2;
+export const MINIMO_DIAS_RESPALDO = 1;
 /** Si las entregas coinciden a más de esto del pin, el pin y las entregas se contradicen (misma distancia que usa el analizador). */
 export const DISTANCIA_CONFLICTO_PIN_M = 150;
 

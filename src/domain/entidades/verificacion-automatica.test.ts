@@ -18,20 +18,30 @@ describe('confirmaElPin', () => {
     expect(confirmaElPin(PIN, 'geocodificador', entrega(0, 80), [])).toBe(false);
   });
 
-  it('pin que nació de una entrega: una sola entrega no basta, aunque caiga justo encima', () => {
-    expect(confirmaElPin(PIN, 'chofer', entrega(), [visita(0, '2026-10-08')])).toBe(false);
-    expect(confirmaElPin(PIN, 'aprendido', entrega(), [])).toBe(false);
+  it('pin que nació de una entrega: una entrega con GPS firme (≤25 m) a ≤60 m lo confirma sola; entregado manda', () => {
+    expect(confirmaElPin(PIN, 'chofer', entrega(0, 20), [])).toBe(true);
+    expect(confirmaElPin(PIN, 'aprendido', entrega(0, 25), [])).toBe(true);
   });
 
-  it('pin que nació de una entrega: dos entregas que coinciden, en dos días, junto al pin, lo confirman', () => {
-    expect(confirmaElPin(PIN, 'chofer', entrega(), [visita(0, '2026-10-08'), visita(0.0002, '2026-10-07')])).toBe(true);
+  it('pin que nació de una entrega con GPS de 26 a 50 m: una sola no basta; con otra que coincida, en cualquier día, sí', () => {
+    expect(confirmaElPin(PIN, 'chofer', entrega(0, 40), [visita(0, '2026-10-08')])).toBe(false);
+    expect(confirmaElPin(PIN, 'chofer', entrega(0, 40), [visita(0, '2026-10-08'), visita(0.0002, '2026-10-08')])).toBe(true);
+    expect(confirmaElPin(PIN, 'chofer', entrega(0, 40), [visita(0, '2026-10-08'), visita(0.0002, '2026-10-07')])).toBe(true);
   });
 
-  it('pin que nació de una entrega: dos entregas el mismo día no cuentan como confirmación independiente', () => {
-    expect(confirmaElPin(PIN, 'chofer', entrega(), [visita(0, '2026-10-08'), visita(0.0002, '2026-10-08')])).toBe(false);
+  it('una entrega a más de 60 m del pin nunca lo confirma, venga de donde venga', () => {
+    expect(confirmaElPin(PIN, 'chofer', entrega(0.0008, 10), [])).toBe(false);
+    expect(confirmaElPin(PIN, 'geocodificador', entrega(0.0008, 10), [])).toBe(false);
+  });
+
+  it('otras entregas lejos del pin o imprecisas no cuentan para el respaldo', () => {
+    const lejos = { ...visita(0.004, '2026-10-07') };
+    const imprecisa = { ...visita(0, '2026-10-06'), precisionM: 120 };
+    expect(confirmaElPin(PIN, 'chofer', entrega(0, 40), [visita(0, '2026-10-08'), lejos, imprecisa])).toBe(false);
   });
 
   it('si no se sabe de dónde salió el pin se trata como uno que nació de una entrega', () => {
-    expect(confirmaElPin(PIN, undefined, entrega(), [visita(0, '2026-10-08')])).toBe(false);
+    expect(confirmaElPin(PIN, undefined, entrega(0, 40), [visita(0, '2026-10-08')])).toBe(false);
+    expect(confirmaElPin(PIN, undefined, entrega(0, 10), [])).toBe(true);
   });
 });
