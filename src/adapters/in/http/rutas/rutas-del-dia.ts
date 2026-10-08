@@ -16,6 +16,7 @@ const item = z.object({
   lat: z.number().optional(),
   lng: z.number().optional(),
   ubicacionAproximada: z.boolean().optional(),
+  noEncontradaEnMapa: z.boolean().optional(),
   tieneFoto: z.boolean().optional(),
   pinVerificado: z.boolean().optional(),
   fotoVerificada: z.boolean().optional(),

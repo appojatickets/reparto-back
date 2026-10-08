@@ -48,6 +48,7 @@ import { crearBuscarPinesPendientes, crearEstadoBusquedaPines } from './applicat
 import { crearColaGeocodificacion } from './application/use-cases/cola-geocodificacion.js';
 import { crearGeocodificarLocal } from './application/use-cases/geocodificar-local.js';
 import { crearNominatimGeocodificador } from './adapters/out/red/nominatim-geocodificador.js';
+import { crearOrsGeocodificador } from './adapters/out/red/ors-geocodificador.js';
 import { crearFijarPinDesdeEnlace } from './application/use-cases/pin-desde-enlace.js';
 import { crearResolvedorEnlacesHttp } from './adapters/out/red/resolvedor-enlaces-http.js';
 import { PostgresFotoReporteRepository } from './adapters/out/postgres/repositorio-fotos.js';
@@ -90,7 +91,7 @@ const clock = relojDelSistema;
 const resolverCamion = crearResolverCamion({ jornadas, clock });
 // Búsqueda del pin por la dirección: una cola en memoria, de a uno por segundo, que no hace esperar a nadie.
 const colaDePines = crearColaGeocodificacion({
-  geocodificar: crearGeocodificarLocal({ clientes, geocodificador: crearNominatimGeocodificador(env.GEOCODER_USER_AGENT), clock }),
+  geocodificar: crearGeocodificarLocal({ clientes, geocodificadores: [crearNominatimGeocodificador(env.GEOCODER_USER_AGENT), ...(env.ORS_API_KEY ? [crearOrsGeocodificador(env.ORS_API_KEY)] : [])], clock }),
   esperar: (ms) => new Promise((resolver) => { setTimeout(resolver, ms); }),
 });
 const programarPines = (empresaId: string, localIds: readonly string[]): void => { colaDePines.encolar(empresaId, localIds); };

@@ -72,6 +72,17 @@ describe('planificar', () => {
     expect(a?.ubicacionAproximada).toBeUndefined();
   });
 
+  it('si la dirección ya se buscó en el mapa y no se encontró, la parada sin pin lo dice (noEncontradaEnMapa); si aún no se busca, no', async () => {
+    const { facturaId, localId, razonSocial, direccion, comuna, urgente, horarios } = paradaDe('Z');
+    const base = { facturaId, localId, razonSocial, direccion, comuna, urgente, horarios };
+    const s = montar({ pendientes: [paradaDe('A'), { ...base, busquedaSinResultado: true }, { ...base, facturaId: 'f-Y', busquedaSinResultado: false }] });
+    const r = await s.planificar(despachador, entrada);
+    const por = (id: string) => (r.ok ? r.value.paradas.find((p) => p.facturaId === id) : undefined);
+    expect(por('f-Z')).toMatchObject({ ubicacionAproximada: true, noEncontradaEnMapa: true });
+    expect(por('f-Y')?.noEncontradaEnMapa).toBeUndefined();
+    expect(por('f-A')?.noEncontradaEnMapa).toBeUndefined();
+  });
+
   it('la parada avisa si el local tiene foto de la fachada', async () => {
     const s = montar({ pendientes: [paradaDe('A', { tieneFoto: true }), paradaDe('B')] });
     const r = await s.planificar(despachador, entrada);

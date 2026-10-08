@@ -58,6 +58,12 @@ describe('rutas en Postgres', () => {
     expect(r[0]?.horarios).toEqual([{ dias: [1, 2], tramos: [{ apertura: 570, cierre: 1080 }], fuente: 'confirmado', confianza: 0.5 }]);
     expect(r[1]).not.toHaveProperty('lat');
     expect(await rutas.facturasPendientes(s.empresa, s.camion, '2026-10-06')).toEqual([]);
+    // Sin pin y todavía sin buscar: no se dice que «no se encontró»; después de buscar sin éxito, sí.
+    expect(r.find((x) => x.folio === '2')?.busquedaSinResultado).toBeUndefined();
+    await clientes.marcarIntentoGeocodificacion(s.empresa, s.local('Sin Pin D'), new Date());
+    const despues = await rutas.facturasPendientes(s.empresa, s.camion, FECHA);
+    expect(despues.find((x) => x.folio === '2')).toMatchObject({ busquedaSinResultado: true });
+    expect(despues.find((x) => x.folio === '1')?.busquedaSinResultado).toBeUndefined();
   });
 
   it('no incluye anuladas ni facturas de otra empresa', async () => {

@@ -182,6 +182,13 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] **Dirección nueva del chofer (CARGAR → NO ESTÁ):** el campo ahora dice **Razón social** (antes «Nombre del local (opcional)») y eso es lo que se guarda como razón social.
 - [ ] **Fila de cada parada:** ahora trae **MOVER · ENTREGADO · CERRADO · IR**. Toca **CERRADO**: se anota y se despliega la lista habitual (**AVISAR AL VENDEDOR POR WHATSAPP**, **ESPERAR 10 MIN**, **VOLVER MÁS TARDE**); **MÁS OPCIONES** suma ESPERAR 15/20 MIN y **DEJAR PARA OTRO DÍA**. Tocar CERRADO otra vez cierra la lista.
 
+### A22. Direcciones que no se encuentran y paradas sin ubicación precisa (ADR 0034 del back, ADR 0021 del front)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. No hay migración. Para el segundo buscador hace falta `ORS_API_KEY` (la misma de las rutas por calles, ver A19-6).
+- [ ] **Segundo buscador:** carga una factura con una dirección que antes no se encontraba. Si el primer buscador no la halla, el segundo la prueba solo. Mira unos minutos después en la ficha del local si quedó con pin (**PIN POR VERIFICAR**).
+- [ ] **En la ruta (RUTAS o MI RUTA):** las paradas sin ubicación precisa salen en **naranja** con la insignia **SIN UBICACIÓN PRECISA**, y arriba aparece el aviso «N paradas sin ubicación precisa: la ruta las ubica por estimación».
+- [ ] Abre una de esas paradas: dice **«No se encontró esta dirección en el mapa y no tiene pin»** (o «Todavía no tiene pin: se está buscando» si aún no se busca) y recomienda pegar la ubicación del vendedor (botón **UBICACIÓN DEL VENDEDOR**) o fijar el pin.
+- [ ] Marca **ENTREGADO** en la puerta de una parada sin pin: la ruta avisa **«La ubicación de … quedó guardada con tu GPS»**, la insignia naranja desaparece en la siguiente visita y lo que queda se reordena.
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos

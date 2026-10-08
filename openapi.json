@@ -13150,6 +13150,9 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
                             "type": "boolean"
                           },
@@ -13257,6 +13260,9 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
                             "type": "boolean"
                           },
@@ -13318,6 +13324,9 @@
                             "type": "number"
                           },
                           "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
+                          "noEncontradaEnMapa": {
                             "type": "boolean"
                           },
                           "tieneFoto": {
@@ -13391,6 +13400,9 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
                             "type": "boolean"
                           },
@@ -13452,6 +13464,9 @@
                             "type": "number"
                           },
                           "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
+                          "noEncontradaEnMapa": {
                             "type": "boolean"
                           },
                           "tieneFoto": {
@@ -13523,6 +13538,9 @@
                             "type": "number"
                           },
                           "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
+                          "noEncontradaEnMapa": {
                             "type": "boolean"
                           },
                           "tieneFoto": {
@@ -13946,6 +13964,9 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
                             "type": "boolean"
                           },
@@ -14053,6 +14074,9 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
                             "type": "boolean"
                           },
@@ -14114,6 +14138,9 @@
                             "type": "number"
                           },
                           "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
+                          "noEncontradaEnMapa": {
                             "type": "boolean"
                           },
                           "tieneFoto": {
@@ -14187,6 +14214,9 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
                             "type": "boolean"
                           },
@@ -14248,6 +14278,9 @@
                             "type": "number"
                           },
                           "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
+                          "noEncontradaEnMapa": {
                             "type": "boolean"
                           },
                           "tieneFoto": {
@@ -14319,6 +14352,9 @@
                             "type": "number"
                           },
                           "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
+                          "noEncontradaEnMapa": {
                             "type": "boolean"
                           },
                           "tieneFoto": {
@@ -14833,6 +14869,9 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
                             "type": "boolean"
                           },
@@ -14940,6 +14979,9 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
                             "type": "boolean"
                           },
@@ -15001,6 +15043,9 @@
                             "type": "number"
                           },
                           "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
+                          "noEncontradaEnMapa": {
                             "type": "boolean"
                           },
                           "tieneFoto": {
@@ -15074,6 +15119,9 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
                             "type": "boolean"
                           },
@@ -15135,6 +15183,9 @@
                             "type": "number"
                           },
                           "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
+                          "noEncontradaEnMapa": {
                             "type": "boolean"
                           },
                           "tieneFoto": {
@@ -15206,6 +15257,9 @@
                             "type": "number"
                           },
                           "ubicacionAproximada": {
+                            "type": "boolean"
+                          },
+                          "noEncontradaEnMapa": {
                             "type": "boolean"
                           },
                           "tieneFoto": {
