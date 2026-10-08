@@ -1,5 +1,6 @@
 import { sql } from 'kysely';
 import type { EntregaRepository, NuevoEvento, PosicionConocida } from '../../../application/ports/out/entregas.js';
+import type { VisitaConGps } from '../../../domain/entidades/respaldo-del-pin.js';
 import type { Db } from './client.js';
 
 export class PostgresEntregaRepository implements EntregaRepository {
@@ -50,6 +51,21 @@ export class PostgresEntregaRepository implements EntregaRepository {
     if (facturaIds.length === 0) return new Set();
     const filas = await this.db.selectFrom('entrega_evento').select('factura_id').where('empresa_id', '=', empresaId).where('tipo', '=', 'llegada').where('factura_id', 'in', [...facturaIds]).execute();
     return new Set(filas.map((f) => f.factura_id));
+  }
+
+  async visitasConGps(empresaId: string, localId: string, limite: number): Promise<readonly VisitaConGps[]> {
+    const filas = await this.db
+      .selectFrom('entrega_evento')
+      .select(['lat', 'lng', 'precision_m', 'creado_en'])
+      .where('empresa_id', '=', empresaId)
+      .where('local_id', '=', localId)
+      .where('tipo', '=', 'entregado')
+      .where('lat', 'is not', null)
+      .where('precision_m', 'is not', null)
+      .orderBy('creado_en', 'desc')
+      .limit(limite)
+      .execute();
+    return filas.flatMap((f) => (f.lat !== null && f.lng !== null && f.precision_m !== null ? [{ lat: f.lat, lng: f.lng, precisionM: f.precision_m, en: f.creado_en }] : []));
   }
 
   async posicionesDeEntrega(empresaId: string, localId: string, limite: number): Promise<readonly { readonly lat: number; readonly lng: number; readonly precisionM: number }[]> {

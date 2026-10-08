@@ -2987,6 +2987,35 @@
                     "pinVerificado": {
                       "type": "boolean"
                     },
+                    "pinRespaldo": {
+                      "type": "object",
+                      "properties": {
+                        "nivel": {
+                          "type": "string",
+                          "enum": [
+                            "verificado",
+                            "respaldado",
+                            "en_conflicto",
+                            "sin_respaldo"
+                          ]
+                        },
+                        "entregas": {
+                          "type": "number"
+                        },
+                        "dias": {
+                          "type": "number"
+                        },
+                        "distanciaM": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "nivel",
+                        "entregas",
+                        "dias"
+                      ],
+                      "additionalProperties": false
+                    },
                     "fotoPath": {
                       "type": "string"
                     },

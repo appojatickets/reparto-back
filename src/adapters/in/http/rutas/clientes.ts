@@ -108,6 +108,8 @@ export const rutasClientes = ({ app, casos, guard }: ContextoRutas): void => {
     pinEstado,
     pinFuente: z.enum(['geocodificador', 'manual', 'importado', 'aprendido', 'chofer', 'enlace']).optional(),
     pinVerificado: z.boolean(),
+    /** Qué tan firme es el pin según las entregas (solo si el local tiene pin). */
+    pinRespaldo: z.object({ nivel: z.enum(['verificado', 'respaldado', 'en_conflicto', 'sin_respaldo']), entregas: z.number(), dias: z.number(), distanciaM: z.number().optional() }).optional(),
     fotoPath: z.string().optional(),
     streetviewRumbo: z.number().optional(),
     nota: z.string().optional(),

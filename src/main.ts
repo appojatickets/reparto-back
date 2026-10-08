@@ -129,7 +129,7 @@ const casos: CasosDeUso = {
   buscarClientes: crearBuscarClientes({ clientes }),
   crearClienteNuevo: crearCrearClienteNuevo({ clientes }),
   importarClientes: crearImportarClientes({ clientes }),
-  obtenerLocal: crearObtenerLocal({ clientes }),
+  obtenerLocal: crearObtenerLocal({ clientes, entregas }),
   actualizarLocal: crearActualizarLocal({ clientes }),
   importarPines: crearImportarPines({ clientes, pines }),
   listarPropuestasPin: crearListarPropuestasPin({ pines }),

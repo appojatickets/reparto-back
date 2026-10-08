@@ -15,7 +15,7 @@ const pos = { lat: -33.45, lng: -70.66, precisionM: 15 };
 const montar = (factura = facturaDe({ camion: { id: 'cam-1', patente: 'ABCD12' }, local: { id: 'l-1', razonSocial: 'Rabelo', direccion: 'Av. Colón 765', comuna: 'San Bernardo', tienePin: false } }), jornada = JORNADA) => {
   const facturas = fakeFacturas();
   facturas.obtener.mockResolvedValue(factura);
-  const entregas = { registrar: vi.fn<EntregaRepository['registrar']>(() => Promise.resolve()), ultimaPosicion: vi.fn<EntregaRepository['ultimaPosicion']>(() => Promise.resolve(undefined)), conLlegada: vi.fn<EntregaRepository['conLlegada']>(() => Promise.resolve(new Set<string>())), posicionesDeEntrega: vi.fn<EntregaRepository['posicionesDeEntrega']>(() => Promise.resolve([])) };
+  const entregas = { registrar: vi.fn<EntregaRepository['registrar']>(() => Promise.resolve()), visitasConGps: vi.fn<EntregaRepository['visitasConGps']>(() => Promise.resolve([])), ultimaPosicion: vi.fn<EntregaRepository['ultimaPosicion']>(() => Promise.resolve(undefined)), conLlegada: vi.fn<EntregaRepository['conLlegada']>(() => Promise.resolve(new Set<string>())), posicionesDeEntrega: vi.fn<EntregaRepository['posicionesDeEntrega']>(() => Promise.resolve([])) };
   const clientes = fakeClientes();
   const rutas = fakeRutas();
   const reordenarTrasVisita = vi.fn<(actor: Usuario, camionId: string, fecha: string, facturaId: string) => Promise<boolean>>(() => Promise.resolve(true));
