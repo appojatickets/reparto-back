@@ -267,6 +267,17 @@ describe('la ruta con tiempos por calles', () => {
   });
 });
 
+describe('insignias de verificación en la fila de la ruta', () => {
+  it('cada parada dice si su pin y su foto están verificados', async () => {
+    const s = montar({ pendientes: [paradaDe('A', { pinVerificado: true, fotoVerificada: true }), paradaDe('B')] });
+    const r = await s.planificar(despachador, entrada);
+    const por = (id: string) => (r.ok ? r.value.paradas.find((x) => x.facturaId === id) : undefined);
+    expect(por('f-A')).toMatchObject({ pinVerificado: true, fotoVerificada: true });
+    expect(por('f-B')).not.toHaveProperty('pinVerificado');
+    expect(por('f-B')).not.toHaveProperty('fotoVerificada');
+  });
+});
+
 describe('coordenadas para navegar', () => {
   it('cada parada trae el pin del local; las sin pin no traen coordenadas', async () => {
     const s = montar({ pendientes: [paradaDe('A', { lat: -33.45, lng: -70.65 }), paradaDe('B')] });

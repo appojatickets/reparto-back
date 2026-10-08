@@ -17,6 +17,8 @@ const item = z.object({
   lng: z.number().optional(),
   ubicacionAproximada: z.boolean().optional(),
   tieneFoto: z.boolean().optional(),
+  pinVerificado: z.boolean().optional(),
+  fotoVerificada: z.boolean().optional(),
   urgente: z.boolean(),
   antesDeMin: z.number().optional(),
   nota: z.string().optional(),

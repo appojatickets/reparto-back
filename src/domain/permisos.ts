@@ -23,6 +23,7 @@ export const TODOS_LOS_PERMISOS = [
   'metricas:leer',
   'datos:exportar',
   'fotos:revisar',
+  'reportes:revisar',
   'locales:eliminar',
 ] as const;
 
@@ -43,7 +44,7 @@ const PERMISOS_DE_EDITOR: readonly Permiso[] = ['clientes:escribir', 'locales:el
 
 const PERMISOS_POR_ROL: Readonly<Record<Rol, readonly Permiso[]>> = {
   admin: TODOS_LOS_PERMISOS,
-  despachador: ['clientes:leer', 'clientes:escribir', 'clientes:crear', 'pines:proponer', 'pines:revisar', 'pines:verificar', 'archivos:subir', 'facturas:leer', 'facturas:escribir', 'rutas:leer', 'rutas:escribir', 'entregas:registrar', 'vendedores:leer', 'locales:eliminar'],
+  despachador: ['clientes:leer', 'clientes:escribir', 'clientes:crear', 'pines:proponer', 'pines:revisar', 'pines:verificar', 'reportes:revisar', 'archivos:subir', 'facturas:leer', 'facturas:escribir', 'rutas:leer', 'rutas:escribir', 'entregas:registrar', 'vendedores:leer', 'locales:eliminar'],
   chofer: PERMISOS_DE_CAMION,
   ayudante: PERMISOS_DE_CAMION,
 };

@@ -7,6 +7,8 @@ import { crearGuardarConfigEmpresa, crearObtenerConfigEmpresa } from './applicat
 import { crearServiciosDeRuta } from './application/use-cases/rutas.js';
 import { crearGuardarHorario, crearObtenerHorario } from './application/use-cases/horarios.js';
 import { crearIniciarJornada, crearMiJornada, crearResolverCamion, crearTerminarJornada } from './application/use-cases/jornada.js';
+import { crearReportarLocal, crearResolverReporteLocal, crearVerReportes } from './application/use-cases/reportes-local.js';
+import { PostgresReporteLocalRepository } from './adapters/out/postgres/repositorio-reportes-local.js';
 import { crearVerificarPin } from './application/use-cases/pin-verificado.js';
 import { crearRevisarPines } from './application/use-cases/revisar-pines.js';
 import { crearVerAnalitica } from './application/use-cases/analitica.js';
@@ -71,6 +73,7 @@ const pines = new PostgresPropuestaPinRepository(db);
 const camiones = new PostgresCamionRepository(db);
 const vendedores = new PostgresVendedorRepository(db);
 const reportesFoto = new PostgresFotoReporteRepository(db);
+const reportesLocal = new PostgresReporteLocalRepository(db);
 const facturas = new PostgresFacturaRepository(db);
 const empresas = new PostgresEmpresaRepository(db);
 const rutas = new PostgresRutaRepository(db);
@@ -143,6 +146,9 @@ const casos: CasosDeUso = {
   cambiarRazonSocial: crearCambiarRazonSocial({ clientes }),
   eliminarLocal: crearEliminarLocal({ clientes, almacen }),
   reportarFoto: crearReportarFoto({ clientes, reportes: reportesFoto }),
+  reportarLocal: crearReportarLocal({ clientes, reportes: reportesLocal }),
+  verReportes: crearVerReportes({ fotos: reportesFoto, locales: reportesLocal }),
+  resolverReporteLocal: crearResolverReporteLocal({ clientes, reportes: reportesLocal, clock }),
   fotosParaRevision: crearFotosParaRevision({ reportes: reportesFoto }),
   verificarFoto: crearVerificarFoto({ clientes, clock }),
   verificarPin: crearVerificarPin({ clientes, clock }),

@@ -2,6 +2,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { PostgresCamionRepository } from '../../src/adapters/out/postgres/repositorio-camiones.js';
 import { PostgresClienteRepository } from '../../src/adapters/out/postgres/repositorio-clientes.js';
 import { PostgresEntregaRepository } from '../../src/adapters/out/postgres/repositorio-entregas.js';
+import { PostgresReporteLocalRepository } from '../../src/adapters/out/postgres/repositorio-reportes-local.js';
 import { PostgresFacturaRepository } from '../../src/adapters/out/postgres/repositorio-facturas.js';
 import { crearObtenerLocal } from '../../src/application/use-cases/obtener-local.js';
 import { abrirDb, crearEmpresa, crearUsuario } from './utils.js';
@@ -109,5 +110,51 @@ describe('lista para revisar pines (Postgres real)', () => {
     expect(visitas.get(s.local)).toHaveLength(1); // solo la más reciente
     expect(visitas.has(otra.local)).toBe(false); // el local de otra empresa no aparece
     expect(await entregas.visitasConGpsDeLocales(s.empresa, [], 5)).toEqual(new Map());
+  });
+});
+
+describe('insignias de pin y foto verificados (Postgres real)', () => {
+  it('la búsqueda, la ficha y las facturas pendientes dicen si el pin y la foto están verificados', async () => {
+    const s = await sembrar();
+    await db.updateTable('local').set({ foto_path: 'f/1.jpg' }).where('id', '=', s.local).execute();
+    const buscar = async () => (await clientes.buscar(s.empresa, { texto: 'Kiosko', limite: 5 }))[0];
+    expect(await buscar()).not.toHaveProperty('pinVerificado');
+    expect(await buscar()).not.toHaveProperty('fotoVerificada');
+
+    await clientes.verificarPinPorEntregas(s.empresa, s.local, new Date('2026-10-08T15:00:00Z'));
+    await clientes.marcarFotoVerificada(s.empresa, s.local, 'f/1.jpg', { por: s.actor.id, en: new Date('2026-10-08T15:00:00Z') });
+    expect(await buscar()).toMatchObject({ pinVerificado: true, fotoVerificada: true });
+    expect(await clientes.obtenerLocal(s.empresa, s.local)).toMatchObject({ pinVerificado: true, fotoVerificada: true });
+
+    // Cambiar la foto quita la verificación de la foto, no la del pin.
+    await clientes.actualizarLocal(s.empresa, s.local, { fotoPath: 'f/2.jpg' });
+    expect(await buscar()).toMatchObject({ pinVerificado: true });
+    expect(await buscar()).not.toHaveProperty('fotoVerificada');
+  });
+});
+
+describe('reportes de nombre y ubicación (Postgres real)', () => {
+  it('guarda cómo estaba, no repite el mismo reporte abierto, avisa si ya cambió y se puede cerrar', async () => {
+    const s = await sembrar();
+    const reportes = new PostgresReporteLocalRepository(db);
+    await reportes.crear(s.empresa, { localId: s.local, tipo: 'nombre', sugerido: 'Bazar Sol', reportadoPor: s.actor.id });
+    await reportes.crear(s.empresa, { localId: s.local, tipo: 'nombre', sugerido: 'otro', reportadoPor: s.actor.id }); // repetido: queda uno
+    await reportes.crear(s.empresa, { localId: s.local, tipo: 'ubicacion', detalle: 'queda en la otra cuadra', reportadoPor: s.actor.id });
+    const abiertos = await reportes.abiertos(s.empresa, 10);
+    expect(abiertos).toHaveLength(2);
+    expect(abiertos.find((r) => r.tipo === 'nombre')).toMatchObject({ sugerido: 'Bazar Sol', razonSocial: 'Kiosko Sol', cambioDesdeElReporte: false });
+    expect(abiertos.find((r) => r.tipo === 'ubicacion')).toMatchObject({ detalle: 'queda en la otra cuadra', lat: PIN.lat, cambioDesdeElReporte: false });
+    expect(await reportes.abiertos((await sembrar()).empresa, 10)).toEqual([]);
+
+    // Mover el pin y cambiar el nombre: los dos reportes lo notan.
+    await db.updateTable('local').set({ lat: PIN.lat + 0.001 }).where('id', '=', s.local).execute();
+    await db.updateTable('cliente').set({ razon_social: 'Bazar Sol' }).where('empresa_id', '=', s.empresa).execute();
+    expect((await reportes.abiertos(s.empresa, 10)).map((r) => r.cambioDesdeElReporte)).toEqual([true, true]);
+
+    const primero = abiertos[0];
+    expect(await reportes.obtener(s.empresa, primero?.id ?? '')).toMatchObject({ abierto: true, localId: s.local });
+    await reportes.resolver(s.empresa, primero?.id ?? '', s.actor.id, 'corregido', new Date('2026-10-08T16:00:00Z'));
+    expect(await reportes.abiertos(s.empresa, 10)).toHaveLength(1);
+    expect(await reportes.obtener(s.empresa, primero?.id ?? '')).toMatchObject({ abierto: false });
   });
 });

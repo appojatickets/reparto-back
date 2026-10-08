@@ -32,7 +32,9 @@ type FilaBusqueda = {
   lat: number | null;
   lng: number | null;
   pin_estado: EstadoPin;
+  pin_verificado: boolean;
   foto_path: string | null;
+  foto_verificada: boolean;
   streetview_rumbo: number | null;
   nota: string | null;
   score: number;
@@ -54,7 +56,7 @@ export class PostgresClienteRepository implements ClienteRepository {
       : sql`replace(c.rut, '-', '') like ${`${rutDigitos}%`}`;
     const r = await sql<FilaBusqueda>`
       select l.id as local_id, c.id as cliente_id, c.razon_social, l.direccion, l.comuna, l.lat, l.lng, l.pin_estado,
-             l.foto_path, l.streetview_rumbo, l.nota,
+             (l.pin_verificado_en is not null) as pin_verificado, l.foto_path, (l.foto_path is not null and l.foto_verificada_en is not null) as foto_verificada, l.streetview_rumbo, l.nota,
              ${rutDigitos === undefined ? sql`greatest(word_similarity(${texto}::text, c.razon_social_norm), word_similarity(${texto}::text, l.direccion_norm))::float8` : sql`1::float8`} as score
       from "local" l
       join cliente c on c.id = l.cliente_id
@@ -70,7 +72,9 @@ export class PostgresClienteRepository implements ClienteRepository {
       comuna: f.comuna,
       ...(f.lat !== null && f.lng !== null ? { lat: f.lat, lng: f.lng } : {}),
       pinEstado: f.pin_estado,
+      ...(f.pin_verificado && f.lat !== null ? { pinVerificado: true } : {}),
       ...(f.foto_path !== null ? { fotoPath: f.foto_path } : {}),
+      ...(f.foto_verificada ? { fotoVerificada: true } : {}),
       ...(f.streetview_rumbo !== null ? { streetviewRumbo: f.streetview_rumbo } : {}),
       ...(f.nota !== null ? { nota: f.nota } : {}),
       score: f.score,
@@ -279,7 +283,7 @@ export class PostgresClienteRepository implements ClienteRepository {
     const f = await this.db
       .selectFrom('local as l')
       .innerJoin('cliente as c', 'c.id', 'l.cliente_id')
-      .select(['l.id', 'l.cliente_id', 'c.razon_social', 'c.rut', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng', 'l.pin_estado', 'l.pin_fuente', 'l.pin_verificado_en', 'l.pin_verificado_por', 'l.foto_path', 'l.streetview_rumbo', 'l.nota'])
+      .select(['l.id', 'l.cliente_id', 'c.razon_social', 'c.rut', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng', 'l.pin_estado', 'l.pin_fuente', 'l.pin_verificado_en', 'l.pin_verificado_por', 'l.foto_path', 'l.foto_verificada_en', 'l.streetview_rumbo', 'l.nota'])
       .where('l.id', '=', localId)
       .where('l.empresa_id', '=', empresaId)
       .executeTakeFirst();
@@ -297,6 +301,7 @@ export class PostgresClienteRepository implements ClienteRepository {
       pinVerificado: f.pin_verificado_en !== null,
       ...(f.pin_verificado_en !== null ? { pinVerificacion: f.pin_verificado_por === null ? ('entregas' as const) : ('persona' as const) } : {}),
       ...(f.foto_path !== null ? { fotoPath: f.foto_path } : {}),
+      ...(f.foto_path !== null && f.foto_verificada_en !== null ? { fotoVerificada: true } : {}),
       ...(f.streetview_rumbo !== null ? { streetviewRumbo: f.streetview_rumbo } : {}),
       ...(f.nota !== null ? { nota: f.nota } : {}),
     };

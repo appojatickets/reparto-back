@@ -13,7 +13,11 @@ export type ResultadoBusqueda = {
   readonly lat?: number;
   readonly lng?: number;
   readonly pinEstado: EstadoPin;
+  /** Alguien verificó el pin (una persona o las entregas): ya no se mueve solo. */
+  readonly pinVerificado?: boolean;
   readonly fotoPath?: string;
+  /** El admin revisó y dio por buena la foto que tiene hoy el local. */
+  readonly fotoVerificada?: boolean;
   readonly streetviewRumbo?: number;
   readonly nota?: string;
   readonly score: number;
@@ -61,6 +65,7 @@ export type LocalDetalle = {
   /** Quién lo verificó: una persona, o el sistema solo porque las entregas lo confirmaron (ADR 0032). */
   readonly pinVerificacion?: 'persona' | 'entregas';
   readonly fotoPath?: string;
+  readonly fotoVerificada?: boolean;
   readonly streetviewRumbo?: number;
   readonly nota?: string;
 };

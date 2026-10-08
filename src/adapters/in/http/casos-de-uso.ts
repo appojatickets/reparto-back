@@ -12,6 +12,7 @@ import type { crearServiciosDeRuta } from '../../../application/use-cases/rutas.
 import type { crearGuardarHorario, crearObtenerHorario } from '../../../application/use-cases/horarios.js';
 import type { VerAnalitica } from '../../../application/use-cases/analitica.js';
 import type { AnalizarAprendizaje } from '../../../application/use-cases/analizar-aprendizaje.js';
+import type { crearReportarLocal, crearResolverReporteLocal, crearVerReportes } from '../../../application/use-cases/reportes-local.js';
 import type { crearVerificarPin } from '../../../application/use-cases/pin-verificado.js';
 import type { crearRevisarPines } from '../../../application/use-cases/revisar-pines.js';
 import type { RegistrarPosiciones } from '../../../application/use-cases/seguimiento.js';
@@ -55,6 +56,9 @@ export type CasosDeUso = {
   readonly cambiarRazonSocial: ReturnType<typeof crearCambiarRazonSocial>;
   readonly eliminarLocal: ReturnType<typeof crearEliminarLocal>;
   readonly reportarFoto: ReturnType<typeof crearReportarFoto>;
+  readonly reportarLocal: ReturnType<typeof crearReportarLocal>;
+  readonly verReportes: ReturnType<typeof crearVerReportes>;
+  readonly resolverReporteLocal: ReturnType<typeof crearResolverReporteLocal>;
   readonly fotosParaRevision: ReturnType<typeof crearFotosParaRevision>;
   readonly verificarFoto: ReturnType<typeof crearVerificarFoto>;
   readonly verificarPin: ReturnType<typeof crearVerificarPin>;

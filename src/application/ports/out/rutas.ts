@@ -30,6 +30,9 @@ export type FacturaParaRuta = {
   readonly pinAproximado?: boolean;
   /** El local tiene foto de la fachada (la subió alguien del equipo). */
   readonly tieneFoto?: boolean;
+  /** Alguien verificó el pin del local y el admin dio por buena su foto: se muestran como insignias ✓. */
+  readonly pinVerificado?: boolean;
+  readonly fotoVerificada?: boolean;
   readonly antesDeMin?: number;
   readonly urgente: boolean;
   readonly nota?: string;

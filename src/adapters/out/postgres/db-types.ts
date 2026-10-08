@@ -83,6 +83,22 @@ export type Tabla = {
     resuelto_por: string | null;
     resolucion: 'eliminada' | 'descartada' | null;
   };
+  reporte_local: {
+    id: Generated<string>;
+    empresa_id: string;
+    local_id: string;
+    tipo: 'nombre' | 'ubicacion';
+    detalle: string | null;
+    sugerido: string | null;
+    razon_social_al_reportar: string;
+    lat_al_reportar: number | null;
+    lng_al_reportar: number | null;
+    reportado_por: string | null;
+    creado_en: Generated<Date>;
+    resuelto_en: Date | null;
+    resuelto_por: string | null;
+    resolucion: 'corregido' | 'descartado' | null;
+  };
   vendedor: { id: Generated<string>; empresa_id: string; codigo: string; nombre: string; celular: string | null; activo: Generated<boolean>; creado_en: Generated<Date> };
   factura: {
     id: Generated<string>;

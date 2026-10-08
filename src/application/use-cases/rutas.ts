@@ -41,6 +41,9 @@ export type ItemVista = {
   readonly ubicacionAproximada?: boolean;
   /** El local tiene foto de la fachada (se pide aparte, con URL firmada). */
   readonly tieneFoto?: boolean;
+  /** Insignias: el pin está verificado y la foto de la fachada está verificada. */
+  readonly pinVerificado?: boolean;
+  readonly fotoVerificada?: boolean;
   readonly urgente: boolean;
   readonly antesDeMin?: number;
   readonly nota?: string;
@@ -158,6 +161,8 @@ const itemDe = (f: FacturaParaRuta): ItemVista => ({
   comuna: f.comuna,
   ...(f.lat !== undefined && f.lng !== undefined ? { lat: f.lat, lng: f.lng, ...(f.pinAproximado ? { ubicacionAproximada: true } : {}) } : centroDeComuna(f.comuna) !== undefined ? { ubicacionAproximada: true } : {}),
   ...(f.tieneFoto ? { tieneFoto: true } : {}),
+  ...(f.pinVerificado ? { pinVerificado: true } : {}),
+  ...(f.fotoVerificada ? { fotoVerificada: true } : {}),
   urgente: f.urgente,
   ...(f.antesDeMin !== undefined ? { antesDeMin: f.antesDeMin } : {}),
   ...(f.nota !== undefined ? { nota: f.nota } : {}),
