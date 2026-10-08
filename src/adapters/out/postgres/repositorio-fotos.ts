@@ -28,11 +28,11 @@ export class PostgresFotoReporteRepository implements FotoReporteRepository {
   async abiertos(empresaId: string, limite: number): Promise<readonly ReporteFoto[]> {
     const filas = await this.db
       .selectFrom('foto_reporte as r')
-      .innerJoin('local as l', (j) => j.onRef('l.id', '=', 'r.local_id').onRef('l.foto_path', '=', 'r.foto_path'))
+      .innerJoin('local as l', 'l.id', 'r.local_id')
       .innerJoin('cliente as c', 'c.id', 'l.cliente_id')
       .leftJoin('usuario as ur', 'ur.id', 'r.reportado_por')
       .leftJoin('usuario as us', 'us.id', 'l.foto_por')
-      .select(['r.id', 'r.local_id', 'c.razon_social', 'l.direccion', 'l.comuna', 'r.motivo', 'r.detalle', 'ur.nombre as reportado_por', 'r.creado_en', 'us.nombre as subida_por', 'l.foto_en'])
+      .select(['r.id', 'r.local_id', 'c.razon_social', 'l.direccion', 'l.comuna', 'r.motivo', 'r.detalle', 'ur.nombre as reportado_por', 'r.creado_en', 'us.nombre as subida_por', 'l.foto_en', 'l.foto_path as foto_actual', 'r.foto_path'])
       .where('r.empresa_id', '=', empresaId)
       .where('r.resuelto_en', 'is', null)
       .orderBy('r.creado_en', 'desc')
@@ -48,8 +48,10 @@ export class PostgresFotoReporteRepository implements FotoReporteRepository {
       ...(f.detalle !== null ? { detalle: f.detalle } : {}),
       ...(f.reportado_por !== null ? { reportadoPor: f.reportado_por } : {}),
       reportadoEn: f.creado_en,
-      ...(f.subida_por !== null ? { subidaPor: f.subida_por } : {}),
-      ...(f.foto_en !== null ? { subidaEn: f.foto_en } : {}),
+      fotoReemplazada: f.foto_actual !== f.foto_path,
+      // Quién subió la foto del local solo cuenta mientras sea la reportada: si ya la cambiaron, es de otra foto.
+      ...(f.foto_actual === f.foto_path && f.subida_por !== null ? { subidaPor: f.subida_por } : {}),
+      ...(f.foto_actual === f.foto_path && f.foto_en !== null ? { subidaEn: f.foto_en } : {}),
     }));
   }
 

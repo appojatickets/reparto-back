@@ -9742,6 +9742,9 @@
                           "reportadoEn": {
                             "type": "string"
                           },
+                          "fotoReemplazada": {
+                            "type": "boolean"
+                          },
                           "subidaPor": {
                             "type": "string"
                           },
@@ -9756,7 +9759,8 @@
                           "direccion",
                           "comuna",
                           "motivo",
-                          "reportadoEn"
+                          "reportadoEn",
+                          "fotoReemplazada"
                         ],
                         "additionalProperties": false
                       }

@@ -59,6 +59,7 @@ export const rutasFotos = ({ app, casos, guard }: ContextoRutas): void => {
                 detalle: z.string().optional(),
                 reportadoPor: z.string().optional(),
                 reportadoEn: z.string(),
+                fotoReemplazada: z.boolean(),
                 subidaPor: z.string().optional(),
                 subidaEn: z.string().optional(),
               }),

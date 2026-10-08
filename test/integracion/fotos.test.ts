@@ -98,3 +98,43 @@ describe('verificación de fotos', () => {
     expect((await fotos.verificadas(empresa, 10)).map((f) => f.localId)).toEqual([l]);
   });
 });
+
+describe('reportes de fotos en el panel del admin', () => {
+  it('un reporte abierto aparece con la foto vigente y con quién la subió', async () => {
+    const { empresa, chofer, locales, paths } = await escenario();
+    await fotos.crear(empresa, { localId: locales[0] ?? '', fotoPath: paths[0] ?? '', motivo: 'no_es_la_fachada', reportadoPor: chofer });
+    const abiertos = await fotos.abiertos(empresa, 10);
+    expect(abiertos).toHaveLength(1);
+    expect(abiertos[0]).toMatchObject({ localId: locales[0], motivo: 'no_es_la_fachada', fotoReemplazada: false, subidaEn: DIA(1) });
+  });
+
+  it('si después reemplazan la foto, el reporte sigue visible, marcado como «foto reemplazada», sin atribuirle quién subió la nueva', async () => {
+    const { empresa, chofer, admin, locales, paths } = await escenario();
+    const [l, p] = [locales[0] ?? '', paths[0] ?? ''];
+    await fotos.crear(empresa, { localId: l, fotoPath: p, motivo: 'se_ven_personas', detalle: 'sale gente', reportadoPor: chofer });
+    await clientes.actualizarLocal(empresa, l, { fotoPath: `${empresa}/${l}/nueva.webp`, fotoPor: admin, fotoEn: DIA(8) });
+    const abiertos = await fotos.abiertos(empresa, 10);
+    expect(abiertos).toHaveLength(1);
+    expect(abiertos[0]).toMatchObject({ localId: l, motivo: 'se_ven_personas', detalle: 'sale gente', fotoReemplazada: true });
+    expect(abiertos[0]).not.toHaveProperty('subidaPor');
+    expect(abiertos[0]).not.toHaveProperty('subidaEn');
+  });
+
+  it('si el local quedó sin foto, el reporte también sigue visible', async () => {
+    const { empresa, chofer, locales, paths } = await escenario();
+    const [l, p] = [locales[0] ?? '', paths[0] ?? ''];
+    await fotos.crear(empresa, { localId: l, fotoPath: p, motivo: 'borrosa', reportadoPor: chofer });
+    await clientes.quitarFoto(empresa, l);
+    expect((await fotos.abiertos(empresa, 10))[0]).toMatchObject({ localId: l, fotoReemplazada: true });
+  });
+
+  it('cerrar el reporte (dejarlo) lo saca de la lista', async () => {
+    const { empresa, chofer, admin, locales, paths } = await escenario();
+    const [l, p] = [locales[0] ?? '', paths[0] ?? ''];
+    await fotos.crear(empresa, { localId: l, fotoPath: p, motivo: 'borrosa', reportadoPor: chofer });
+    await clientes.quitarFoto(empresa, l);
+    const [r] = await fotos.abiertos(empresa, 10);
+    await fotos.resolver(empresa, r?.id ?? '', admin, 'descartada', DIA(9));
+    expect(await fotos.abiertos(empresa, 10)).toEqual([]);
+  });
+});

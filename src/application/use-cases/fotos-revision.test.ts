@@ -41,7 +41,7 @@ describe('reportar una foto', () => {
 describe('fotos para revisar', () => {
   it('trae lo reportado y las subidas en dos listas: las que faltan por verificar y las ya verificadas', async () => {
     const reportes = fakeReportesFoto();
-    reportes.abiertos.mockResolvedValueOnce([{ id: 'r-1', localId: 'l-1', razonSocial: 'Rabelo', direccion: 'Calle 1', comuna: 'Maipú', motivo: 'borrosa', reportadoEn: new Date('2026-10-05T12:00:00Z') }]);
+    reportes.abiertos.mockResolvedValueOnce([{ id: 'r-1', localId: 'l-1', razonSocial: 'Rabelo', direccion: 'Calle 1', comuna: 'Maipú', motivo: 'borrosa', reportadoEn: new Date('2026-10-05T12:00:00Z'), fotoReemplazada: false }]);
     reportes.porVerificar.mockResolvedValueOnce([{ localId: 'l-2', fotoPath: 'empresa-1/l-2/a.webp', razonSocial: 'Kiosko', direccion: 'Calle 2', comuna: 'Paine', subidaPor: 'Juan Pérez', subidaEn: new Date('2026-10-05T11:00:00Z') }]);
     reportes.verificadas.mockResolvedValueOnce([{ localId: 'l-3', fotoPath: 'empresa-1/l-3/b.webp', razonSocial: 'Botillería', direccion: 'Calle 3', comuna: 'Buin', verificadaPor: 'Matías', verificadaEn: new Date('2026-10-06T09:00:00Z') }]);
     const r = await crearFotosParaRevision({ reportes })(admin);
