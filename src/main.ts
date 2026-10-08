@@ -8,6 +8,7 @@ import { crearServiciosDeRuta } from './application/use-cases/rutas.js';
 import { crearGuardarHorario, crearObtenerHorario } from './application/use-cases/horarios.js';
 import { crearIniciarJornada, crearMiJornada, crearResolverCamion, crearTerminarJornada } from './application/use-cases/jornada.js';
 import { crearVerificarPin } from './application/use-cases/pin-verificado.js';
+import { crearRevisarPines } from './application/use-cases/revisar-pines.js';
 import { crearVerAnalitica } from './application/use-cases/analitica.js';
 import { crearAnalizarAprendizaje } from './application/use-cases/analizar-aprendizaje.js';
 import { crearRegistrarPosiciones } from './application/use-cases/seguimiento.js';
@@ -145,6 +146,7 @@ const casos: CasosDeUso = {
   fotosParaRevision: crearFotosParaRevision({ reportes: reportesFoto }),
   verificarFoto: crearVerificarFoto({ clientes, clock }),
   verificarPin: crearVerificarPin({ clientes, clock }),
+  revisarPines: crearRevisarPines({ clientes, entregas }),
   resolverReporteFoto: crearResolverReporteFoto({ clientes, reportes: reportesFoto, almacen, clock }),
   exportarLocales: crearExportarLocales({ clientes }),
   obtenerUrlFoto: crearObtenerUrlFoto({ clientes, almacen }),

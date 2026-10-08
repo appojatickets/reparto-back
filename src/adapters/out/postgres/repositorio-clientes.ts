@@ -15,6 +15,7 @@ import type {
   NuevoClienteConLocal,
   ResultadoBusqueda,
   ResumenImportacion,
+  LocalConPin,
 } from '../../../application/ports/out/clientes.js';
 import type { Db } from './client.js';
 
@@ -374,6 +375,27 @@ export class PostgresClienteRepository implements ClienteRepository {
       .where('pin_verificado_en', 'is', null)
       .executeTakeFirst();
     return r.numUpdatedRows > 0n;
+  }
+
+  async listarPinesParaRevisar(empresaId: string, estado: 'por_verificar' | 'verificados', limite: number): Promise<readonly LocalConPin[]> {
+    let q = this.db
+      .selectFrom('local as l')
+      .innerJoin('cliente as c', 'c.id', 'l.cliente_id')
+      .select(['l.id', 'c.razon_social', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng', 'l.pin_fuente', 'l.pin_verificado_por', 'l.pin_verificado_en'])
+      .where('l.empresa_id', '=', empresaId)
+      .where('l.lat', 'is not', null)
+      .where('l.lng', 'is not', null);
+    q = estado === 'verificados' ? q.where('l.pin_verificado_en', 'is not', null).orderBy('l.pin_verificado_en', 'desc') : q.where('l.pin_verificado_en', 'is', null).orderBy('l.comuna').orderBy('c.razon_social');
+    const filas = await q.limit(limite).execute();
+    return filas.flatMap((f) =>
+      f.lat !== null && f.lng !== null
+        ? [{
+            id: f.id, razonSocial: f.razon_social, direccion: f.direccion, comuna: f.comuna, lat: f.lat, lng: f.lng,
+            ...(f.pin_fuente !== null ? { pinFuente: f.pin_fuente } : {}),
+            ...(f.pin_verificado_en !== null ? { pinVerificacion: f.pin_verificado_por === null ? ('entregas' as const) : ('persona' as const), verificadoEn: f.pin_verificado_en } : {}),
+          }]
+        : [],
+    );
   }
 
   async contarPines(empresaId: string): Promise<{ readonly verificados: number; readonly porVerificar: number; readonly sinPin: number }> {

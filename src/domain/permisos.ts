@@ -7,6 +7,7 @@ export const TODOS_LOS_PERMISOS = [
   'clientes:importar',
   'pines:proponer',
   'pines:revisar',
+  'pines:verificar',
   'archivos:subir',
   'usuarios:gestionar',
   'camiones:gestionar',
@@ -36,13 +37,13 @@ const PERMISOS_DE_CAMION: readonly Permiso[] = ['clientes:leer', 'clientes:crear
 
 /**
  * Un chofer o ayudante con permiso de editor (lo da o quita el admin) puede corregir lo que se cargó mal: el nombre del cliente, la nota, el
- * pin, quitar una foto subida por error y eliminar una dirección equivocada. Nada más: ni usuarios, ni métricas, ni importaciones.
+ * pin, quitar una foto subida por error, eliminar una dirección equivocada y verificar pines (ADR 0033). Nada más: ni usuarios, ni métricas, ni importaciones.
  */
-const PERMISOS_DE_EDITOR: readonly Permiso[] = ['clientes:escribir', 'locales:eliminar'];
+const PERMISOS_DE_EDITOR: readonly Permiso[] = ['clientes:escribir', 'locales:eliminar', 'pines:verificar'];
 
 const PERMISOS_POR_ROL: Readonly<Record<Rol, readonly Permiso[]>> = {
   admin: TODOS_LOS_PERMISOS,
-  despachador: ['clientes:leer', 'clientes:escribir', 'clientes:crear', 'pines:proponer', 'pines:revisar', 'archivos:subir', 'facturas:leer', 'facturas:escribir', 'rutas:leer', 'rutas:escribir', 'entregas:registrar', 'vendedores:leer', 'locales:eliminar'],
+  despachador: ['clientes:leer', 'clientes:escribir', 'clientes:crear', 'pines:proponer', 'pines:revisar', 'pines:verificar', 'archivos:subir', 'facturas:leer', 'facturas:escribir', 'rutas:leer', 'rutas:escribir', 'entregas:registrar', 'vendedores:leer', 'locales:eliminar'],
   chofer: PERMISOS_DE_CAMION,
   ayudante: PERMISOS_DE_CAMION,
 };

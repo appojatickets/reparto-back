@@ -53,6 +53,28 @@ export class PostgresEntregaRepository implements EntregaRepository {
     return new Set(filas.map((f) => f.factura_id));
   }
 
+  async visitasConGpsDeLocales(empresaId: string, localIds: readonly string[], porLocal: number): Promise<ReadonlyMap<string, readonly VisitaConGps[]>> {
+    const salida = new Map<string, VisitaConGps[]>();
+    if (localIds.length === 0) return salida;
+    const filas = await this.db
+      .selectFrom('entrega_evento')
+      .select(['local_id', 'lat', 'lng', 'precision_m', 'creado_en'])
+      .where('empresa_id', '=', empresaId)
+      .where('local_id', 'in', [...localIds])
+      .where('tipo', '=', 'entregado')
+      .where('lat', 'is not', null)
+      .where('precision_m', 'is not', null)
+      .orderBy('creado_en', 'desc')
+      .execute();
+    for (const f of filas) {
+      if (f.lat === null || f.lng === null || f.precision_m === null) continue;
+      const lista = salida.get(f.local_id) ?? [];
+      if (lista.length < porLocal) lista.push({ lat: f.lat, lng: f.lng, precisionM: f.precision_m, en: f.creado_en });
+      salida.set(f.local_id, lista);
+    }
+    return salida;
+  }
+
   async visitasConGps(empresaId: string, localId: string, limite: number): Promise<readonly VisitaConGps[]> {
     const filas = await this.db
       .selectFrom('entrega_evento')

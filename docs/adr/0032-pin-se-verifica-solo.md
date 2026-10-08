@@ -22,3 +22,6 @@ Sin migración: `pin_verificado_en` con `pin_verificado_por` nulo = verificado p
 - La verificación automática nunca bloquea el aviso: si falla, el ENTREGADO igual queda hecho.
 - Solo verifica si el local tiene pin y no estaba verificado (consulta condicional).
 - Las constantes (50 m de precisión, 60 m, 2 entregas en 2 días) son las mismas del ADR 0024 y 0030: un solo criterio.
+
+## Lista para revisar pines (ADR 0033, misma entrega)
+`GET /v1/pines/revision?estado=por_verificar|verificados` (permiso nuevo `pines:verificar`): hasta 100 pines con su nivel de respaldo. «Por verificar» va con lo más seguro primero (respaldados, después en conflicto, después sin respaldo); «verificados» con los más recientes primero y quién los verificó. El permiso `pines:verificar` lo tienen admin, despachador y el **chofer editor** (también para `PUT /v1/locales/:id/pin/verificacion`); no incluye aceptar propuestas ni buscar pines (siguen en `pines:revisar`).

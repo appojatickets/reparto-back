@@ -141,13 +141,50 @@ export const rutasPinesYArchivos = ({ app, casos, guard }: ContextoRutas): void 
     },
   );
 
+  const respaldoPin = z.object({ nivel: z.enum(['verificado', 'respaldado', 'en_conflicto', 'sin_respaldo']), entregas: z.number(), dias: z.number(), distanciaM: z.number().optional() });
+
+  a.get(
+    '/v1/pines/revision',
+    {
+      preHandler: guard('pines:verificar'),
+      schema: {
+        tags: ['pines'],
+        summary: 'Pines para revisar: «por verificar» (con cuánto los respaldan las entregas; lo más seguro primero) o «verificados» (los más recientes primero). Hasta 100.',
+        security: SEGURIDAD,
+        querystring: z.object({ estado: z.enum(['por_verificar', 'verificados']).default('por_verificar') }),
+        response: {
+          200: z.object({
+            total: z.number(),
+            pines: z.array(z.object({
+              id: z.string(),
+              razonSocial: z.string(),
+              direccion: z.string(),
+              comuna: z.string(),
+              lat: z.number(),
+              lng: z.number(),
+              pinFuente: z.string().optional(),
+              pinVerificacion: z.enum(['persona', 'entregas']).optional(),
+              verificadoEn: z.iso.datetime().optional(),
+              respaldo: respaldoPin,
+            })),
+          }),
+          ...RESPUESTAS_ERROR,
+        },
+      },
+    },
+    async (req, reply) => {
+      const r = await casos.revisarPines(actor(req), req.query.estado);
+      return r.ok ? reply.send({ total: r.value.total, pines: r.value.pines.map(({ verificadoEn, ...p }) => ({ ...p, ...(verificadoEn ? { verificadoEn: verificadoEn.toISOString() } : {}) })) }) : enviarError(reply, r.error);
+    },
+  );
+
   a.put(
     '/v1/locales/:id/pin/verificacion',
     {
-      preHandler: guard('pines:revisar'),
+      preHandler: guard('pines:verificar'),
       schema: {
         tags: ['pines'],
-        summary: 'Verificar el pin de un local (admin o despachador): un pin verificado ya no se mueve solo con las entregas; con verificado=false vuelve a «por verificar» y se sigue ajustando',
+        summary: 'Verificar el pin de un local (admin, despachador o chofer editor): un pin verificado ya no se mueve solo con las entregas; con verificado=false vuelve a «por verificar» y se sigue ajustando',
         security: SEGURIDAD,
         params: idParam,
         body: z.object({ verificado: z.boolean() }),

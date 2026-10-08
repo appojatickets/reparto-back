@@ -81,6 +81,13 @@ describe('chofer o ayudante con permiso de editor', () => {
     for (const p of prohibidos) expect(comoEditor('chofer', p)).toBe(false);
   });
 
+  it('el editor puede verificar pines (y ver la lista para hacerlo); sin el permiso de editor, no', () => {
+    expect(comoEditor('chofer', 'pines:verificar')).toBe(true);
+    expect(comoEditor('ayudante', 'pines:verificar')).toBe(true);
+    for (const rol of ['chofer', 'ayudante'] as const) expect(puede(rol, 'pines:verificar')).toBe(false);
+    expect(roles.filter((r) => puede(r, 'pines:verificar'))).toEqual(['admin', 'despachador']);
+  });
+
   it('el despachador y el admin pueden eliminar direcciones; el de camión sin el permiso, no', () => {
     expect(roles.filter((r) => puede(r, 'locales:eliminar'))).toEqual(['admin', 'despachador']);
   });

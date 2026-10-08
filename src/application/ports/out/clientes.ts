@@ -65,6 +65,19 @@ export type LocalDetalle = {
   readonly nota?: string;
 };
 
+/** Un local con pin, para la pantalla de revisión de pines. */
+export type LocalConPin = {
+  readonly id: string;
+  readonly razonSocial: string;
+  readonly direccion: string;
+  readonly comuna: string;
+  readonly lat: number;
+  readonly lng: number;
+  readonly pinFuente?: FuentePin;
+  readonly pinVerificacion?: 'persona' | 'entregas';
+  readonly verificadoEn?: Date;
+};
+
 export type CambiosLocal = {
   readonly nota?: string;
   readonly streetviewRumbo?: number;
@@ -136,6 +149,8 @@ export interface ClienteRepository {
    * Devuelve si lo verificó.
    */
   verificarPinPorEntregas(empresaId: string, localId: string, en: Date): Promise<boolean>;
+  /** Locales con pin para revisar: los «por verificar» (en orden de comuna) o los «verificados» (los más recientes primero), hasta `limite`. */
+  listarPinesParaRevisar(empresaId: string, estado: 'por_verificar' | 'verificados', limite: number): Promise<readonly LocalConPin[]>;
   /** Cuántos locales tienen pin verificado, pin por verificar y ningún pin. */
   contarPines(empresaId: string): Promise<{ readonly verificados: number; readonly porVerificar: number; readonly sinPin: number }>;
   /** Locales sin pin a los que todavía no se les buscó la dirección (o cuya última búsqueda fue antes de `intentadosAntesDe`). */

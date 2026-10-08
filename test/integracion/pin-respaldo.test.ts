@@ -89,3 +89,25 @@ describe('verificación automática del pin (Postgres real)', () => {
     expect(await clientes.verificarPinPorEntregas(s.empresa, otra.local, new Date())).toBe(false);
   });
 });
+
+describe('lista para revisar pines (Postgres real)', () => {
+  it('separa por verificar y verificados, solo de esa empresa, y trae las entregas de varios locales en una consulta', async () => {
+    const s = await sembrar();
+    await s.entregar('2026-10-05', 0);
+    await s.entregar('2026-10-06', 0.0001);
+    const otra = await sembrar();
+    const porVerificar = await clientes.listarPinesParaRevisar(s.empresa, 'por_verificar', 10);
+    expect(porVerificar.map((l) => l.id)).toEqual([s.local]);
+    expect(await clientes.listarPinesParaRevisar(s.empresa, 'verificados', 10)).toEqual([]);
+
+    await clientes.verificarPinPorEntregas(s.empresa, s.local, new Date('2026-10-08T15:00:00Z'));
+    expect(await clientes.listarPinesParaRevisar(s.empresa, 'por_verificar', 10)).toEqual([]);
+    const verificados = await clientes.listarPinesParaRevisar(s.empresa, 'verificados', 10);
+    expect(verificados[0]).toMatchObject({ id: s.local, razonSocial: 'Kiosko Sol', pinVerificacion: 'entregas' });
+
+    const visitas = await entregas.visitasConGpsDeLocales(s.empresa, [s.local, otra.local], 1);
+    expect(visitas.get(s.local)).toHaveLength(1); // solo la más reciente
+    expect(visitas.has(otra.local)).toBe(false); // el local de otra empresa no aparece
+    expect(await entregas.visitasConGpsDeLocales(s.empresa, [], 5)).toEqual(new Map());
+  });
+});

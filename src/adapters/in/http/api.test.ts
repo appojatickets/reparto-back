@@ -76,7 +76,7 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'POST', url: `/v1/entregas/${UUID}/eventos`, body: { tipo: 'llegada' }, permiso: 'entregas:registrar', caso: 'registrarEvento' },
   { metodo: 'GET', url: '/v1/analitica', permiso: 'metricas:leer', caso: 'verAnalitica' },
   { metodo: 'POST', url: '/v1/analitica/ejecutar', permiso: 'metricas:leer', caso: 'ejecutarAnalisis' },
-  { metodo: 'PUT', url: `/v1/locales/${UUID}/pin/verificacion`, body: { verificado: true }, permiso: 'pines:revisar', caso: 'verificarPin' },
+  { metodo: 'PUT', url: `/v1/locales/${UUID}/pin/verificacion`, body: { verificado: true }, permiso: 'pines:verificar', caso: 'verificarPin' },
   { metodo: 'GET', url: '/v1/jornada', permiso: 'jornada:gestionar', caso: 'miJornada' },
   { metodo: 'POST', url: '/v1/jornada', body: { camionId: UUID }, permiso: 'jornada:gestionar', caso: 'iniciarJornada' },
   { metodo: 'DELETE', url: '/v1/jornada', permiso: 'jornada:gestionar', caso: 'terminarJornada' },
