@@ -200,6 +200,12 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] **Se quitó «Proponer pines»** (la planilla). El menú ahora dice **PROPUESTAS DE PIN** y solo muestra lo que propone el sistema. Dime si también quieres sacar eso.
 - [ ] «Recaudado» es la suma de los totales de las facturas **entregadas** a ese local: el sistema no registra cobros.
 
+### A24. Última parada fija: volver a la empresa (ADR 0022 del front)
+Esperar ~2 min a que Vercel termine de desplegar y abrir la app dos veces. Solo cambia el front.
+- [ ] **CONFIGURACIÓN → Nombre del depósito:** escribe cómo quieres que se llame (por ejemplo «Ibiza»). Si no hay nombre, dice «LA EMPRESA». El depósito (dirección en el mapa) tiene que estar configurado.
+- [ ] En **MI RUTA** y **RUTAS**, al final de la lista de paradas aparece una fila fija con doble borde: **VOLVER A IBIZA**, con la hora estimada de regreso y los botones **IR** y **WAZE**. No tiene MOVER: no se puede mover ni entregar.
+- [ ] Al hacer la **última entrega** esa fila se destaca: **«Terminaste las entregas · VUELVE A IBIZA»**.
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos
