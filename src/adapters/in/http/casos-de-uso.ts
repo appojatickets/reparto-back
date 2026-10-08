@@ -20,10 +20,11 @@ import type { crearAutenticarUsuario } from '../../../application/use-cases/aute
 import type { crearBuscarClientes } from '../../../application/use-cases/buscar-clientes.js';
 import type { crearCrearClienteNuevo } from '../../../application/use-cases/crear-cliente-nuevo.js';
 import type { crearCrearUsuario } from '../../../application/use-cases/crear-usuario.js';
-import type { crearCambiarEstadoUsuario, crearListarUsuarios, crearResetearPin } from '../../../application/use-cases/gestionar-usuarios.js';
+import type { crearCambiarEditorUsuario, crearCambiarEstadoUsuario, crearListarUsuarios, crearResetearPin } from '../../../application/use-cases/gestionar-usuarios.js';
 import type { crearFotosParaRevision, crearReportarFoto, crearResolverReporteFoto, crearVerificarFoto } from '../../../application/use-cases/fotos-revision.js';
 import type { crearImportarClientes } from '../../../application/use-cases/importar-clientes.js';
 import type { crearIniciarSesion } from '../../../application/use-cases/iniciar-sesion.js';
+import type { crearCambiarRazonSocial, crearEliminarLocal } from '../../../application/use-cases/corregir-clientes.js';
 import type { crearObtenerLocal } from '../../../application/use-cases/obtener-local.js';
 import type { crearImportarPines, crearListarPropuestasPin, crearResolverPropuestaPin } from '../../../application/use-cases/pines.js';
 import type { crearRefrescarSesion } from '../../../application/use-cases/refrescar-sesion.js';
@@ -38,6 +39,7 @@ export type CasosDeUso = {
   readonly listarUsuarios: ReturnType<typeof crearListarUsuarios>;
   readonly resetearPin: ReturnType<typeof crearResetearPin>;
   readonly cambiarEstadoUsuario: ReturnType<typeof crearCambiarEstadoUsuario>;
+  readonly cambiarEditorUsuario: ReturnType<typeof crearCambiarEditorUsuario>;
   readonly buscarClientes: ReturnType<typeof crearBuscarClientes>;
   readonly crearClienteNuevo: ReturnType<typeof crearCrearClienteNuevo>;
   readonly importarClientes: ReturnType<typeof crearImportarClientes>;
@@ -49,6 +51,8 @@ export type CasosDeUso = {
   readonly solicitarUrlSubida: ReturnType<typeof crearSolicitarUrlSubida>;
   readonly registrarFotoLocal: ReturnType<typeof crearRegistrarFotoLocal>;
   readonly quitarFotoLocal: ReturnType<typeof crearQuitarFotoLocal>;
+  readonly cambiarRazonSocial: ReturnType<typeof crearCambiarRazonSocial>;
+  readonly eliminarLocal: ReturnType<typeof crearEliminarLocal>;
   readonly reportarFoto: ReturnType<typeof crearReportarFoto>;
   readonly fotosParaRevision: ReturnType<typeof crearFotosParaRevision>;
   readonly verificarFoto: ReturnType<typeof crearVerificarFoto>;

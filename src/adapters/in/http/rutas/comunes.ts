@@ -16,6 +16,8 @@ export const usuarioPublico = z.object({
   nombre: z.string(),
   rol: z.enum(['admin', 'despachador', 'chofer', 'ayudante']),
   activo: z.boolean(),
+  /** Chofer o ayudante con permiso de editor (lo da el admin). */
+  editor: z.boolean(),
 });
 
 export const sesionSchema = z.object({ accessToken: z.string(), refreshToken: z.string(), expiraEnSegundos: z.number() });

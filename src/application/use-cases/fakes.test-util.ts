@@ -20,6 +20,7 @@ export const usuarioDe = (extra: Partial<Usuario> = {}): Usuario => ({
   username: 'admin',
   nombre: 'Administrador',
   activo: true,
+  editor: false,
   ...extra,
 });
 
@@ -38,6 +39,12 @@ export const fakeUsuarios = (semilla: Usuario[] = []) => {
       const u = filas.get(id);
       if (u?.empresaId !== empresaId) return Promise.resolve(false);
       filas.set(id, { ...u, activo });
+      return Promise.resolve(true);
+    },
+    cambiarEditor: (empresaId, id, editor) => {
+      const u = filas.get(id);
+      if (u?.empresaId !== empresaId) return Promise.resolve(false);
+      filas.set(id, { ...u, editor });
       return Promise.resolve(true);
     },
   };

@@ -3,10 +3,10 @@ import type { Usuario } from '../../../domain/entidades/usuario.js';
 import type { IntentosLoginRepository, UsuarioRepository, EstadoIntentos } from '../../../application/ports/out/usuarios.js';
 import type { Db } from './client.js';
 
-type Fila = { id: string; empresa_id: string; rol: Usuario['rol']; username: string; nombre: string; activo: boolean };
+type Fila = { id: string; empresa_id: string; rol: Usuario['rol']; username: string; nombre: string; activo: boolean; editor: boolean };
 
-const aUsuario = (f: Fila): Usuario => ({ id: f.id, empresaId: f.empresa_id, rol: f.rol, username: f.username, nombre: f.nombre, activo: f.activo });
-const COLUMNAS = ['id', 'empresa_id', 'rol', 'username', 'nombre', 'activo'] as const;
+const aUsuario = (f: Fila): Usuario => ({ id: f.id, empresaId: f.empresa_id, rol: f.rol, username: f.username, nombre: f.nombre, activo: f.activo, editor: f.editor });
+const COLUMNAS = ['id', 'empresa_id', 'rol', 'username', 'nombre', 'activo', 'editor'] as const;
 
 export class PostgresUsuarioRepository implements UsuarioRepository {
   constructor(private readonly db: Db) {}
@@ -32,11 +32,16 @@ export class PostgresUsuarioRepository implements UsuarioRepository {
   }
 
   async crear(u: Usuario): Promise<void> {
-    await this.db.insertInto('usuario').values({ id: u.id, empresa_id: u.empresaId, rol: u.rol, username: u.username, nombre: u.nombre, activo: u.activo }).execute();
+    await this.db.insertInto('usuario').values({ id: u.id, empresa_id: u.empresaId, rol: u.rol, username: u.username, nombre: u.nombre, activo: u.activo, editor: u.editor }).execute();
   }
 
   async cambiarActivo(empresaId: string, id: string, activo: boolean): Promise<boolean> {
     const r = await this.db.updateTable('usuario').set({ activo }).where('id', '=', id).where('empresa_id', '=', empresaId).executeTakeFirst();
+    return r.numUpdatedRows > 0n;
+  }
+
+  async cambiarEditor(empresaId: string, id: string, editor: boolean): Promise<boolean> {
+    const r = await this.db.updateTable('usuario').set({ editor }).where('id', '=', id).where('empresa_id', '=', empresaId).executeTakeFirst();
     return r.numUpdatedRows > 0n;
   }
 }

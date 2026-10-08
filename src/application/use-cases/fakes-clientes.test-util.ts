@@ -22,6 +22,8 @@ export const fakeClientes = (locales: LocalDetalle[] = []) => {
     contarPines: vi.fn<ClienteRepository['contarPines']>(() => Promise.resolve({ verificados: 0, porVerificar: 0, sinPin: 0 })),
     exportarLocales: vi.fn<ClienteRepository['exportarLocales']>(() => Promise.resolve([])),
     quitarFoto: vi.fn<ClienteRepository['quitarFoto']>(() => Promise.resolve(true)),
+    renombrarCliente: vi.fn<ClienteRepository['renombrarCliente']>(() => Promise.resolve(true)),
+    eliminarLocal: vi.fn<ClienteRepository['eliminarLocal']>((empresaId, id) => Promise.resolve(empresaId === 'empresa-1' && locales.some((l) => l.id === id) ? 'ELIMINADO' : 'NO_ENCONTRADO')),
     marcarFotoVerificada: vi.fn<ClienteRepository['marcarFotoVerificada']>((empresaId, id, fotoPath) => Promise.resolve(empresaId === 'empresa-1' && locales.some((l) => l.id === id && l.fotoPath === fotoPath))),
     localesSinPin: vi.fn<ClienteRepository['localesSinPin']>(() => Promise.resolve([])),
     contarLocalesSinPin: vi.fn<ClienteRepository['contarLocalesSinPin']>(() => Promise.resolve(0)),

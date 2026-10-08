@@ -413,6 +413,33 @@ export class PostgresClienteRepository implements ClienteRepository {
     }));
   }
 
+  async renombrarCliente(empresaId: string, clienteId: string, razonSocial: string): Promise<boolean> {
+    const r = await this.db.updateTable('cliente').set({ razon_social: razonSocial }).where('id', '=', clienteId).where('empresa_id', '=', empresaId).executeTakeFirst();
+    return r.numUpdatedRows > 0n;
+  }
+
+  async eliminarLocal(empresaId: string, localId: string): Promise<'ELIMINADO' | 'NO_ENCONTRADO' | 'CON_ENTREGAS'> {
+    return this.db.transaction().execute(async (trx) => {
+      const local = await trx.selectFrom('local').select(['id', 'cliente_id']).where('id', '=', localId).where('empresa_id', '=', empresaId).forUpdate().executeTakeFirst();
+      if (!local) return 'NO_ENCONTRADO';
+      // El historial no se toca: una entrega hecha o cualquier aviso (llegué, cerrado…) de esta dirección impide eliminarla.
+      const hecha = await trx.selectFrom('factura').select('id').where('local_id', '=', localId).where('estado', 'in', ['entregada', 'no_entregada']).limit(1).executeTakeFirst();
+      const aviso = await trx.selectFrom('entrega_evento').select('factura_id').where('local_id', '=', localId).limit(1).executeTakeFirst();
+      if (hecha || aviso) return 'CON_ENTREGAS';
+      // Lo que queda son facturas sin entregar: se van con la dirección. El registro de aprendizaje solo se agrega, así que solo pierde el vínculo.
+      const ids = (await trx.selectFrom('factura').select('id').where('local_id', '=', localId).execute()).map((f) => f.id);
+      if (ids.length > 0) {
+        await trx.deleteFrom('parada_ruta').where('factura_id', 'in', ids).execute();
+        await trx.updateTable('ruta_operacion').set({ factura_id: null }).where('factura_id', 'in', ids).execute();
+        await trx.deleteFrom('factura').where('id', 'in', ids).execute();
+      }
+      await trx.deleteFrom('local').where('id', '=', localId).execute();
+      const quedan = await trx.selectFrom('local').select('id').where('cliente_id', '=', local.cliente_id).limit(1).executeTakeFirst();
+      if (!quedan) await trx.deleteFrom('cliente').where('id', '=', local.cliente_id).execute();
+      return 'ELIMINADO';
+    });
+  }
+
   async quitarFoto(empresaId: string, localId: string): Promise<boolean> {
     const r = await this.db.updateTable('local').set({ foto_path: null, foto_verificada_por: null, foto_verificada_en: null }).where('id', '=', localId).where('empresa_id', '=', empresaId).executeTakeFirst();
     return r.numUpdatedRows > 0n;

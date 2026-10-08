@@ -100,7 +100,7 @@ describe('rutas en Postgres', () => {
     await factura(s, '4', 'Sin Pin D');
     const reloj = { now: () => new Date('2026-10-05T12:00:00Z') };
     const servicios = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas: new PostgresEntregaRepository(db), jornadas: new PostgresJornadaRepository(db), registro: new PostgresRegistroAprendizajeRepository(db), clock: reloj, resolverCamion: pasarCamion });
-    const usuario = { id: s.usuario, empresaId: s.empresa, rol: 'despachador' as const, username: 'd', nombre: 'D', activo: true };
+    const usuario = { id: s.usuario, empresaId: s.empresa, rol: 'despachador' as const, username: 'd', nombre: 'D', activo: true, editor: false };
 
     const p = await servicios.planificar(usuario, { camionId: s.camion, fecha: FECHA });
     // Sin pin la ruta igual se calcula (ADR 0019): «Sin Pin D» entra ubicada en el centro de su comuna y marcada como aproximada.
@@ -168,7 +168,7 @@ describe('horario manual en Postgres', () => {
     await factura(s, '1', 'Almacén A');
     await factura(s, '2', 'Bazar B');
     const servicios = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas: new PostgresEntregaRepository(db), jornadas: new PostgresJornadaRepository(db), registro: new PostgresRegistroAprendizajeRepository(db), clock: { now: () => new Date('2026-10-05T12:00:00Z') }, resolverCamion: pasarCamion });
-    const usuario = { id: s.usuario, empresaId: s.empresa, rol: 'despachador' as const, username: 'd', nombre: 'D', activo: true };
+    const usuario = { id: s.usuario, empresaId: s.empresa, rol: 'despachador' as const, username: 'd', nombre: 'D', activo: true, editor: false };
     const p = await servicios.planificar(usuario, { camionId: s.camion, fecha: FECHA }); // 2026-10-05 es lunes: Almacén A está cerrado
     expect(p.ok && p.value.paradas.map((x) => x.cliente)).toEqual(['Bazar B']);
     expect(p.ok && p.value.noAtendidas.map((x) => x.cliente)).toEqual(['Almacén A']);
@@ -213,7 +213,7 @@ describe('jornada en Postgres', () => {
 
   it('de punta a punta: el chofer carga una factura y ve su ruta solo en el camión de su jornada', async () => {
     const s = await sembrar();
-    const chofer = { id: s.usuario, empresaId: s.empresa, rol: 'chofer' as const, username: 'c', nombre: 'C', activo: true };
+    const chofer = { id: s.usuario, empresaId: s.empresa, rol: 'chofer' as const, username: 'c', nombre: 'C', activo: true, editor: false };
     const reloj = { now: () => new Date('2026-10-05T12:00:00Z') };
     const resolverCamion = crearResolverCamion({ jornadas, clock: reloj });
     const registrar = crearRegistrarFactura({ facturas, clock: reloj, resolverCamion });

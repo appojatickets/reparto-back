@@ -16,9 +16,10 @@ import { crearAutenticarUsuario } from './application/use-cases/autenticar-usuar
 import { crearBuscarClientes } from './application/use-cases/buscar-clientes.js';
 import { crearCrearClienteNuevo } from './application/use-cases/crear-cliente-nuevo.js';
 import { crearCrearUsuario } from './application/use-cases/crear-usuario.js';
-import { crearCambiarEstadoUsuario, crearListarUsuarios, crearResetearPin } from './application/use-cases/gestionar-usuarios.js';
+import { crearCambiarEditorUsuario, crearCambiarEstadoUsuario, crearListarUsuarios, crearResetearPin } from './application/use-cases/gestionar-usuarios.js';
 import { crearImportarClientes } from './application/use-cases/importar-clientes.js';
 import { crearIniciarSesion } from './application/use-cases/iniciar-sesion.js';
+import { crearCambiarRazonSocial, crearEliminarLocal } from './application/use-cases/corregir-clientes.js';
 import { crearObtenerLocal } from './application/use-cases/obtener-local.js';
 import { crearImportarPines, crearListarPropuestasPin, crearResolverPropuestaPin } from './application/use-cases/pines.js';
 import { crearRefrescarSesion } from './application/use-cases/refrescar-sesion.js';
@@ -126,6 +127,7 @@ const casos: CasosDeUso = {
   listarUsuarios: crearListarUsuarios({ usuarios }),
   resetearPin: crearResetearPin({ identidad, usuarios, intentos }),
   cambiarEstadoUsuario: crearCambiarEstadoUsuario({ usuarios }),
+  cambiarEditorUsuario: crearCambiarEditorUsuario({ usuarios }),
   buscarClientes: crearBuscarClientes({ clientes }),
   crearClienteNuevo: crearCrearClienteNuevo({ clientes }),
   importarClientes: crearImportarClientes({ clientes }),
@@ -137,6 +139,8 @@ const casos: CasosDeUso = {
   solicitarUrlSubida: crearSolicitarUrlSubida({ clientes, almacen, ids: generadorDeIds }),
   registrarFotoLocal: crearRegistrarFotoLocal({ clientes, almacen, clock }),
   quitarFotoLocal: crearQuitarFotoLocal({ clientes, almacen }),
+  cambiarRazonSocial: crearCambiarRazonSocial({ clientes }),
+  eliminarLocal: crearEliminarLocal({ clientes, almacen }),
   reportarFoto: crearReportarFoto({ clientes, reportes: reportesFoto }),
   fotosParaRevision: crearFotosParaRevision({ reportes: reportesFoto }),
   verificarFoto: crearVerificarFoto({ clientes, clock }),

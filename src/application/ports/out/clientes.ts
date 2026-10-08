@@ -134,6 +134,13 @@ export interface ClienteRepository {
   /** Locales sin pin a los que todavía no se les buscó la dirección (o cuya última búsqueda fue antes de `intentadosAntesDe`). */
   /** Los locales de la empresa con los datos de su cliente, en orden de comuna y nombre (hasta `limite`). */
   exportarLocales(empresaId: string, filtro: FiltroExportacion, limite: number): Promise<readonly FilaExportacion[]>;
+  /** Cambia la razón social del cliente (corregir un error de tipeo). Devuelve false si no existe en esa empresa. */
+  renombrarCliente(empresaId: string, clienteId: string, razonSocial: string): Promise<boolean>;
+  /**
+   * Elimina la dirección equivocada con sus facturas pendientes, y el cliente si se queda sin direcciones. Si la dirección ya tiene entregas
+   * hechas no se toca nada (`CON_ENTREGAS`): el historial no se borra.
+   */
+  eliminarLocal(empresaId: string, localId: string): Promise<'ELIMINADO' | 'NO_ENCONTRADO' | 'CON_ENTREGAS'>;
   /** Deja el local sin foto (y sin verificación). Devuelve true si el local existe en esa empresa. */
   quitarFoto(empresaId: string, localId: string): Promise<boolean>;
   /**

@@ -40,7 +40,7 @@ export const crearCrearUsuario = ({ identidad, usuarios, dominioCorreo }: { iden
       }
     }
 
-    const usuario: Usuario = { id: cuenta.value.usuarioId, empresaId: actor.empresaId, rol: entrada.rol, username, nombre: `${nombre} ${paterno}`, activo: true };
+    const usuario: Usuario = { id: cuenta.value.usuarioId, empresaId: actor.empresaId, rol: entrada.rol, username, nombre: `${nombre} ${paterno}`, activo: true, editor: false };
     try {
       await usuarios.crear(usuario);
     } catch (e) {

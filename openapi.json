@@ -169,6 +169,9 @@
                         },
                         "activo": {
                           "type": "boolean"
+                        },
+                        "editor": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -176,7 +179,8 @@
                         "username",
                         "nombre",
                         "rol",
-                        "activo"
+                        "activo",
+                        "editor"
                       ],
                       "additionalProperties": false
                     }
@@ -676,6 +680,9 @@
                     "activo": {
                       "type": "boolean"
                     },
+                    "editor": {
+                      "type": "boolean"
+                    },
                     "empresaId": {
                       "type": "string"
                     }
@@ -686,6 +693,7 @@
                     "nombre",
                     "rol",
                     "activo",
+                    "editor",
                     "empresaId"
                   ],
                   "additionalProperties": false
@@ -932,6 +940,9 @@
                           },
                           "activo": {
                             "type": "boolean"
+                          },
+                          "editor": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -939,7 +950,8 @@
                           "username",
                           "nombre",
                           "rol",
-                          "activo"
+                          "activo",
+                          "editor"
                         ],
                         "additionalProperties": false
                       }
@@ -1231,6 +1243,9 @@
                     },
                     "activo": {
                       "type": "boolean"
+                    },
+                    "editor": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -1238,7 +1253,8 @@
                     "username",
                     "nombre",
                     "rol",
-                    "activo"
+                    "activo",
+                    "editor"
                   ],
                   "additionalProperties": false
                 }
@@ -1461,6 +1477,257 @@
                 },
                 "required": [
                   "pin"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    null
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/usuarios/{id}/editor": {
+      "put": {
+        "summary": "Dar o quitar el permiso de editor a un chofer o ayudante (corregir clientes, quitar fotos, eliminar direcciones equivocadas)",
+        "tags": [
+          "usuarios"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "editor": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "editor"
                 ]
               }
             }
@@ -3234,6 +3501,237 @@
           }
         }
       },
+      "delete": {
+        "summary": "Eliminar una dirección equivocada con sus facturas pendientes (y el cliente si se queda sin direcciones); con entregas hechas responde 409",
+        "tags": [
+          "clientes"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    null
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
       "patch": {
         "summary": "Nota, rumbo de Street View (solo la referencia) y pin del local",
         "tags": [
@@ -3260,6 +3758,258 @@
                     "type": "number"
                   }
                 }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    null
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/clientes/{id}": {
+      "patch": {
+        "summary": "Corregir la razón social del cliente (error de tipeo)",
+        "tags": [
+          "clientes"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "razonSocial": {
+                    "type": "string",
+                    "maxLength": 400
+                  }
+                },
+                "required": [
+                  "razonSocial"
+                ]
               }
             }
           }

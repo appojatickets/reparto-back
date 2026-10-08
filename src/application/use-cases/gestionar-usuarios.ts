@@ -26,6 +26,16 @@ export const crearResetearPin = ({ identidad, usuarios, intentos }: { identidad:
     return ok(undefined);
   };
 
+/** El admin da o quita el permiso de editor a un chofer o ayudante (los roles de oficina ya tienen esos permisos). */
+export const crearCambiarEditorUsuario = ({ usuarios }: { usuarios: UsuarioRepository }) =>
+  async (actor: Usuario, usuarioId: string, editor: boolean): Promise<Result<void, ErrorApp>> => {
+    const objetivo = await enEmpresa(usuarios, actor, usuarioId);
+    if (!objetivo) return err(errorApp('NO_ENCONTRADO', 'El usuario no existe.'));
+    if (objetivo.rol !== 'chofer' && objetivo.rol !== 'ayudante') return err(errorApp('VALIDACION', 'El permiso de editor es para choferes y ayudantes: el admin y el despachador ya pueden corregir.'));
+    await usuarios.cambiarEditor(actor.empresaId, usuarioId, editor);
+    return ok(undefined);
+  };
+
 export const crearCambiarEstadoUsuario = ({ usuarios }: { usuarios: UsuarioRepository }) =>
   async (actor: Usuario, usuarioId: string, activo: boolean): Promise<Result<void, ErrorApp>> => {
     if (usuarioId === actor.id && !activo) return err(errorApp('VALIDACION', 'No puedes desactivar tu propia cuenta.'));

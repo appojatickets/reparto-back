@@ -29,7 +29,7 @@ const sembrar = async () => {
     await entregas.registrar(empresa, { tipo, facturaId: f.value.id, localId: local, camionId: camion.value.id, usuarioId: usuario, lat: PIN.lat + dLat, lng: PIN.lng, precisionM });
     await db.updateTable('entrega_evento').set({ creado_en: new Date(`${dia}T15:00:00Z`) }).where('factura_id', '=', f.value.id).execute();
   };
-  const actor = { id: usuario, empresaId: empresa, rol: 'admin' as const, username: 'admin', nombre: 'Admin', activo: true };
+  const actor = { id: usuario, empresaId: empresa, rol: 'admin' as const, username: 'admin', nombre: 'Admin', activo: true, editor: false };
   return { empresa, local, entregar, actor };
 };
 

@@ -125,6 +125,36 @@ export const rutasClientes = ({ app, casos, guard }: ContextoRutas): void => {
   );
 
   a.patch(
+    '/v1/clientes/:id',
+    {
+      preHandler: guard('clientes:escribir'),
+      schema: { tags: ['clientes'], summary: 'Corregir la razón social del cliente (error de tipeo)', security: SEGURIDAD, params: idParam, body: z.object({ razonSocial: z.string().max(400) }), response: { 204: z.null(), ...RESPUESTAS_ERROR } },
+    },
+    async (req, reply) => {
+      const r = await casos.cambiarRazonSocial(actor(req), req.params.id, req.body.razonSocial);
+      return r.ok ? reply.code(204).send(null) : enviarError(reply, r.error);
+    },
+  );
+
+  a.delete(
+    '/v1/locales/:id',
+    {
+      preHandler: guard('locales:eliminar'),
+      schema: {
+        tags: ['clientes'],
+        summary: 'Eliminar una dirección equivocada con sus facturas pendientes (y el cliente si se queda sin direcciones); con entregas hechas responde 409',
+        security: SEGURIDAD,
+        params: idParam,
+        response: { 204: z.null(), ...RESPUESTAS_ERROR },
+      },
+    },
+    async (req, reply) => {
+      const r = await casos.eliminarLocal(actor(req), req.params.id);
+      return r.ok ? reply.code(204).send(null) : enviarError(reply, r.error);
+    },
+  );
+
+  a.patch(
     '/v1/locales/:id',
     {
       preHandler: guard('clientes:escribir'),

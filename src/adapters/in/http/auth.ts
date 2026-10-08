@@ -28,7 +28,7 @@ export const crearGuard = (casos: Pick<CasosDeUso, 'autenticar'>): Guard => (per
   if (!token) return void enviarError(reply, errorApp('NO_AUTENTICADO', 'Falta iniciar sesión.'));
   const r = await casos.autenticar(token);
   if (!r.ok) return void enviarError(reply, r.error);
-  if (permiso !== undefined && !puede(r.value.rol, permiso)) {
+  if (permiso !== undefined && !puede(r.value.rol, permiso, r.value.editor)) {
     return void enviarError(reply, errorApp('SIN_PERMISO', 'No tienes permiso para esta acción.'));
   }
   req.usuario = r.value;

@@ -58,3 +58,38 @@ describe('permisos por rol', () => {
     }
   });
 });
+
+describe('chofer o ayudante con permiso de editor', () => {
+  const comoEditor = (rol: Rol, permiso: Permiso) => puede(rol, permiso, true);
+
+  it('corrige clientes (nombre, nota, pin, quitar una foto) y elimina una dirección equivocada', () => {
+    for (const rol of ['chofer', 'ayudante'] as const) {
+      expect(comoEditor(rol, 'clientes:escribir')).toBe(true);
+      expect(comoEditor(rol, 'locales:eliminar')).toBe(true);
+    }
+  });
+
+  it('sin el permiso, ni el chofer ni el ayudante pueden eliminar direcciones ni corregir clientes', () => {
+    for (const rol of ['chofer', 'ayudante'] as const) {
+      expect(puede(rol, 'locales:eliminar')).toBe(false);
+      expect(puede(rol, 'clientes:escribir')).toBe(false);
+    }
+  });
+
+  it('no recibe nada más: ni usuarios, métricas, importaciones, revisión de fotos o pines, camiones ni configuración', () => {
+    const prohibidos: Permiso[] = ['usuarios:gestionar', 'metricas:leer', 'clientes:importar', 'fotos:revisar', 'pines:revisar', 'camiones:gestionar', 'empresa:configurar', 'datos:exportar'];
+    for (const p of prohibidos) expect(comoEditor('chofer', p)).toBe(false);
+  });
+
+  it('el despachador y el admin pueden eliminar direcciones; el de camión sin el permiso, no', () => {
+    expect(roles.filter((r) => puede(r, 'locales:eliminar'))).toEqual(['admin', 'despachador']);
+  });
+
+  it('el permiso de editor no le quita ni le agrega nada a los roles de oficina', () => {
+    for (const p of TODOS_LOS_PERMISOS) {
+      expect(puede('despachador', p, true)).toBe(puede('despachador', p));
+      expect(puede('admin', p, true)).toBe(puede('admin', p));
+    }
+  });
+});
+
