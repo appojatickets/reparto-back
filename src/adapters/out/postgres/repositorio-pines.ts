@@ -75,7 +75,7 @@ export class PostgresPropuestaPinRepository implements PropuestaPinRepository {
       if (aceptar && p.local_id !== null) {
         await trx
           .updateTable('local')
-          .set({ lat: p.lat, lng: p.lng, pin_estado: 'validado', pin_fuente: 'importado' })
+          .set({ lat: p.lat, lng: p.lng, pin_estado: 'validado', pin_fuente: 'importado', pin_verificado_por: resolutorId, pin_verificado_en: ahora })
           .where('id', '=', p.local_id)
           .where('empresa_id', '=', empresaId)
           .execute();

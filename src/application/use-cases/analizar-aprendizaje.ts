@@ -1,5 +1,5 @@
 import {
-  atenciones, calidadDeJornada, capacidadAprendida, cierresFrecuentes, pinesSugeridos, ritmoAprendido, servicioAprendido, tramosDeViaje, type LocalObs, type ParametroAprendido,
+  atenciones, calidadDeJornada, capacidadAprendida, cierresFrecuentes, completarConVisitas, pinesDudosos, pinesSugeridos, resumenesDelDia, ritmoAprendido, seguimientoDeLaRuta, servicioAprendido, tramosDeViaje, visitasDeducidas, type LocalObs, type ParametroAprendido,
 } from '../../domain/aprendizaje/analisis.js';
 import { distanciaMetros } from '../../domain/importacion/propuesta-pin.js';
 import type { AprendizajeRepository, ResumenAnalisis } from '../ports/out/aprendizaje.js';
@@ -22,16 +22,18 @@ export const crearAnalizarAprendizaje = ({ aprendizaje, empresas, pines, clock }
     const datos = await aprendizaje.datosParaAnalizar(empresaId, new Date(iniciadoEn.getTime() - VENTANA_ANALISIS_DIAS * 86_400_000));
     const locales = new Map<string, LocalObs>(datos.locales.map((l) => [l.id, l]));
 
+    // Casi nadie avisa LLEGUÉ y ENTREGADO se toca al llegar: la atención y el viaje se miden con el recorrido del camión.
+    const visitas = completarConVisitas(datos.eventos, visitasDeducidas(datos.eventos, locales, datos.posiciones));
     const parametros: ParametroAprendido[] = [
-      ...servicioAprendido(atenciones(datos.eventos)),
-      ...ritmoAprendido(tramosDeViaje(datos.eventos, locales)),
-      ...capacidadAprendida(datos.resumenes),
+      ...servicioAprendido(atenciones(visitas.eventos, visitas.salidas)),
+      ...ritmoAprendido(tramosDeViaje(visitas.eventos, locales, visitas.salidas)),
+      ...capacidadAprendida(resumenesDelDia(datos.eventos)),
     ];
     await aprendizaje.guardarParametros(empresaId, parametros, iniciadoEn);
 
     const config = await empresas.obtenerConfig(empresaId);
     const deposito = config?.deposito;
-    const calidad = deposito ? datos.jornadas.flatMap((j) => { const q = calidadDeJornada(j, datos.eventos, datos.operaciones, locales, deposito); return q ? [q] : []; }) : [];
+    const calidad = deposito ? datos.jornadas.flatMap((j) => { const q = calidadDeJornada(j, visitas.eventos, datos.operaciones, locales, deposito); return q ? [q] : []; }) : [];
     if (calidad.length > 0) await aprendizaje.guardarCalidad(empresaId, calidad, iniciadoEn);
 
     // Pines que las visitas contradicen: solo se proponen (una persona decide) y sin repetir lo que ya está pendiente.
@@ -51,7 +53,8 @@ export const crearAnalizarAprendizaje = ({ aprendizaje, empresas, pines, clock }
 
     const resumen: ResumenAnalisis = {
       eventos: datos.eventos.length, jornadas: datos.jornadas.length, parametros: parametros.length, jornadasComparadas: calidad.length,
-      pinesSugeridos: sugeridos.length, pinesProponidos, cierresFrecuentes: cierresFrecuentes(datos.eventos).slice(0, 20),
+      pinesSugeridos: sugeridos.length, pinesProponidos, seguimientoRuta: seguimientoDeLaRuta(datos.eventos, datos.operaciones), llegadasDeducidas: visitas.llegadasDeducidas,
+      pinesDudosos: pinesDudosos(datos.eventos, locales).slice(0, 20), cierresFrecuentes: cierresFrecuentes(datos.eventos).slice(0, 20),
     };
     await aprendizaje.registrarEjecucion(empresaId, { iniciadoEn, terminadoEn: clock.now(), resumen });
     return resumen;

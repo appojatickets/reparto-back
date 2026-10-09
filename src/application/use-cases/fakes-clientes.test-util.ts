@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import { err, ok } from '../../domain/shared/result.js';
 import type { AlmacenArchivos } from '../ports/out/archivos.js';
-import type { ClienteRepository, CoincidenciaLocal, LocalDetalle, ResumenImportacion } from '../ports/out/clientes.js';
+import type { ClienteRepository, LocalDetalle, ResumenImportacion } from '../ports/out/clientes.js';
 import type { FotoReporteRepository } from '../ports/out/fotos.js';
 import type { IdGenerator } from '../ports/out/id-generator.js';
 import type { PropuestaPinRepository } from '../ports/out/pines.js';
@@ -17,13 +17,23 @@ export const fakeClientes = (locales: LocalDetalle[] = []) => {
     obtenerLocal: vi.fn<ClienteRepository['obtenerLocal']>((empresaId, id) => Promise.resolve(empresaId === 'empresa-1' ? locales.find((l) => l.id === id) : undefined)),
     actualizarLocal: vi.fn<ClienteRepository['actualizarLocal']>((empresaId, id) => Promise.resolve(empresaId === 'empresa-1' && locales.some((l) => l.id === id))),
     fijarPinSiFalta: vi.fn<ClienteRepository['fijarPinSiFalta']>(() => Promise.resolve(true)),
+    ajustarPinPorEntrega: vi.fn<ClienteRepository['ajustarPinPorEntrega']>(() => Promise.resolve(true)),
+    verificarPin: vi.fn<ClienteRepository['verificarPin']>((empresaId, id) => Promise.resolve(empresaId === 'empresa-1' && locales.some((l) => l.id === id) ? 'OK' : 'NO_ENCONTRADO')),
+    listarPinesParaRevisar: vi.fn<ClienteRepository['listarPinesParaRevisar']>(() => Promise.resolve([])),
+    verificarPinPorEntregas: vi.fn<ClienteRepository['verificarPinPorEntregas']>(() => Promise.resolve(true)),
+    contarPines: vi.fn<ClienteRepository['contarPines']>(() => Promise.resolve({ verificados: 0, porVerificar: 0, sinPin: 0 })),
     exportarLocales: vi.fn<ClienteRepository['exportarLocales']>(() => Promise.resolve([])),
     quitarFoto: vi.fn<ClienteRepository['quitarFoto']>(() => Promise.resolve(true)),
+    corregirCliente: vi.fn<ClienteRepository['corregirCliente']>(() => Promise.resolve('OK')),
+    corregirDireccion: vi.fn<ClienteRepository['corregirDireccion']>(() => Promise.resolve('OK')),
+    listarLocales: vi.fn<ClienteRepository['listarLocales']>(() => Promise.resolve({ total: 0, locales: [] })),
+    resumenPorComuna: vi.fn<ClienteRepository['resumenPorComuna']>(() => Promise.resolve([])),
+    eliminarLocal: vi.fn<ClienteRepository['eliminarLocal']>((empresaId, id) => Promise.resolve(empresaId === 'empresa-1' && locales.some((l) => l.id === id) ? 'ELIMINADO' : 'NO_ENCONTRADO')),
+    marcarFotoVerificada: vi.fn<ClienteRepository['marcarFotoVerificada']>((empresaId, id, fotoPath) => Promise.resolve(empresaId === 'empresa-1' && locales.some((l) => l.id === id && l.fotoPath === fotoPath))),
     localesSinPin: vi.fn<ClienteRepository['localesSinPin']>(() => Promise.resolve([])),
     contarLocalesSinPin: vi.fn<ClienteRepository['contarLocalesSinPin']>(() => Promise.resolve(0)),
     marcarIntentoGeocodificacion: vi.fn<ClienteRepository['marcarIntentoGeocodificacion']>(() => Promise.resolve()),
     fijarPinGeocodificado: vi.fn<ClienteRepository['fijarPinGeocodificado']>(() => Promise.resolve(true)),
-    coincidenciaDeDireccion: vi.fn<ClienteRepository['coincidenciaDeDireccion']>((): Promise<CoincidenciaLocal | undefined> => Promise.resolve(undefined)),
   } satisfies ClienteRepository;
   return repo;
 };
@@ -35,6 +45,7 @@ export const localDe = (extra: Partial<LocalDetalle> = {}): LocalDetalle => ({
   direccion: 'Av. Providencia 1234',
   comuna: 'Providencia',
   pinEstado: 'pendiente',
+  pinVerificado: false,
   ...extra,
 });
 
@@ -69,7 +80,8 @@ export const fakeReportesFoto = () =>
   ({
     crear: vi.fn<FotoReporteRepository['crear']>(() => Promise.resolve()),
     abiertos: vi.fn<FotoReporteRepository['abiertos']>(() => Promise.resolve([])),
-    recientes: vi.fn<FotoReporteRepository['recientes']>(() => Promise.resolve([])),
+    porVerificar: vi.fn<FotoReporteRepository['porVerificar']>(() => Promise.resolve([])),
+    verificadas: vi.fn<FotoReporteRepository['verificadas']>(() => Promise.resolve([])),
     obtener: vi.fn<FotoReporteRepository['obtener']>(() => Promise.resolve({ id: 'r-1', localId: 'l-1', fotoPath: 'empresa-1/l-1/x.webp', abierto: true })),
     resolver: vi.fn<FotoReporteRepository['resolver']>(() => Promise.resolve()),
     resolverDeFoto: vi.fn<FotoReporteRepository['resolverDeFoto']>(() => Promise.resolve()),

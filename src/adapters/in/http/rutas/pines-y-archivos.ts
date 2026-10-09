@@ -22,34 +22,6 @@ const propuesta = z.object({
 export const rutasPinesYArchivos = ({ app, casos, guard }: ContextoRutas): void => {
   const a = tipada(app);
 
-  a.post(
-    '/v1/pines/importaciones',
-    {
-      preHandler: guard('pines:proponer'),
-      schema: {
-        tags: ['pines'],
-        summary: 'Proponer pines (quedan pendientes de revisión; nada cambia solo)',
-        security: SEGURIDAD,
-        body: z.object({
-          pines: z.array(z.object({ rut: z.string().max(20).optional(), direccion: z.string().max(600).optional(), lat: z.union([z.number(), z.string().max(40)]).optional(), lng: z.union([z.number(), z.string().max(40)]).optional() })).min(1).max(500),
-        }),
-        response: {
-          200: z.object({
-            recibidas: z.number(),
-            pendientes: z.number(),
-            sinLocal: z.number(),
-            errores: z.array(z.object({ fila: z.number(), errores: z.array(z.object({ codigo: z.string(), mensaje: z.string() })) })),
-          }),
-          ...RESPUESTAS_ERROR,
-        },
-      },
-    },
-    async (req, reply) => {
-      const r = await casos.importarPines(actor(req), req.body.pines);
-      return r.ok ? reply.send({ ...r.value, errores: r.value.errores.map((e) => ({ fila: e.fila, errores: e.errores.map((x) => ({ codigo: x.codigo, mensaje: x.mensaje })) })) }) : enviarError(reply, r.error);
-    },
-  );
-
   a.get(
     '/v1/pines/propuestas',
     {
@@ -138,6 +110,62 @@ export const rutasPinesYArchivos = ({ app, casos, guard }: ContextoRutas): void 
     async (req, reply) => {
       const r = await casos.fijarPinDesdeEnlace(actor(req), req.params.id, req.body.enlace);
       return r.ok ? reply.send(r.value) : enviarError(reply, r.error);
+    },
+  );
+
+  const respaldoPin = z.object({ nivel: z.enum(['verificado', 'respaldado', 'en_conflicto', 'sin_respaldo']), entregas: z.number(), dias: z.number(), distanciaM: z.number().optional() });
+
+  a.get(
+    '/v1/pines/revision',
+    {
+      preHandler: guard('pines:verificar'),
+      schema: {
+        tags: ['pines'],
+        summary: 'Pines para revisar: «por verificar» (con cuánto los respaldan las entregas; lo más seguro primero) o «verificados» (los más recientes primero). Hasta 100.',
+        security: SEGURIDAD,
+        querystring: z.object({ estado: z.enum(['por_verificar', 'verificados']).default('por_verificar') }),
+        response: {
+          200: z.object({
+            total: z.number(),
+            pines: z.array(z.object({
+              id: z.string(),
+              razonSocial: z.string(),
+              direccion: z.string(),
+              comuna: z.string(),
+              lat: z.number(),
+              lng: z.number(),
+              pinFuente: z.string().optional(),
+              pinVerificacion: z.enum(['persona', 'entregas']).optional(),
+              verificadoEn: z.iso.datetime().optional(),
+              respaldo: respaldoPin,
+            })),
+          }),
+          ...RESPUESTAS_ERROR,
+        },
+      },
+    },
+    async (req, reply) => {
+      const r = await casos.revisarPines(actor(req), req.query.estado);
+      return r.ok ? reply.send({ total: r.value.total, pines: r.value.pines.map(({ verificadoEn, ...p }) => ({ ...p, ...(verificadoEn ? { verificadoEn: verificadoEn.toISOString() } : {}) })) }) : enviarError(reply, r.error);
+    },
+  );
+
+  a.put(
+    '/v1/locales/:id/pin/verificacion',
+    {
+      preHandler: guard('pines:verificar'),
+      schema: {
+        tags: ['pines'],
+        summary: 'Verificar el pin de un local (admin, despachador o chofer editor): un pin verificado ya no se mueve solo con las entregas; con verificado=false vuelve a «por verificar» y se sigue ajustando',
+        security: SEGURIDAD,
+        params: idParam,
+        body: z.object({ verificado: z.boolean() }),
+        response: { 204: z.null(), ...RESPUESTAS_ERROR },
+      },
+    },
+    async (req, reply) => {
+      const r = await casos.verificarPin(actor(req), req.params.id, req.body.verificado);
+      return r.ok ? reply.code(204).send(null) : enviarError(reply, r.error);
     },
   );
 

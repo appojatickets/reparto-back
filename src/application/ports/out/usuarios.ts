@@ -9,6 +9,8 @@ export interface UsuarioRepository {
   crear(usuario: Usuario): Promise<void>;
   /** Devuelve false si el usuario no existe en esa empresa. */
   cambiarActivo(empresaId: string, id: string, activo: boolean): Promise<boolean>;
+  /** Da o quita el permiso de editor. Devuelve false si el usuario no existe en esa empresa. */
+  cambiarEditor(empresaId: string, id: string, editor: boolean): Promise<boolean>;
 }
 
 export type EstadoIntentos = { readonly intentos: number; readonly bloqueadoHasta?: Date };

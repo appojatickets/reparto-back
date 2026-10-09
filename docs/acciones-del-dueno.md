@@ -3,7 +3,22 @@
 Lista viva de lo que el agente **no puede** hacer (paneles, claves, decisiones de negocio, pruebas con personas).
 Marca cada casilla al terminar. Nunca pegues claves secretas en el chat: cárgalas directo en el panel.
 
-Última actualización: 2026-10-04 (Fase 4a: el chofer elige camión, carga facturas y ve su ruta).
+Última actualización: 2026-10-07 (aprendizaje en segundo plano, pines por verificar/verificados, ruta que prefiere lo cercano).
+
+---
+
+## ⭐ Lo que sigue: tus tareas, en orden
+
+Lo más importante primero. Marca cada casilla al terminar; el detalle de cada una está más abajo (A19).
+
+1. [ ] **Cargar los horarios de atención** (hoy hay 0): Importar clientes → **REVISAR LAS NOTAS CON HORARIOS** → **APLICAR**. Es lo más barato y hace que la ruta respete a quién le sirve cada hora.
+2. [ ] **Buscar los pines que faltan:** 588 de 766 locales no tienen pin. Importar clientes → **BUSCAR LOS PINES POR DIRECCIÓN** y deja la pantalla abierta ~15 minutos. Es lo que más mejora la ruta: con los pines la siguiente parada coincide con la del chofer el 72 % de las veces; sin ellos, mucho menos. El buscador gratis encuentra ~1 de cada 3 direcciones; las demás se fijan solas con la primera entrega.
+3. [ ] **Contarme 3 paradas que moviste a mano y por qué** (cierra pronto, sentido de la calle, queda de paso, pedido del cliente…). Con eso afino cómo ordena la ruta.
+4. [ ] **Decidir las distancias por calles** (hoy la ruta mide en línea recta): ver A19-6. Recomendado: OpenRouteService, gratis.
+5. [ ] **Pegar el enlace que no funcionó** (`maps.app.goo.gl/tQsDTWhhRh9eyaTC8`) en un local con **PEGAR UBICACIÓN** y contarme el mensaje que sale.
+6. [ ] **Verificar pines** que ya sepas que están bien (ficha del local → **VERIFICAR PIN**): quedan fijos y las entregas dejan de moverlos.
+7. [ ] **Pedir a los choferes** que trabajen con la app abierta y la pantalla encendida: el recorrido y la llegada automática solo funcionan así.
+8. [ ] **Pedir a los choferes que carguen las facturas en el orden en que piensan entregarlas** (ya casi lo hacen: el orden de carga y el de entrega se parecen un 80–90 %). Desde el 7-oct la ruta usa ese orden como pista, sobre todo para ubicar las paradas que no tienen pin (ADR 0028 del back).
 
 ---
 
@@ -124,7 +139,78 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] **Fotos:** como chofer, abre una parada con foto y toca **REPORTAR ESTA FOTO** (elige un motivo). Como admin, menú **REVISAR FOTOS**: debe aparecer el reporte con quién reportó y quién subió; prueba **LA FOTO ESTÁ BIEN** y **ELIMINAR LA FOTO**.
 - [ ] La foto de Av. Providencia 2500 que ya subiste no tiene quién/cuándo (es anterior a este cambio); aparece al final de «Subidas hace poco».
 
-### A18. Probar la planilla del día (ADR 0023)
+### A18. Fotos verificadas: por verificar y verificadas (ADR 0023 del back, ADR 0014 del front)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. La migración ya está aplicada en Supabase.
+- [ ] Menú del admin → **REVISAR FOTOS**: debe haber **Reportadas**, **Por verificar (N)** y **Verificadas (0)**. Todas las fotos que ya estaban subidas aparecen en «Por verificar».
+- [ ] Toca **✓ VERIFICADA** en una foto: sale de «Por verificar» y «Verificadas» sube a 1. Toca **VER LAS VERIFICADAS**: está ahí con tu nombre y la hora. Toca **VOLVER A POR VERIFICAR**: regresa a la primera lista.
+- [ ] Prueba **ELIMINAR LA FOTO** en una de «Por verificar» (pide confirmar).
+- [ ] Como chofer, sube una foto nueva (o cambia la de un local ya verificado): debe aparecer en «Por verificar», no en «Verificadas».
+
+### A19. Aprendizaje, pines por verificar y ruta que sigue lo que haces (ADR 0022, 0024 y 0025 del back; 0013 y 0015 del front)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces (la etiqueta de versión está al pie de IMPORTAR CLIENTES).
+- [ ] **Permisos:** al abrir la app debe pedir **ubicación** y **micrófono**. Acepta los dos. Si rechazaste alguno, aparece un aviso con cómo activarlo (candado junto a la dirección → Permitir).
+- [ ] **Pin que sale de la entrega:** como chofer, marca **ENTREGADO** estando en la puerta del cliente. En la ficha del local el pin debe quedar **POR VERIFICAR** y moverse a donde estás. Después de varias entregas queda donde coinciden.
+- [ ] **Verificar un pin:** ficha del local → **VERIFICAR PIN** (admin o despachador). Pasa a **PIN VERIFICADO ✓** y las entregas ya no lo mueven. **QUITAR VERIFICACIÓN** lo vuelve a ajustar.
+- [ ] **Decidir:** los 33 pines exactos que pegaste desde enlaces de Google Maps también se ajustan con el camión hasta que los verifiques. ¿Los verifico todos de una vez con un botón? (dime sí o no).
+- [ ] **ANALÍTICA** (menú del admin): mira cuántos avisos con ubicación hay, cuántas llegadas dedujo del recorrido, los pines verificados / por verificar / sin pin y «La siguiente parada fue la que mostraba la ruta». **ANALIZAR AHORA** lo recalcula.
+- [ ] **Ruta que prefiere lo cercano:** calcula una ruta con varias paradas y comprueba si ahora la siguiente parada coincide más con lo que tú harías. Si todavía mueves paradas, anota cuáles y por qué (es la tarea 3 de arriba).
+- [x] **Mover paradas:** resuelto: ahora se arrastra con el dedo (ver A20).
+
+### A19-6. Distancias por calles (decisión tuya)
+La ruta hoy mide en línea recta × 1,35. Es óptima en esa medida, pero no ve sentidos de calle, líneas de tren ni la Panamericana.
+- [ ] **Opción recomendada, gratis: OpenRouteService** (datos de OpenStreetMap). Crea la cuenta en `account.heigit.org`, genera una clave API y cárgala en Render → `reparto-back` → **Environment** como `ORS_API_KEY` (nunca la pegues en el chat). Plan gratis: 500 consultas de matriz al día. **Si te pide tarjeta, detente y avísame.** Ya está implementado (ADR 0026): cuando la cargues, la ruta usa calles sola (no hay que hacer nada más); con caché y vuelve a línea recta si algo falla.
+- [ ] Cuando la hayas cargado, avísame «listo» (sin la clave): compruebo en los registros que ya consulta (la tabla de caché ya está creada en tu base).
+- [x] **Google Maps: descartado por ti (2026-10-07).** Habría costado con tarjeta (≈ US$95 al mes con 3 camiones de 20 paradas, más con rutas largas) y no permite guardar los tiempos. No se usa.
+- [ ] **Alternativa propia (más adelante):** servidor de rutas propio con datos de OpenStreetMap. Necesita un plan de Render más grande que el Starter (costo extra): no lo haré sin tu autorización.
+
+### A20. Mover paradas arrastrándolas (ADR 0027 del back, ADR 0016 del front)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. La migración ya está aplicada en Supabase.
+- [ ] En **RUTAS** o **MI RUTA**, cada parada trae un botón **↕ MOVER** (ya no hay SUBIR ni BAJAR). **Mantén el dedo apoyado en MOVER y arrastra hacia arriba o abajo**: la parada sigue tu dedo y las otras se corren para abrirle el hueco. **Suelta**: la parada queda en ese lugar.
+- [ ] **Lista larga:** arrastra una parada hasta el borde de arriba o de abajo de la pantalla y quédate ahí: la lista debe **desplazarse sola**. Suelta cuando llegues al lugar que quieres.
+- [ ] Apoyar MOVER y soltar sin mover no cambia nada. La parada queda en su lugar al instante y, al confirmar, lo que está **debajo** se ordena solo (ADR 0029); lo de arriba queda como lo dejaste.
+- [ ] Sin señal: arrastra una parada con el celular en modo avión. Debe **volver a su sitio** y avisar que no se pudo.
+- [ ] Anota si se te cruza con el scroll normal de la página (por ejemplo, si al querer desplazar la lista tocas MOVER sin querer): lo ajusto.
+
+### A21. Chofer editor, corregir y eliminar direcciones, CERRADO en la fila (ADR 0031 del back, ADR 0018 del front)
+Probado por el dueño el 2026-10-08: funciona.
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. La migración ya está aplicada en Supabase.
+- [x] **ADMIN → USUARIOS:** en un chofer o ayudante aparece **DAR PERMISO DE EDITOR**. Tócalo: queda con la insignia **EDITOR** y el botón cambia a **QUITAR PERMISO DE EDITOR**. En admin y despachador no aparece.
+- [x] Entra como ese chofer (cierra sesión y vuelve a entrar para que lo tome). En **INICIO** aparece **BUSCAR CLIENTE**; en cada parada, **CORREGIR ESTA DIRECCIÓN**.
+- [x] En la ficha del local: **QUITAR FOTO** (borra la foto sin reemplazarla), **Razón social (corrige un error de tipeo)** + **GUARDAR NOMBRE**, y **ELIMINAR ESTA DIRECCIÓN** (pide confirmar con SÍ, ELIMINAR / NO, DEJARLA).
+- [x] Una dirección que **ya tuvo entregas** no se deja eliminar y lo explica (para no perder el historial). Prueba con una creada por error, sin entregas: debe borrarse y volver a la búsqueda.
+- [x] Un chofer **sin** el permiso no ve nada de lo anterior.
+- [x] **ADMIN → REVISAR FOTOS:** las fotos reportadas aparecen en «Reportadas» aunque la foto ya se haya reemplazado (con el aviso «foto reemplazada»).
+- [x] **Dirección nueva del chofer (CARGAR → NO ESTÁ):** el campo ahora dice **Razón social** (antes «Nombre del local (opcional)») y eso es lo que se guarda como razón social.
+- [x] **Fila de cada parada:** ahora trae **MOVER · ENTREGADO · CERRADO · IR**. Toca **CERRADO**: se anota y se despliega la lista habitual (**AVISAR AL VENDEDOR POR WHATSAPP**, **ESPERAR 10 MIN**, **VOLVER MÁS TARDE**); **MÁS OPCIONES** suma ESPERAR 15/20 MIN y **DEJAR PARA OTRO DÍA**. Tocar CERRADO otra vez cierra la lista.
+
+### A22. Direcciones que no se encuentran y paradas sin ubicación precisa (ADR 0034 del back, ADR 0021 del front)
+Probado por el dueño el 2026-10-08: funciona.
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. No hay migración. Para el segundo buscador hace falta `ORS_API_KEY` (la misma de las rutas por calles, ver A19-6).
+- [x] **Segundo buscador:** carga una factura con una dirección que antes no se encontraba. Si el primer buscador no la halla, el segundo la prueba solo. Mira unos minutos después en la ficha del local si quedó con pin (**PIN POR VERIFICAR**).
+- [x] **En la ruta (RUTAS o MI RUTA):** las paradas sin ubicación precisa salen en **naranja** con la insignia **SIN UBICACIÓN PRECISA**, y arriba aparece el aviso «N paradas sin ubicación precisa: la ruta las ubica por estimación».
+- [x] Abre una de esas paradas: dice **«No se encontró esta dirección en el mapa y no tiene pin»** (o «Todavía no tiene pin: se está buscando» si aún no se busca) y recomienda pegar la ubicación del vendedor (botón **UBICACIÓN DEL VENDEDOR**) o fijar el pin.
+- [x] Marca **ENTREGADO** en la puerta de una parada sin pin: la ruta avisa **«La ubicación de … quedó guardada con tu GPS»**, la insignia naranja desaparece en la siguiente visita y lo que queda se reordena.
+
+### A23. Locales por comuna: ver, buscar, editar y compartir (ADR 0035 del back, ADR 0022 del front)
+Probado por el dueño el 2026-10-08: funciona.
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. No hay migración.
+- [x] **Menú → LOCALES POR COMUNA** (admin, despachador y chofer editor). Elige una comuna: el selector dice cuántos locales tiene y cuántos sin pin.
+- [x] Los locales salen separados en **POR VERIFICAR (n)** —incluye los sin pin— y **VERIFICADOS (n)**. Cada uno muestra razón social, RUT, dirección, insignia del pin, cuántas entregas tiene («N entregas hechas») y la nota.
+- [x] **Buscador:** escribe un nombre, RUT o parte de la dirección; busca en todas las comunas (o solo en la elegida).
+- [x] **EDITAR:** razón social, RUT, giro, dirección, comuna, nota y la ubicación del pin (pega el enlace de Google Maps o las coordenadas). Solo se guarda lo que cambiaste. **ELIMINAR ESTA DIRECCIÓN** pide confirmar; con entregas hechas no se deja.
+- [x] **VERIFICAR PIN**, **VER EN EL MAPA** y **VER FOTO** funcionan desde cada local.
+- [x] **COMPARTIR:** en el celular abre el menú de compartir con nombre, RUT, dirección y el enlace al pin (con la foto si el teléfono lo permite); si no, ofrece **ENVIAR POR WHATSAPP** y **COPIAR EL TEXTO**.
+- [x] **Se quitó «Proponer pines»** (la planilla). El menú ahora dice **PROPUESTAS DE PIN** y solo muestra lo que propone el sistema. Dime si también quieres sacar eso.
+
+### A24. Última parada fija: volver a la empresa (ADR 0022 del front)
+Probado por el dueño el 2026-10-08: funciona.
+Esperar ~2 min a que Vercel termine de desplegar y abrir la app dos veces. Solo cambia el front.
+- [x] **CONFIGURACIÓN → Nombre del depósito:** escribe cómo quieres que se llame (por ejemplo «Ibiza»). Si no hay nombre, dice «LA EMPRESA». El depósito (dirección en el mapa) tiene que estar configurado.
+- [x] En **MI RUTA** y **RUTAS**, al final de la lista de paradas aparece una fila fija con doble borde: **VOLVER A IBIZA**, con la hora estimada de regreso y los botones **IR** y **WAZE**. No tiene MOVER: no se puede mover ni entregar.
+- [x] Al hacer la **última entrega** esa fila se destaca: **«Terminaste las entregas · VUELVE A IBIZA»**.
+
+### A25. Probar la planilla del día (ADR 0036 del back)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. La migración ya está aplicada en Supabase.
 - [ ] Entra como admin o despachador a **PLANILLA DEL DÍA** y pega la tabla de la mañana (con los encabezados Chofer, Ayudante, Camión, Vendedor y, si la tienes, Comuna). Revisa la vista previa y confirma.
 - [ ] Mira el resultado fila por fila: camiones creados (con su nombre de dos dígitos), vendedores creados, y quién quedó **sin usuario** (hay que crearlo en USUARIOS y volver a pegar).
 - [ ] Entra como chofer (o ayudante) de esa planilla: debe abrir la app **ya con su camión del día** y ver sus vendedores y comunas.
@@ -145,7 +231,7 @@ Con esto el servidor deja de dormirse (ver `docs/adr/0006-render-starter-pagado.
 
 ### B4. Aviso de privacidad (Ley 21.719)
 La ley rige desde el 1-dic-2026 (hay un proyecto para aplazarla, aún en trámite).
-- [ ] Revisar con quien corresponda el texto del aviso a choferes y clientes: qué se registra (hora de cada entrega, posición puntual), para qué, quién lo ve y por cuánto tiempo (12 meses).
+- [ ] Revisar con quien corresponda el texto del aviso a choferes y clientes: qué se registra (hora de cada entrega, posición al avisar, **posición del camión cada minuto mientras la app está abierta**, llegadas detectadas solas, lo que mueven en la ruta), para qué (mejorar las rutas; se sigue al camión, no al chofer), quién lo ve y por cuánto tiempo (12 meses).
 - [ ] Informar a los choferes antes de usar la app.
 
 ### B5. Spikes que requieren personas o dispositivos
@@ -160,6 +246,7 @@ La ley rige desde el 1-dic-2026 (hay un proyecto para aplazarla, aún en trámit
 - [ ] **Prioridad:** ¿qué significa exactamente «prioridad» en una factura? (hoy solo adelanta la llegada con un peso pequeño y sube el costo de no atenderla).
 - [ ] **Frío (O-02):** ¿hay un tiempo máximo fuera del freezer? Está desactivado hasta que lo definas.
 - [ ] **Pines:** ¿quién revisa los pines que proponen los choferes? (hoy: admin y despachador).
+- [ ] **Pines verificados:** ¿quién verifica pines y con qué criterio? (hoy: admin y despachador, desde la ficha del local).
 - [ ] **Roles:** ¿hace falta el rol despachador en la práctica o lo hace el administrador?
 - [ ] **O-05/O-07:** ¿puedes exportar los clientes del sistema de facturación (aunque sea una planilla) para sembrar la base?
 - [ ] **O-08:** línea base actual: km, horas de ruta, hora de regreso y rechazos por local cerrado, en un día normal por camión.

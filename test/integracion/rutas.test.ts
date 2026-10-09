@@ -58,6 +58,12 @@ describe('rutas en Postgres', () => {
     expect(r[0]?.horarios).toEqual([{ dias: [1, 2], tramos: [{ apertura: 570, cierre: 1080 }], fuente: 'confirmado', confianza: 0.5 }]);
     expect(r[1]).not.toHaveProperty('lat');
     expect(await rutas.facturasPendientes(s.empresa, s.camion, '2026-10-06')).toEqual([]);
+    // Sin pin y todavía sin buscar: no se dice que «no se encontró»; después de buscar sin éxito, sí.
+    expect(r.find((x) => x.folio === '2')?.busquedaSinResultado).toBeUndefined();
+    await clientes.marcarIntentoGeocodificacion(s.empresa, s.local('Sin Pin D'), new Date());
+    const despues = await rutas.facturasPendientes(s.empresa, s.camion, FECHA);
+    expect(despues.find((x) => x.folio === '2')).toMatchObject({ busquedaSinResultado: true });
+    expect(despues.find((x) => x.folio === '1')?.busquedaSinResultado).toBeUndefined();
   });
 
   it('no incluye anuladas ni facturas de otra empresa', async () => {
@@ -100,22 +106,32 @@ describe('rutas en Postgres', () => {
     await factura(s, '4', 'Sin Pin D');
     const reloj = { now: () => new Date('2026-10-05T12:00:00Z') };
     const servicios = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas: new PostgresEntregaRepository(db), jornadas: new PostgresJornadaRepository(db), registro: new PostgresRegistroAprendizajeRepository(db), clock: reloj, resolverCamion: pasarCamion });
-    const usuario = { id: s.usuario, empresaId: s.empresa, rol: 'despachador' as const, username: 'd', nombre: 'D', activo: true };
+    const usuario = { id: s.usuario, empresaId: s.empresa, rol: 'despachador' as const, username: 'd', nombre: 'D', activo: true, editor: false };
 
     const p = await servicios.planificar(usuario, { camionId: s.camion, fecha: FECHA });
-    // Sin pin la ruta igual se calcula: «Sin Pin D» entra con la comuna como ubicación aproximada (ADR 0019).
+    // Sin pin la ruta igual se calcula (ADR 0019): «Sin Pin D» entra ubicada en el centro de su comuna y marcada como aproximada.
     expect(p.ok && p.value.paradas).toHaveLength(4);
-    expect(p.ok && p.value.sinPin).toEqual([]);
     expect(p.ok && p.value.paradas.filter((x) => x.ubicacionAproximada).map((x) => x.folio)).toEqual(['4']);
+    expect(p.ok && p.value.sinPin).toEqual([]);
     const orden = p.ok ? p.value.paradas.map((x) => x.facturaId) : [];
 
     const m = await servicios.operar(usuario, { camionId: s.camion, fecha: FECHA, version: 1, operacion: { tipo: 'subir', facturaId: orden[2] ?? '' } });
     expect(m.ok && m.value).toMatchObject({ modo: 'manual', version: 2 });
 
+    // Lo que quedó arriba de la parada subida se fija tal cual; lo de abajo se ordena solo (ADR 0029).
     const v = await servicios.ver(usuario, { camionId: s.camion, fecha: FECHA });
-    expect(v.ok && v.value.paradas.map((x) => x.facturaId)).toEqual([orden[0], orden[2], orden[1], orden[3]]);
+    const trasSubir = v.ok ? v.value.paradas.map((x) => x.facturaId) : [];
+    expect(trasSubir.slice(0, 2)).toEqual([orden[0], orden[2]]);
+    expect([...trasSubir].sort()).toEqual([...orden].sort());
+    expect(v.ok && v.value.paradas.map((x) => x.fijada)).toEqual([true, true, false, false]);
 
-    const q = await servicios.operar(usuario, { camionId: s.camion, fecha: FECHA, version: 2, operacion: { tipo: 'quitar', facturaId: orden[0] ?? '' } });
+    // Arrastrar y soltar: la primera parada queda al final y el movimiento se anota para que el sistema aprenda.
+    const mv = await servicios.operar(usuario, { camionId: s.camion, fecha: FECHA, version: 2, operacion: { tipo: 'mover', facturaId: orden[0] ?? '', posicion: 3 } });
+    expect(mv.ok && mv.value.paradas.map((x) => x.facturaId)).toEqual([...trasSubir.slice(1), orden[0]]);
+    expect(mv.ok && mv.value).toMatchObject({ modo: 'manual', version: 3 });
+    expect(await db.selectFrom('ruta_operacion').select('id').where('empresa_id', '=', s.empresa).where('tipo', '=', 'mover').execute()).toHaveLength(1);
+
+    const q = await servicios.operar(usuario, { camionId: s.camion, fecha: FECHA, version: 3, operacion: { tipo: 'quitar', facturaId: orden[0] ?? '' } });
     expect(q.ok && q.value.paradas).toHaveLength(3);
     expect((await facturas.listar(s.empresa, { fecha: FECHA, sinCamion: true })).map((f) => f.id)).toEqual([orden[0]]);
   });
@@ -158,7 +174,7 @@ describe('horario manual en Postgres', () => {
     await factura(s, '1', 'Almacén A');
     await factura(s, '2', 'Bazar B');
     const servicios = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas: new PostgresEntregaRepository(db), jornadas: new PostgresJornadaRepository(db), registro: new PostgresRegistroAprendizajeRepository(db), clock: { now: () => new Date('2026-10-05T12:00:00Z') }, resolverCamion: pasarCamion });
-    const usuario = { id: s.usuario, empresaId: s.empresa, rol: 'despachador' as const, username: 'd', nombre: 'D', activo: true };
+    const usuario = { id: s.usuario, empresaId: s.empresa, rol: 'despachador' as const, username: 'd', nombre: 'D', activo: true, editor: false };
     const p = await servicios.planificar(usuario, { camionId: s.camion, fecha: FECHA }); // 2026-10-05 es lunes: Almacén A está cerrado
     expect(p.ok && p.value.paradas.map((x) => x.cliente)).toEqual(['Bazar B']);
     expect(p.ok && p.value.noAtendidas.map((x) => x.cliente)).toEqual(['Almacén A']);
@@ -203,7 +219,7 @@ describe('jornada en Postgres', () => {
 
   it('de punta a punta: el chofer carga una factura y ve su ruta solo en el camión de su jornada', async () => {
     const s = await sembrar();
-    const chofer = { id: s.usuario, empresaId: s.empresa, rol: 'chofer' as const, username: 'c', nombre: 'C', activo: true };
+    const chofer = { id: s.usuario, empresaId: s.empresa, rol: 'chofer' as const, username: 'c', nombre: 'C', activo: true, editor: false };
     const reloj = { now: () => new Date('2026-10-05T12:00:00Z') };
     const resolverCamion = crearResolverCamion({ jornadas, clock: reloj });
     const registrar = crearRegistrarFactura({ facturas, clock: reloj, resolverCamion });

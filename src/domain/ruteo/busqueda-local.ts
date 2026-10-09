@@ -5,7 +5,8 @@ import { evaluar } from './evaluacion.js';
 const EPS = 1e-9;
 
 /**
- * Descenso por vecindarios: 2-opt, Or-opt (segmentos de 1 a 3, que incluye relocate) y swap, con primera mejora.
+ * Descenso por vecindarios: 2-opt, Or-opt (segmentos de 1 a 3, que incluye relocate, también dado vuelta) y swap, con primera mejora.
+ * El segmento dado vuelta importa con tiempos por calles, que no son iguales de ida y de vuelta.
  * Las primeras `f` posiciones (paradas fijadas por el chofer) no se mueven. Muta `orden` y devuelve su costo.
  *
  * Nota: la factibilidad se comprueba evaluando la ruta completa (O(n)) con poda por costo, no en O(1) con holguras:
@@ -49,15 +50,21 @@ export const descenso = (c: Compilado, orden: number[], f: number, agotado: () =
       for (let i = f; i + largo <= m; i++) {
         const segmento = orden.slice(i, i + largo);
         const resto = [...orden.slice(0, i), ...orden.slice(i + largo)];
-        for (let pos = f; pos <= resto.length; pos++) {
-          if (pos === i) continue;
-          let w = 0;
-          for (let k = 0; k < pos; k++) candidata[w++] = resto[k] ?? 0;
-          for (const s of segmento) candidata[w++] = s;
-          for (let k = pos; k < resto.length; k++) candidata[w++] = resto[k] ?? 0;
-          if (probar()) {
-            mejoro = true;
-            break;
+        let movido = false;
+        for (let pos = f; pos <= resto.length && !movido; pos++) {
+          for (let vuelta = 0; vuelta < (largo > 1 ? 2 : 1); vuelta++) {
+            // En su mismo lugar solo tiene sentido darlo vuelta.
+            if (pos === i && vuelta === 0) continue;
+            let w = 0;
+            for (let k = 0; k < pos; k++) candidata[w++] = resto[k] ?? 0;
+            if (vuelta === 0) for (const s of segmento) candidata[w++] = s;
+            else for (let s = segmento.length - 1; s >= 0; s--) candidata[w++] = segmento[s] ?? 0;
+            for (let k = pos; k < resto.length; k++) candidata[w++] = resto[k] ?? 0;
+            if (probar()) {
+              mejoro = true;
+              movido = true;
+              break;
+            }
           }
         }
       }

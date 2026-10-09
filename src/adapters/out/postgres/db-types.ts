@@ -6,7 +6,7 @@ type Fecha = ColumnType<Date, Date | string | undefined, Date | string>;
 
 export type Tabla = {
   empresa: { id: Generated<string>; nombre: string; config: ColumnType<unknown, string | undefined, string>; config_version: Generated<number>; creado_en: Generated<Date> };
-  usuario: { id: string; empresa_id: string; rol: 'admin' | 'despachador' | 'chofer' | 'ayudante'; username: string; nombre: string; activo: Generated<boolean>; creado_en: Generated<Date> };
+  usuario: { id: string; empresa_id: string; rol: 'admin' | 'despachador' | 'chofer' | 'ayudante'; username: string; nombre: string; activo: Generated<boolean>; editor: Generated<boolean>; creado_en: Generated<Date> };
   cliente: {
     id: Generated<string>;
     empresa_id: string;
@@ -32,6 +32,10 @@ export type Tabla = {
     foto_path: string | null;
     foto_por: string | null;
     foto_en: Date | null;
+    foto_verificada_por: string | null;
+    foto_verificada_en: Date | null;
+    pin_verificado_por: string | null;
+    pin_verificado_en: Date | null;
     streetview_rumbo: number | null;
     nota: string | null;
     geocod_intento_en: Date | null;
@@ -78,6 +82,22 @@ export type Tabla = {
     resuelto_en: Date | null;
     resuelto_por: string | null;
     resolucion: 'eliminada' | 'descartada' | null;
+  };
+  reporte_local: {
+    id: Generated<string>;
+    empresa_id: string;
+    local_id: string;
+    tipo: 'nombre' | 'ubicacion';
+    detalle: string | null;
+    sugerido: string | null;
+    razon_social_al_reportar: string;
+    lat_al_reportar: number | null;
+    lng_al_reportar: number | null;
+    reportado_por: string | null;
+    creado_en: Generated<Date>;
+    resuelto_en: Date | null;
+    resuelto_por: string | null;
+    resolucion: 'corregido' | 'descartado' | null;
   };
   vendedor: { id: Generated<string>; empresa_id: string; codigo: string; nombre: string; celular: string | null; activo: Generated<boolean>; creado_en: Generated<Date> };
   asignacion_dia: {
@@ -147,7 +167,7 @@ export type Tabla = {
     camion_id: string;
     fecha_reparto: string;
     usuario_id: string | null;
-    tipo: 'planificar' | 'subir' | 'bajar' | 'primero' | 'despues' | 'quitar' | 'ordenar' | 'insertar' | 'salida';
+    tipo: 'planificar' | 'subir' | 'bajar' | 'primero' | 'despues' | 'mover' | 'quitar' | 'ordenar' | 'insertar' | 'salida';
     factura_id: string | null;
     modo: 'sugerida' | 'manual';
     version: number;
@@ -166,6 +186,7 @@ export type Tabla = {
     tomado_en: Date;
     creado_en: Generated<Date>;
   };
+  viaje_par: { desde: string; hasta: string; segundos: number; metros: number; consultado_en: Generated<Date> };
   jornada_resumen: {
     jornada_id: string;
     empresa_id: string;

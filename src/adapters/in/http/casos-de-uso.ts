@@ -13,6 +13,9 @@ import type { crearServiciosDeRuta } from '../../../application/use-cases/rutas.
 import type { crearGuardarHorario, crearObtenerHorario } from '../../../application/use-cases/horarios.js';
 import type { VerAnalitica } from '../../../application/use-cases/analitica.js';
 import type { AnalizarAprendizaje } from '../../../application/use-cases/analizar-aprendizaje.js';
+import type { crearReportarLocal, crearResolverReporteLocal, crearVerReportes } from '../../../application/use-cases/reportes-local.js';
+import type { crearVerificarPin } from '../../../application/use-cases/pin-verificado.js';
+import type { crearRevisarPines } from '../../../application/use-cases/revisar-pines.js';
 import type { RegistrarPosiciones } from '../../../application/use-cases/seguimiento.js';
 import type { crearIniciarJornada, crearMiJornada, crearTerminarJornada } from '../../../application/use-cases/jornada.js';
 import type { crearRegistrarEvento } from '../../../application/use-cases/entregas.js';
@@ -20,12 +23,14 @@ import type { crearAutenticarUsuario } from '../../../application/use-cases/aute
 import type { crearBuscarClientes } from '../../../application/use-cases/buscar-clientes.js';
 import type { crearCrearClienteNuevo } from '../../../application/use-cases/crear-cliente-nuevo.js';
 import type { crearCrearUsuario } from '../../../application/use-cases/crear-usuario.js';
-import type { crearCambiarEstadoUsuario, crearListarUsuarios, crearResetearPin } from '../../../application/use-cases/gestionar-usuarios.js';
-import type { crearFotosParaRevision, crearReportarFoto, crearResolverReporteFoto } from '../../../application/use-cases/fotos-revision.js';
+import type { crearCambiarEditorUsuario, crearCambiarEstadoUsuario, crearListarUsuarios, crearResetearPin } from '../../../application/use-cases/gestionar-usuarios.js';
+import type { crearFotosParaRevision, crearReportarFoto, crearResolverReporteFoto, crearVerificarFoto } from '../../../application/use-cases/fotos-revision.js';
 import type { crearImportarClientes } from '../../../application/use-cases/importar-clientes.js';
 import type { crearIniciarSesion } from '../../../application/use-cases/iniciar-sesion.js';
+import type { crearCorregirCliente, crearEliminarLocal } from '../../../application/use-cases/corregir-clientes.js';
+import type { crearListarLocales, crearResumenComunas } from '../../../application/use-cases/listar-locales.js';
 import type { crearObtenerLocal } from '../../../application/use-cases/obtener-local.js';
-import type { crearImportarPines, crearListarPropuestasPin, crearResolverPropuestaPin } from '../../../application/use-cases/pines.js';
+import type { crearListarPropuestasPin, crearResolverPropuestaPin } from '../../../application/use-cases/pines.js';
 import type { crearRefrescarSesion } from '../../../application/use-cases/refrescar-sesion.js';
 
 /** Todo lo que el adaptador HTTP necesita del resto de la aplicación; `main` lo arma y lo inyecta. */
@@ -38,19 +43,29 @@ export type CasosDeUso = {
   readonly listarUsuarios: ReturnType<typeof crearListarUsuarios>;
   readonly resetearPin: ReturnType<typeof crearResetearPin>;
   readonly cambiarEstadoUsuario: ReturnType<typeof crearCambiarEstadoUsuario>;
+  readonly cambiarEditorUsuario: ReturnType<typeof crearCambiarEditorUsuario>;
   readonly buscarClientes: ReturnType<typeof crearBuscarClientes>;
   readonly crearClienteNuevo: ReturnType<typeof crearCrearClienteNuevo>;
   readonly importarClientes: ReturnType<typeof crearImportarClientes>;
   readonly obtenerLocal: ReturnType<typeof crearObtenerLocal>;
   readonly actualizarLocal: ReturnType<typeof crearActualizarLocal>;
-  readonly importarPines: ReturnType<typeof crearImportarPines>;
   readonly listarPropuestasPin: ReturnType<typeof crearListarPropuestasPin>;
   readonly resolverPropuestaPin: ReturnType<typeof crearResolverPropuestaPin>;
   readonly solicitarUrlSubida: ReturnType<typeof crearSolicitarUrlSubida>;
   readonly registrarFotoLocal: ReturnType<typeof crearRegistrarFotoLocal>;
   readonly quitarFotoLocal: ReturnType<typeof crearQuitarFotoLocal>;
+  readonly corregirCliente: ReturnType<typeof crearCorregirCliente>;
+  readonly listarLocales: ReturnType<typeof crearListarLocales>;
+  readonly resumenComunas: ReturnType<typeof crearResumenComunas>;
+  readonly eliminarLocal: ReturnType<typeof crearEliminarLocal>;
   readonly reportarFoto: ReturnType<typeof crearReportarFoto>;
+  readonly reportarLocal: ReturnType<typeof crearReportarLocal>;
+  readonly verReportes: ReturnType<typeof crearVerReportes>;
+  readonly resolverReporteLocal: ReturnType<typeof crearResolverReporteLocal>;
   readonly fotosParaRevision: ReturnType<typeof crearFotosParaRevision>;
+  readonly verificarFoto: ReturnType<typeof crearVerificarFoto>;
+  readonly verificarPin: ReturnType<typeof crearVerificarPin>;
+  readonly revisarPines: ReturnType<typeof crearRevisarPines>;
   readonly resolverReporteFoto: ReturnType<typeof crearResolverReporteFoto>;
   readonly exportarLocales: ReturnType<typeof crearExportarLocales>;
   readonly obtenerUrlFoto: ReturnType<typeof crearObtenerUrlFoto>;

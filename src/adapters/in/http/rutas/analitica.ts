@@ -7,11 +7,12 @@ import { SEGURIDAD, tipada, type ContextoRutas } from './comunes.js';
 const etiqueta = z.object({ razonSocial: z.string(), direccion: z.string(), comuna: z.string() });
 const parametro = z.object({ clave: z.enum(['ritmo', 'servicio_min', 'capacidad_paradas', 'duracion_jornada_min']), ambito: z.string(), valor: z.number(), muestras: z.number(), confianza: z.number(), camion: z.string().optional() });
 const resumenAnalisis = z.object({
-  eventos: z.number(), jornadas: z.number(), parametros: z.number(), jornadasComparadas: z.number(), pinesSugeridos: z.number(), pinesProponidos: z.number(),
+  eventos: z.number(), jornadas: z.number(), parametros: z.number(), jornadasComparadas: z.number(), pinesSugeridos: z.number(), pinesProponidos: z.number(), llegadasDeducidas: z.number(),
+  seguimientoRuta: z.object({ entregas: z.number(), primeraDeLaLista: z.number(), conRutaDelSistema: z.number(), primeraDeLaRutaDelSistema: z.number() }),
   cierresFrecuentes: z.array(z.object({ localId: z.string(), cerrados: z.number(), intentos: z.number(), confianzaAbierto: z.number(), horasCerrado: z.array(z.number()) })),
 });
 
-const resumenAJson = (r: ResumenAnalisis) => ({ ...r, cierresFrecuentes: r.cierresFrecuentes.map((c) => ({ ...c, horasCerrado: [...c.horasCerrado] })) });
+const resumenAJson = (r: ResumenAnalisis) => ({ eventos: r.eventos, jornadas: r.jornadas, parametros: r.parametros, jornadasComparadas: r.jornadasComparadas, pinesSugeridos: r.pinesSugeridos, pinesProponidos: r.pinesProponidos, llegadasDeducidas: r.llegadasDeducidas, seguimientoRuta: r.seguimientoRuta, cierresFrecuentes: r.cierresFrecuentes.map((c) => ({ ...c, horasCerrado: [...c.horasCerrado] })) });
 
 export const rutasAnalitica = ({ app, casos, guard }: ContextoRutas): void => {
   const a = tipada(app);
@@ -31,6 +32,7 @@ export const rutasAnalitica = ({ app, casos, guard }: ContextoRutas): void => {
               jornadas: z.number(), jornadasTerminadas: z.number(), avisos: z.number(), avisosConGps: z.number(), avisosAutomaticos: z.number(), paradasConLlegada: z.number(),
               paradasResueltas: z.number(), puntosGps: z.number(), ultimoPuntoGps: z.string().optional(), operacionesRuta: z.number(), correccionesManuales: z.number(),
             }),
+            pines: z.object({ verificados: z.number(), porVerificar: z.number(), sinPin: z.number() }),
             porDia: z.array(z.object({ fecha: z.string(), jornadas: z.number(), atendidas: z.number(), sinHacer: z.number() })),
             calidad: z.array(z.object({ fecha: z.string(), camionId: z.string(), camion: z.string().optional(), distSugeridaM: z.number(), distRealM: z.number(), inversiones: z.number() })),
             aprendido: z.object({
@@ -38,6 +40,7 @@ export const rutasAnalitica = ({ app, casos, guard }: ContextoRutas): void => {
               localesLentos: z.array(parametro.extend({ etiqueta: etiqueta.optional() })),
             }),
             cierres: z.array(z.object({ localId: z.string(), cerrados: z.number(), intentos: z.number(), horasCerrado: z.array(z.number()), etiqueta: etiqueta.optional() })),
+            pinesDudosos: z.array(z.object({ localId: z.string(), distanciaM: z.number(), visitas: z.number(), fuente: z.string().optional(), etiqueta: etiqueta.optional() })),
             ultimaEjecucion: z.object({ iniciadoEn: z.string(), terminadoEn: z.string(), resumen: resumenAnalisis }).optional(),
           }),
           ...RESPUESTAS_ERROR,
@@ -51,6 +54,7 @@ export const rutasAnalitica = ({ app, casos, guard }: ContextoRutas): void => {
       return reply.send({
         desde: p.desde.toISOString(),
         cobertura: { ...cobertura, ...(ultimoPuntoGps ? { ultimoPuntoGps: ultimoPuntoGps.toISOString() } : {}) },
+        pines: p.pines,
         porDia: [...p.porDia],
         calidad: [...p.calidad],
         aprendido: {
@@ -60,6 +64,7 @@ export const rutasAnalitica = ({ app, casos, guard }: ContextoRutas): void => {
           localesLentos: [...p.aprendido.localesLentos],
         },
         cierres: p.cierres.map((c) => ({ ...c, horasCerrado: [...c.horasCerrado] })),
+        pinesDudosos: [...p.pinesDudosos],
         ...(e ? { ultimaEjecucion: { iniciadoEn: e.iniciadoEn.toISOString(), terminadoEn: e.terminadoEn.toISOString(), resumen: resumenAJson(e.resumen) } } : {}),
       });
     },

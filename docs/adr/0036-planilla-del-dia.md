@@ -1,4 +1,4 @@
-# 0023 — Planilla del día: quién lleva cada camión, con qué vendedores y comunas
+# 0036 — Planilla del día: quién lleva cada camión, con qué vendedores y comunas
 
 Estado: aceptada. Decisión del dueño, 2026-10-07. Cierra lo que quedó abierto en el ADR 0017.
 

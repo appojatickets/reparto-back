@@ -28,14 +28,24 @@ export type FacturaParaRuta = {
   readonly lng?: number;
   /** El pin lo halló el buscador por la dirección con poca precisión (calle, no número): sirve para ordenar, pero es aproximado. */
   readonly pinAproximado?: boolean;
+  /** El local no tiene pin y ya se buscó su dirección en el mapa sin éxito (distinto de «todavía no se busca»). */
+  readonly busquedaSinResultado?: boolean;
   /** El local tiene foto de la fachada (la subió alguien del equipo). */
   readonly tieneFoto?: boolean;
+  /** Alguien verificó el pin del local y el admin dio por buena su foto: se muestran como insignias ✓. */
+  readonly pinVerificado?: boolean;
+  readonly fotoVerificada?: boolean;
   readonly antesDeMin?: number;
   readonly urgente: boolean;
   readonly nota?: string;
   readonly total?: number;
   readonly horarios: readonly HorarioLocal[];
+  /** Cuándo se cargó la factura (ms): el chofer las carga casi en el orden en que va a entregar. */
+  readonly cargadaEn?: number;
 };
+
+/** Una factura del camión ese día que ya se entregó (o no se pudo), con su ubicación conocida: ayuda a ubicar las que no tienen pin. */
+export type HechaConUbicacion = { readonly cargadaEn: number; readonly comuna: string; readonly lat: number; readonly lng: number };
 
 export type GuardarRuta = {
   readonly camionId: string;
@@ -53,6 +63,8 @@ export interface RutaRepository {
   obtener(empresaId: string, camionId: string, fecha: string): Promise<RutaGuardada | undefined>;
   /** Facturas `pendiente` del camión ese día, con el horario de su local. */
   facturasPendientes(empresaId: string, camionId: string, fecha: string): Promise<readonly FacturaParaRuta[]>;
+  /** Facturas del camión ese día ya entregadas o no entregadas cuyo local tiene ubicación (el pin queda donde se entregó). */
+  hechasConUbicacion(empresaId: string, camionId: string, fecha: string): Promise<readonly HechaConUbicacion[]>;
   guardar(empresaId: string, datos: GuardarRuta): Promise<Result<RutaGuardada, 'VERSION_DESACTUALIZADA'>>;
   /** La ruta se arma cada día: borra la guardada de ese camión y día (no sirve guardar rutas, nunca se repiten). */
   borrar(empresaId: string, camionId: string, fecha: string): Promise<void>;

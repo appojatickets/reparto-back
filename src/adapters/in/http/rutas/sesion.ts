@@ -22,7 +22,7 @@ export const rutasSesion = ({ app, casos, guard }: ContextoRutas): void => {
       const r = await casos.iniciarSesion(req.body);
       if (!r.ok) return enviarError(reply, r.error);
       const { sesion, usuario } = r.value;
-      return reply.send({ ...sesion, usuario: { id: usuario.id, username: usuario.username, nombre: usuario.nombre, rol: usuario.rol, activo: usuario.activo } });
+      return reply.send({ ...sesion, usuario: { id: usuario.id, username: usuario.username, nombre: usuario.nombre, rol: usuario.rol, activo: usuario.activo, editor: usuario.editor } });
     },
   );
 
@@ -56,7 +56,7 @@ export const rutasSesion = ({ app, casos, guard }: ContextoRutas): void => {
     },
     async (req, reply) => {
       const u = actor(req);
-      return reply.send({ id: u.id, username: u.username, nombre: u.nombre, rol: u.rol, activo: u.activo, empresaId: u.empresaId });
+      return reply.send({ id: u.id, username: u.username, nombre: u.nombre, rol: u.rol, activo: u.activo, editor: u.editor, empresaId: u.empresaId });
     },
   );
 };

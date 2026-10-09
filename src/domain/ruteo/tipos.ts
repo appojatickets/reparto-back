@@ -10,6 +10,8 @@ export type ParadaRuta = {
   readonly ventanas: readonly VentanaHoraria[];
   readonly servicioMin: number;
   readonly prioridad: boolean;
+  /** En qué orden cargó el chofer esta factura (0 = la primera). Suele parecerse al orden en que entrega. */
+  readonly ordenCarga?: number;
 };
 
 /**

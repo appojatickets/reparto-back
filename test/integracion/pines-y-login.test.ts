@@ -109,3 +109,20 @@ describe('usuarios y bloqueo de login', () => {
     expect(await intentos.obtener(id)).toEqual({ intentos: 0 });
   });
 });
+
+describe('permiso de editor en Postgres', () => {
+  it('nace apagado, el admin lo enciende y apaga, y solo vale dentro de la empresa', async () => {
+    const e = await crearEmpresa(db);
+    const otra = await crearEmpresa(db);
+    const id = await crearUsuario(db, e, 'chofer', `c${Math.random().toString(36).slice(2, 8)}`);
+    const repo = new PostgresUsuarioRepository(db);
+    expect((await repo.porId(id))?.editor).toBe(false);
+    expect(await repo.cambiarEditor(e, id, true)).toBe(true);
+    expect((await repo.porId(id))?.editor).toBe(true);
+    expect((await repo.listar(e)).find((u) => u.id === id)?.editor).toBe(true);
+    expect(await repo.cambiarEditor(otra, id, false)).toBe(false); // otra empresa: no lo toca
+    expect((await repo.porId(id))?.editor).toBe(true);
+    expect(await repo.cambiarEditor(e, id, false)).toBe(true);
+    expect((await repo.porId(id))?.editor).toBe(false);
+  });
+});

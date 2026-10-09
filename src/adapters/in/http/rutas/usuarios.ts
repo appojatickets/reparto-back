@@ -14,7 +14,7 @@ export const rutasUsuarios = ({ app, casos, guard }: ContextoRutas): void => {
     { preHandler: admin, schema: { tags: ['usuarios'], summary: 'Listar usuarios', security: SEGURIDAD, response: { 200: z.object({ usuarios: z.array(usuarioPublico) }), ...RESPUESTAS_ERROR } } },
     async (req, reply) => {
       const lista = await casos.listarUsuarios(actor(req));
-      return reply.send({ usuarios: lista.map((u) => ({ id: u.id, username: u.username, nombre: u.nombre, rol: u.rol, activo: u.activo })) });
+      return reply.send({ usuarios: lista.map((u) => ({ id: u.id, username: u.username, nombre: u.nombre, rol: u.rol, activo: u.activo, editor: u.editor })) });
     },
   );
 
@@ -40,7 +40,7 @@ export const rutasUsuarios = ({ app, casos, guard }: ContextoRutas): void => {
       const r = await casos.crearUsuario(actor(req), req.body);
       if (!r.ok) return enviarError(reply, r.error);
       const u = r.value;
-      return reply.code(201).send({ id: u.id, username: u.username, nombre: u.nombre, rol: u.rol, activo: u.activo });
+      return reply.code(201).send({ id: u.id, username: u.username, nombre: u.nombre, rol: u.rol, activo: u.activo, editor: u.editor });
     },
   );
 
@@ -49,6 +49,15 @@ export const rutasUsuarios = ({ app, casos, guard }: ContextoRutas): void => {
     { preHandler: admin, schema: { tags: ['usuarios'], summary: 'Resetear la clave', security: SEGURIDAD, params: idParam, body: z.object({ pin: z.string().min(1).max(64) }), response: { 204: z.null(), ...RESPUESTAS_ERROR } } },
     async (req, reply) => {
       const r = await casos.resetearPin(actor(req), req.params.id, req.body.pin);
+      return r.ok ? reply.code(204).send(null) : enviarError(reply, r.error);
+    },
+  );
+
+  a.put(
+    '/v1/usuarios/:id/editor',
+    { preHandler: admin, schema: { tags: ['usuarios'], summary: 'Dar o quitar el permiso de editor a un chofer o ayudante (corregir clientes, quitar fotos, eliminar direcciones equivocadas)', security: SEGURIDAD, params: idParam, body: z.object({ editor: z.boolean() }), response: { 204: z.null(), ...RESPUESTAS_ERROR } } },
+    async (req, reply) => {
+      const r = await casos.cambiarEditorUsuario(actor(req), req.params.id, req.body.editor);
       return r.ok ? reply.code(204).send(null) : enviarError(reply, r.error);
     },
   );

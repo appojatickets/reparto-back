@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { crearObtenerUrlFoto, crearQuitarFotoLocal, crearRegistrarFotoLocal, crearSolicitarUrlSubida } from './archivos.js';
-import { crearImportarPines, crearListarPropuestasPin, crearResolverPropuestaPin } from './pines.js';
+import { crearListarPropuestasPin, crearResolverPropuestaPin } from './pines.js';
 import { crearReloj, usuarioDe } from './fakes.test-util.js';
 import { fakeAlmacen, fakeClientes, fakePines, fallaAlmacen, idsFijos, localDe } from './fakes-clientes.test-util.js';
 
@@ -8,40 +8,6 @@ const chofer = usuarioDe({ id: 'u-ch', rol: 'chofer' });
 const { clock } = crearReloj();
 const admin = usuarioDe();
 const UUID = '123e4567-e89b-12d3-a456-426614174000';
-
-describe('importarPines', () => {
-  const pin = { rut: '12.345.678-5', direccion: 'Av. Providencia 1234', lat: -33.4372, lng: -70.6506 };
-
-  it('un pin con local asociado queda pendiente, con la distancia al pin actual', async () => {
-    const clientes = fakeClientes();
-    clientes.coincidenciaDeDireccion.mockResolvedValue({ localId: 'l-1', lat: -33.4372, lng: -70.6496 });
-    const pines = fakePines();
-    const r = await crearImportarPines({ clientes, pines })(chofer, [pin]);
-    expect(r.ok && r.value).toMatchObject({ recibidas: 1, pendientes: 1, sinLocal: 0, errores: [] });
-    const [empresa, proponente, propuestas] = pines.crearLote.mock.calls[0] ?? [];
-    expect([empresa, proponente]).toEqual(['empresa-1', 'u-ch']);
-    expect(propuestas?.[0]).toMatchObject({ localId: 'l-1', estado: 'pendiente', rut: '12345678-5' });
-    expect(propuestas?.[0]?.distanciaActualM).toBeGreaterThan(80);
-  });
-
-  it('sin local coincidente queda «sin_local»; las filas inválidas se informan y no se guardan', async () => {
-    const pines = fakePines();
-    const r = await crearImportarPines({ clientes: fakeClientes(), pines })(chofer, [pin, { direccion: '', lat: 1, lng: 1 }]);
-    expect(r.ok && r.value).toMatchObject({ recibidas: 2, pendientes: 0, sinLocal: 1 });
-    expect(r.ok && r.value.errores).toHaveLength(1);
-    expect(r.ok && r.value.errores[0]?.fila).toBe(2);
-    expect(pines.crearLote.mock.calls[0]?.[2]).toHaveLength(1);
-  });
-
-  it('un lote vacío o gigante se rechaza; si todo es inválido no guarda nada', async () => {
-    const pines = fakePines();
-    const importar = crearImportarPines({ clientes: fakeClientes(), pines });
-    expect((await importar(chofer, [])).ok).toBe(false);
-    expect((await importar(chofer, Array.from({ length: 501 }, () => pin))).ok).toBe(false);
-    await importar(chofer, [{ direccion: '' }]);
-    expect(pines.crearLote).not.toHaveBeenCalled();
-  });
-});
 
 describe('revisión de propuestas de pin', () => {
   it('listar usa la empresa del actor y acota el límite', async () => {

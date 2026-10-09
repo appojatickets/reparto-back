@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { crearActualizarLocal } from './actualizar-local.js';
 import { crearBuscarClientes } from './buscar-clientes.js';
 import { crearCrearClienteNuevo } from './crear-cliente-nuevo.js';
@@ -153,6 +153,46 @@ describe('actualizarLocal', () => {
     const r = await crearActualizarLocal({ clientes: clientes() })(despachador, 'l-1', entrada);
     expect(!r.ok && r.error.codigo).toBe('VALIDACION');
     expect(!r.ok && r.error.mensaje.toLowerCase()).toContain(texto.toLowerCase());
+  });
+
+  describe('corregir la dirección y la comuna', () => {
+    it('limpia el texto, deja la comuna con su nombre oficial, vuelve a buscar el pin y guarda lo demás', async () => {
+      const c = clientes();
+      const programarPines = vi.fn();
+      const r = await crearActualizarLocal({ clientes: c, programarPines })(despachador, 'l-1', { direccion: ' Av.  Colón  765 ', comuna: 'san bernardo', nota: 'portón' });
+      expect(r.ok).toBe(true);
+      expect(c.corregirDireccion).toHaveBeenCalledWith('empresa-1', 'l-1', { direccion: 'Av. Colón 765', comuna: 'San Bernardo' });
+      expect(c.actualizarLocal).toHaveBeenCalledWith('empresa-1', 'l-1', { nota: 'portón' });
+      expect(programarPines).toHaveBeenCalledWith('empresa-1', ['l-1']);
+    });
+
+    it('con solo la dirección conserva la comuna que ya tiene (y al revés)', async () => {
+      const c = clientes();
+      await crearActualizarLocal({ clientes: c })(despachador, 'l-1', { direccion: 'Calle Nueva 10' });
+      expect(c.corregirDireccion).toHaveBeenLastCalledWith('empresa-1', 'l-1', { direccion: 'Calle Nueva 10', comuna: 'Providencia' });
+      await crearActualizarLocal({ clientes: c })(despachador, 'l-1', { comuna: 'Ñuñoa' });
+      expect(c.corregirDireccion).toHaveBeenLastCalledWith('empresa-1', 'l-1', { direccion: 'Av. Providencia 1234', comuna: 'Ñuñoa' });
+    });
+
+    it.each([
+      [{ direccion: '   ' }, 'dirección'],
+      [{ direccion: 'x'.repeat(301) }, '300'],
+      [{ comuna: 'Valparaíso' }, 'comuna'],
+    ])('rechaza %j sin tocar nada', async (entrada, texto) => {
+      const c = clientes();
+      const r = await crearActualizarLocal({ clientes: c })(despachador, 'l-1', entrada);
+      expect(!r.ok && r.error.codigo).toBe('VALIDACION');
+      expect(!r.ok && r.error.mensaje.toLowerCase()).toContain(texto);
+      expect(c.corregirDireccion).not.toHaveBeenCalled();
+    });
+
+    it('si el cliente ya tiene un local con esa dirección es CONFLICTO y no se guarda lo demás', async () => {
+      const c = clientes();
+      c.corregirDireccion.mockResolvedValueOnce('DUPLICADO');
+      const r = await crearActualizarLocal({ clientes: c })(despachador, 'l-1', { direccion: 'Calle Repetida 1', nota: 'x' });
+      expect(!r.ok && r.error.codigo).toBe('CONFLICTO');
+      expect(c.actualizarLocal).not.toHaveBeenCalled();
+    });
   });
 
   it('un local de otra empresa o inexistente es NO_ENCONTRADO', async () => {

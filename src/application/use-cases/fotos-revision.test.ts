@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { crearReloj, usuarioDe } from './fakes.test-util.js';
 import { fakeAlmacen, fakeClientes, fakeReportesFoto, localDe } from './fakes-clientes.test-util.js';
-import { crearFotosParaRevision, crearReportarFoto, crearResolverReporteFoto } from './fotos-revision.js';
+import { crearFotosParaRevision, crearReportarFoto, crearResolverReporteFoto, crearVerificarFoto } from './fotos-revision.js';
 
 const chofer = usuarioDe({ id: 'u-ch', rol: 'chofer' });
 const admin = usuarioDe({ id: 'u-admin' });
@@ -39,15 +39,50 @@ describe('reportar una foto', () => {
 });
 
 describe('fotos para revisar', () => {
-  it('trae lo reportado y lo subido hace poco', async () => {
+  it('trae lo reportado y las subidas en dos listas: las que faltan por verificar y las ya verificadas', async () => {
     const reportes = fakeReportesFoto();
-    reportes.abiertos.mockResolvedValueOnce([{ id: 'r-1', localId: 'l-1', razonSocial: 'Rabelo', direccion: 'Calle 1', comuna: 'Maipú', motivo: 'borrosa', reportadoEn: new Date('2026-10-05T12:00:00Z') }]);
-    reportes.recientes.mockResolvedValueOnce([{ localId: 'l-2', razonSocial: 'Kiosko', direccion: 'Calle 2', comuna: 'Paine', subidaPor: 'Juan Pérez', subidaEn: new Date('2026-10-05T11:00:00Z') }]);
+    reportes.abiertos.mockResolvedValueOnce([{ id: 'r-1', localId: 'l-1', razonSocial: 'Rabelo', direccion: 'Calle 1', comuna: 'Maipú', motivo: 'borrosa', reportadoEn: new Date('2026-10-05T12:00:00Z'), fotoReemplazada: false }]);
+    reportes.porVerificar.mockResolvedValueOnce([{ localId: 'l-2', fotoPath: 'empresa-1/l-2/a.webp', razonSocial: 'Kiosko', direccion: 'Calle 2', comuna: 'Paine', subidaPor: 'Juan Pérez', subidaEn: new Date('2026-10-05T11:00:00Z') }]);
+    reportes.verificadas.mockResolvedValueOnce([{ localId: 'l-3', fotoPath: 'empresa-1/l-3/b.webp', razonSocial: 'Botillería', direccion: 'Calle 3', comuna: 'Buin', verificadaPor: 'Matías', verificadaEn: new Date('2026-10-06T09:00:00Z') }]);
     const r = await crearFotosParaRevision({ reportes })(admin);
     expect(r.reportadas.map((x) => x.id)).toEqual(['r-1']);
-    expect(r.recientes.map((x) => x.subidaPor)).toEqual(['Juan Pérez']);
+    expect(r.porVerificar.map((x) => x.subidaPor)).toEqual(['Juan Pérez']);
+    expect(r.verificadas.map((x) => x.verificadaPor)).toEqual(['Matías']);
     expect(reportes.abiertos).toHaveBeenCalledWith('empresa-1', 100);
-    expect(reportes.recientes).toHaveBeenCalledWith('empresa-1', 30);
+    expect(reportes.porVerificar).toHaveBeenCalledWith('empresa-1', 100);
+    expect(reportes.verificadas).toHaveBeenCalledWith('empresa-1', 30);
+  });
+});
+
+describe('verificar una foto', () => {
+  const verificar = (clientes = fakeClientes([localDe({ fotoPath: FOTO })])) => ({ clientes, caso: crearVerificarFoto({ clientes, clock }) });
+
+  it('queda verificada por el admin, con la hora, y sale de «por verificar»', async () => {
+    const { clientes, caso } = verificar();
+    const r = await caso(admin, 'l-1', { fotoPath: FOTO, verificada: true });
+    expect(r.ok).toBe(true);
+    expect(clientes.marcarFotoVerificada).toHaveBeenCalledWith('empresa-1', 'l-1', FOTO, { por: 'u-admin', en: new Date('2026-10-05T12:00:00.000Z') });
+  });
+
+  it('se puede devolver a «por verificar»; repetir la misma decisión no falla', async () => {
+    const { clientes, caso } = verificar();
+    expect((await caso(admin, 'l-1', { fotoPath: FOTO, verificada: false })).ok).toBe(true);
+    expect(clientes.marcarFotoVerificada).toHaveBeenCalledWith('empresa-1', 'l-1', FOTO, undefined);
+    expect((await caso(admin, 'l-1', { fotoPath: FOTO, verificada: true })).ok).toBe(true);
+    expect((await caso(admin, 'l-1', { fotoPath: FOTO, verificada: true })).ok).toBe(true);
+  });
+
+  it('si el local ya cambió o perdió la foto, no se verifica la nueva sin verla: CONFLICTO', async () => {
+    const { clientes, caso } = verificar();
+    clientes.marcarFotoVerificada.mockResolvedValueOnce(false);
+    const r = await caso(admin, 'l-1', { fotoPath: 'empresa-1/l-1/vieja.webp', verificada: true });
+    expect(!r.ok && r.error.codigo).toBe('CONFLICTO');
+  });
+
+  it('un local que no existe es NO_ENCONTRADO', async () => {
+    const { caso } = verificar(fakeClientes([]));
+    const r = await caso(admin, 'l-9', { fotoPath: FOTO, verificada: true });
+    expect(!r.ok && r.error.codigo).toBe('NO_ENCONTRADO');
   });
 });
 
@@ -73,12 +108,13 @@ describe('decidir sobre un reporte', () => {
     expect(reportes.resolverDeFoto).toHaveBeenCalledTimes(1);
   });
 
-  it('dejarla descarta el reporte y la foto queda', async () => {
+  it('dejarla descarta el reporte, la foto queda y se da por verificada (el admin ya la miró)', async () => {
     const clientes = fakeClientes([localDe({ fotoPath: FOTO })]);
     const reportes = fakeReportesFoto();
     const almacen = fakeAlmacen();
     await crearResolverReporteFoto({ clientes, reportes, almacen, clock })(admin, 'r-1', 'descartar');
     expect(reportes.resolver).toHaveBeenCalledWith('empresa-1', 'r-1', 'u-admin', 'descartada', new Date('2026-10-05T12:00:00.000Z'));
+    expect(clientes.marcarFotoVerificada).toHaveBeenCalledWith('empresa-1', 'l-1', FOTO, { por: 'u-admin', en: new Date('2026-10-05T12:00:00.000Z') });
     expect(clientes.quitarFoto).not.toHaveBeenCalled();
     expect(almacen.eliminar).not.toHaveBeenCalled();
   });

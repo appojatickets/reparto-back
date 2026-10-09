@@ -7,6 +7,10 @@ import { crearGuardarConfigEmpresa, crearObtenerConfigEmpresa } from './applicat
 import { crearServiciosDeRuta } from './application/use-cases/rutas.js';
 import { crearGuardarHorario, crearObtenerHorario } from './application/use-cases/horarios.js';
 import { crearIniciarJornada, crearMiJornada, crearResolverCamion, crearTerminarJornada } from './application/use-cases/jornada.js';
+import { crearReportarLocal, crearResolverReporteLocal, crearVerReportes } from './application/use-cases/reportes-local.js';
+import { PostgresReporteLocalRepository } from './adapters/out/postgres/repositorio-reportes-local.js';
+import { crearVerificarPin } from './application/use-cases/pin-verificado.js';
+import { crearRevisarPines } from './application/use-cases/revisar-pines.js';
 import { crearVerAnalitica } from './application/use-cases/analitica.js';
 import { crearAnalizarAprendizaje } from './application/use-cases/analizar-aprendizaje.js';
 import { crearRegistrarPosiciones } from './application/use-cases/seguimiento.js';
@@ -15,17 +19,22 @@ import { crearAutenticarUsuario } from './application/use-cases/autenticar-usuar
 import { crearBuscarClientes } from './application/use-cases/buscar-clientes.js';
 import { crearCrearClienteNuevo } from './application/use-cases/crear-cliente-nuevo.js';
 import { crearCrearUsuario } from './application/use-cases/crear-usuario.js';
-import { crearCambiarEstadoUsuario, crearListarUsuarios, crearResetearPin } from './application/use-cases/gestionar-usuarios.js';
+import { crearCambiarEditorUsuario, crearCambiarEstadoUsuario, crearListarUsuarios, crearResetearPin } from './application/use-cases/gestionar-usuarios.js';
 import { crearImportarClientes } from './application/use-cases/importar-clientes.js';
 import { crearIniciarSesion } from './application/use-cases/iniciar-sesion.js';
+import { crearCorregirCliente, crearEliminarLocal } from './application/use-cases/corregir-clientes.js';
+import { crearListarLocales, crearResumenComunas } from './application/use-cases/listar-locales.js';
 import { crearObtenerLocal } from './application/use-cases/obtener-local.js';
-import { crearImportarPines, crearListarPropuestasPin, crearResolverPropuestaPin } from './application/use-cases/pines.js';
+import { crearListarPropuestasPin, crearResolverPropuestaPin } from './application/use-cases/pines.js';
 import { crearRefrescarSesion } from './application/use-cases/refrescar-sesion.js';
 import { buildServer } from './adapters/in/http/server.js';
 import type { CasosDeUso } from './adapters/in/http/casos-de-uso.js';
 import { createDb } from './adapters/out/postgres/client.js';
 import { PostgresDatabaseHealth } from './adapters/out/postgres/database-health.js';
 import { PostgresEmpresaRepository } from './adapters/out/postgres/repositorio-empresa.js';
+import { PostgresCacheDeViajes } from './adapters/out/postgres/repositorio-viajes.js';
+import { crearProveedorOrs } from './adapters/out/red/ors-viajes.js';
+import { crearViajesPorCalle } from './application/use-cases/viajes-por-calle.js';
 import { PostgresAnaliticaRepository } from './adapters/out/postgres/repositorio-analitica.js';
 import { PostgresAprendizajeRepository } from './adapters/out/postgres/repositorio-aprendizaje.js';
 import { PostgresRegistroAprendizajeRepository } from './adapters/out/postgres/repositorio-registro-aprendizaje.js';
@@ -33,7 +42,7 @@ import { PostgresRutaRepository } from './adapters/out/postgres/repositorio-ruta
 import { PostgresHorarioRepository } from './adapters/out/postgres/repositorio-horarios.js';
 import { PostgresJornadaRepository } from './adapters/out/postgres/repositorio-jornadas.js';
 import { PostgresEntregaRepository } from './adapters/out/postgres/repositorio-entregas.js';
-import { crearFotosParaRevision, crearReportarFoto, crearResolverReporteFoto } from './application/use-cases/fotos-revision.js';
+import { crearFotosParaRevision, crearReportarFoto, crearResolverReporteFoto, crearVerificarFoto } from './application/use-cases/fotos-revision.js';
 import { crearAplicarPlanilla, crearObtenerPlanilla } from './application/use-cases/planilla.js';
 import { crearActualizarVendedor, crearCrearVendedor, crearListarVendedores } from './application/use-cases/vendedores.js';
 import { crearExportarLocales } from './application/use-cases/exportar-locales.js';
@@ -41,6 +50,7 @@ import { crearBuscarPinesPendientes, crearEstadoBusquedaPines } from './applicat
 import { crearColaGeocodificacion } from './application/use-cases/cola-geocodificacion.js';
 import { crearGeocodificarLocal } from './application/use-cases/geocodificar-local.js';
 import { crearNominatimGeocodificador } from './adapters/out/red/nominatim-geocodificador.js';
+import { crearOrsGeocodificador } from './adapters/out/red/ors-geocodificador.js';
 import { crearFijarPinDesdeEnlace } from './application/use-cases/pin-desde-enlace.js';
 import { crearResolvedorEnlacesHttp } from './adapters/out/red/resolvedor-enlaces-http.js';
 import { PostgresFotoReporteRepository } from './adapters/out/postgres/repositorio-fotos.js';
@@ -68,6 +78,7 @@ const camiones = new PostgresCamionRepository(db);
 const vendedores = new PostgresVendedorRepository(db);
 const planillas = new PostgresPlanillaRepository(db);
 const reportesFoto = new PostgresFotoReporteRepository(db);
+const reportesLocal = new PostgresReporteLocalRepository(db);
 const facturas = new PostgresFacturaRepository(db);
 const empresas = new PostgresEmpresaRepository(db);
 const rutas = new PostgresRutaRepository(db);
@@ -84,13 +95,15 @@ const clock = relojDelSistema;
 const resolverCamion = crearResolverCamion({ jornadas, clock });
 // Búsqueda del pin por la dirección: una cola en memoria, de a uno por segundo, que no hace esperar a nadie.
 const colaDePines = crearColaGeocodificacion({
-  geocodificar: crearGeocodificarLocal({ clientes, geocodificador: crearNominatimGeocodificador(env.GEOCODER_USER_AGENT), clock }),
+  geocodificar: crearGeocodificarLocal({ clientes, geocodificadores: [crearNominatimGeocodificador(env.GEOCODER_USER_AGENT), ...(env.ORS_API_KEY ? [crearOrsGeocodificador(env.ORS_API_KEY)] : [])], clock }),
   esperar: (ms) => new Promise((resolver) => { setTimeout(resolver, ms); }),
 });
 const programarPines = (empresaId: string, localIds: readonly string[]): void => { colaDePines.encolar(empresaId, localIds); };
 const aprendizaje = new PostgresAprendizajeRepository(db);
 const analitica = new PostgresAnaliticaRepository(db);
-const serviciosDeRuta = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas, jornadas, registro, aprendizaje, clock, resolverCamion, programarPines });
+// Tiempos por calles: solo si hay clave de OpenRouteService; sin ella la ruta mide en línea recta.
+const viajes = crearViajesPorCalle({ proveedor: env.ORS_API_KEY ? crearProveedorOrs(env.ORS_API_KEY) : undefined, cache: new PostgresCacheDeViajes(db) });
+const serviciosDeRuta = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas, jornadas, registro, aprendizaje, viajes, clock, resolverCamion, programarPines });
 const analizarAprendizaje = crearAnalizarAprendizaje({ aprendizaje, empresas, pines, clock });
 
 // El analizador corre en segundo plano: poco después de terminar una ruta (con calma, juntando varias) y cada pocas horas. Nunca bloquea una petición.
@@ -123,19 +136,29 @@ const casos: CasosDeUso = {
   listarUsuarios: crearListarUsuarios({ usuarios }),
   resetearPin: crearResetearPin({ identidad, usuarios, intentos }),
   cambiarEstadoUsuario: crearCambiarEstadoUsuario({ usuarios }),
+  cambiarEditorUsuario: crearCambiarEditorUsuario({ usuarios }),
   buscarClientes: crearBuscarClientes({ clientes }),
   crearClienteNuevo: crearCrearClienteNuevo({ clientes }),
   importarClientes: crearImportarClientes({ clientes }),
-  obtenerLocal: crearObtenerLocal({ clientes }),
-  actualizarLocal: crearActualizarLocal({ clientes }),
-  importarPines: crearImportarPines({ clientes, pines }),
+  obtenerLocal: crearObtenerLocal({ clientes, entregas }),
+  actualizarLocal: crearActualizarLocal({ clientes, programarPines }),
   listarPropuestasPin: crearListarPropuestasPin({ pines }),
   resolverPropuestaPin: crearResolverPropuestaPin({ pines, clock }),
   solicitarUrlSubida: crearSolicitarUrlSubida({ clientes, almacen, ids: generadorDeIds }),
   registrarFotoLocal: crearRegistrarFotoLocal({ clientes, almacen, clock }),
   quitarFotoLocal: crearQuitarFotoLocal({ clientes, almacen }),
+  corregirCliente: crearCorregirCliente({ clientes }),
+  listarLocales: crearListarLocales({ clientes }),
+  resumenComunas: crearResumenComunas({ clientes }),
+  eliminarLocal: crearEliminarLocal({ clientes, almacen }),
   reportarFoto: crearReportarFoto({ clientes, reportes: reportesFoto }),
+  reportarLocal: crearReportarLocal({ clientes, reportes: reportesLocal }),
+  verReportes: crearVerReportes({ fotos: reportesFoto, locales: reportesLocal }),
+  resolverReporteLocal: crearResolverReporteLocal({ clientes, reportes: reportesLocal, clock }),
   fotosParaRevision: crearFotosParaRevision({ reportes: reportesFoto }),
+  verificarFoto: crearVerificarFoto({ clientes, clock }),
+  verificarPin: crearVerificarPin({ clientes, clock }),
+  revisarPines: crearRevisarPines({ clientes, entregas }),
   resolverReporteFoto: crearResolverReporteFoto({ clientes, reportes: reportesFoto, almacen, clock }),
   exportarLocales: crearExportarLocales({ clientes }),
   obtenerUrlFoto: crearObtenerUrlFoto({ clientes, almacen }),
@@ -163,10 +186,10 @@ const casos: CasosDeUso = {
     analizarPronto();
     return resumen;
   },
-  verAnalitica: crearVerAnalitica({ analitica, aprendizaje, camiones, clock }),
+  verAnalitica: crearVerAnalitica({ analitica, aprendizaje, camiones, clientes, clock }),
   ejecutarAnalisis: analizarAprendizaje,
   registrarPosiciones: crearRegistrarPosiciones({ registro, rutas, entregas, resolverCamion, clock }),
-  registrarEvento: crearRegistrarEvento({ facturas, entregas, clientes, rutas, resolverCamion }),
+  registrarEvento: crearRegistrarEvento({ facturas, entregas, clientes, rutas, resolverCamion, reloj: clock, reordenarTrasVisita: serviciosDeRuta.reordenarTrasVisita }),
   obtenerHorario: crearObtenerHorario({ horarios }),
   guardarHorario: crearGuardarHorario({ horarios }),
   obtenerConfigEmpresa: crearObtenerConfigEmpresa({ empresas }),

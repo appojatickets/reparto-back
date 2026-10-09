@@ -4,6 +4,7 @@ import { evaluar } from './evaluacion.js';
 import { evaluarOrden, optimizar } from './optimizador.js';
 import { verificarInvariantes } from './invariantes.js';
 import { parada, problemaAleatorio, problemaPlano, v } from './problemas.test-util.js';
+import { PARAMETROS_POR_DEFECTO } from './parametros.js';
 
 const permutaciones = <T>(xs: readonly T[]): T[][] =>
   xs.length <= 1 ? [[...xs]] : xs.flatMap((x, i) => permutaciones([...xs.slice(0, i), ...xs.slice(i + 1)]).map((p) => [x, ...p]));
@@ -139,5 +140,19 @@ describe('optimizar · contra fuerza bruta (≤ 7 paradas)', () => {
     const optimo = Math.min(...permutaciones(atendidas).map((perm) => evaluar(c, perm, perm.length)));
     const castigo = s.costo - evaluar(c, atendidas, atendidas.length);
     expect(s.costo - castigo).toBeCloseTo(optimo, 6);
+  });
+});
+
+describe('optimizar · orden en que el chofer cargó las facturas', () => {
+  it('con todo lo demás igual, sigue el orden de carga', () => {
+    const paradas = [parada('X', { ordenCarga: 2 }), parada('Y', { ordenCarga: 0 }), parada('Z', { ordenCarga: 1 })];
+    const conPeso = problemaPlano(paradas, { parametros: { ...PARAMETROS_POR_DEFECTO, pesoOrdenCarga: 1 } });
+    expect(optimizar(conPeso).orden).toEqual(['Y', 'Z', 'X']);
+  });
+
+  it('el orden de carga no gana contra una ventana horaria', () => {
+    const paradas = [parada('A', { ordenCarga: 0, ventanas: [v(600, 700)] }), parada('B', { ordenCarga: 1, ventanas: [v(480, 500)] })];
+    const p = problemaPlano(paradas, { parametros: { ...PARAMETROS_POR_DEFECTO, penalizacionRiesgo: 10_000, pesoOrdenCarga: 1 } });
+    expect(optimizar(p).orden).toEqual(['B', 'A']);
   });
 });

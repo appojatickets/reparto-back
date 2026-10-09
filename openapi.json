@@ -169,6 +169,9 @@
                         },
                         "activo": {
                           "type": "boolean"
+                        },
+                        "editor": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -176,7 +179,8 @@
                         "username",
                         "nombre",
                         "rol",
-                        "activo"
+                        "activo",
+                        "editor"
                       ],
                       "additionalProperties": false
                     }
@@ -676,6 +680,9 @@
                     "activo": {
                       "type": "boolean"
                     },
+                    "editor": {
+                      "type": "boolean"
+                    },
                     "empresaId": {
                       "type": "string"
                     }
@@ -686,6 +693,7 @@
                     "nombre",
                     "rol",
                     "activo",
+                    "editor",
                     "empresaId"
                   ],
                   "additionalProperties": false
@@ -932,6 +940,9 @@
                           },
                           "activo": {
                             "type": "boolean"
+                          },
+                          "editor": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -939,7 +950,8 @@
                           "username",
                           "nombre",
                           "rol",
-                          "activo"
+                          "activo",
+                          "editor"
                         ],
                         "additionalProperties": false
                       }
@@ -1231,6 +1243,9 @@
                     },
                     "activo": {
                       "type": "boolean"
+                    },
+                    "editor": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -1238,7 +1253,8 @@
                     "username",
                     "nombre",
                     "rol",
-                    "activo"
+                    "activo",
+                    "editor"
                   ],
                   "additionalProperties": false
                 }
@@ -1461,6 +1477,257 @@
                 },
                 "required": [
                   "pin"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    null
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/usuarios/{id}/editor": {
+      "put": {
+        "summary": "Dar o quitar el permiso de editor a un chofer o ayudante (corregir clientes, quitar fotos, eliminar direcciones equivocadas)",
+        "tags": [
+          "usuarios"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "editor": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "editor"
                 ]
               }
             }
@@ -2027,8 +2294,14 @@
                               "validado"
                             ]
                           },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
                           "fotoPath": {
                             "type": "string"
+                          },
+                          "fotoVerificada": {
+                            "type": "boolean"
                           },
                           "streetviewRumbo": {
                             "type": "number"
@@ -2973,8 +3246,61 @@
                         "validado"
                       ]
                     },
+                    "pinFuente": {
+                      "type": "string",
+                      "enum": [
+                        "geocodificador",
+                        "manual",
+                        "importado",
+                        "aprendido",
+                        "chofer",
+                        "enlace"
+                      ]
+                    },
+                    "pinVerificado": {
+                      "type": "boolean"
+                    },
+                    "pinVerificacion": {
+                      "type": "string",
+                      "enum": [
+                        "persona",
+                        "entregas"
+                      ]
+                    },
+                    "pinRespaldo": {
+                      "type": "object",
+                      "properties": {
+                        "nivel": {
+                          "type": "string",
+                          "enum": [
+                            "verificado",
+                            "respaldado",
+                            "en_conflicto",
+                            "sin_respaldo"
+                          ]
+                        },
+                        "entregas": {
+                          "type": "number"
+                        },
+                        "dias": {
+                          "type": "number"
+                        },
+                        "distanciaM": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "nivel",
+                        "entregas",
+                        "dias"
+                      ],
+                      "additionalProperties": false
+                    },
                     "fotoPath": {
                       "type": "string"
+                    },
+                    "fotoVerificada": {
+                      "type": "boolean"
                     },
                     "streetviewRumbo": {
                       "type": "number"
@@ -2989,7 +3315,8 @@
                     "razonSocial",
                     "direccion",
                     "comuna",
-                    "pinEstado"
+                    "pinEstado",
+                    "pinVerificado"
                   ],
                   "additionalProperties": false
                 }
@@ -3190,8 +3517,239 @@
           }
         }
       },
+      "delete": {
+        "summary": "Eliminar una dirección equivocada con sus facturas pendientes (y el cliente si se queda sin direcciones); con entregas hechas responde 409",
+        "tags": [
+          "clientes"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    null
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
       "patch": {
-        "summary": "Nota, rumbo de Street View (solo la referencia) y pin del local",
+        "summary": "Dirección y comuna, nota, rumbo de Street View (solo la referencia) y pin del local",
         "tags": [
           "clientes"
         ],
@@ -3202,6 +3760,14 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "direccion": {
+                    "type": "string",
+                    "maxLength": 600
+                  },
+                  "comuna": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
                   "nota": {
                     "type": "string",
                     "maxLength": 1000
@@ -3447,11 +4013,11 @@
         }
       }
     },
-    "/v1/pines/importaciones": {
-      "post": {
-        "summary": "Proponer pines (quedan pendientes de revisión; nada cambia solo)",
+    "/v1/clientes/{id}": {
+      "patch": {
+        "summary": "Corregir los datos del cliente: razón social, RUT y giro (RUT o giro vacíos los borran)",
         "tags": [
-          "pines"
+          "clientes"
         ],
         "requestBody": {
           "required": true,
@@ -3460,54 +4026,286 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "pines": {
-                    "minItems": 1,
-                    "maxItems": 500,
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "rut": {
-                          "type": "string",
-                          "maxLength": 20
-                        },
-                        "direccion": {
-                          "type": "string",
-                          "maxLength": 600
-                        },
-                        "lat": {
-                          "anyOf": [
-                            {
-                              "type": "number"
-                            },
-                            {
-                              "type": "string",
-                              "maxLength": 40
-                            }
-                          ]
-                        },
-                        "lng": {
-                          "anyOf": [
-                            {
-                              "type": "number"
-                            },
-                            {
-                              "type": "string",
-                              "maxLength": 40
-                            }
-                          ]
-                        }
-                      }
-                    }
+                  "razonSocial": {
+                    "type": "string",
+                    "maxLength": 400
+                  },
+                  "rut": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "giro": {
+                    "type": "string",
+                    "maxLength": 300
                   }
-                },
-                "required": [
-                  "pines"
-                ]
+                }
               }
             }
           }
         },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    null
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/locales": {
+      "get": {
+        "summary": "Locales con los datos de su cliente y cuántas entregas tiene: de una comuna o los que coinciden con un texto (razón social, RUT o dirección); primero los de pin por verificar",
+        "tags": [
+          "clientes"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "in": "query",
+            "name": "comuna",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "in": "query",
+            "name": "texto",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "in": "query",
+            "name": "limite",
+            "required": false
+          }
+        ],
         "security": [
           {
             "bearerAuth": []
@@ -3521,56 +4319,334 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "recibidas": {
+                    "total": {
                       "type": "number"
                     },
-                    "pendientes": {
-                      "type": "number"
-                    },
-                    "sinLocal": {
-                      "type": "number"
-                    },
-                    "errores": {
+                    "locales": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "properties": {
-                          "fila": {
+                          "localId": {
+                            "type": "string"
+                          },
+                          "clienteId": {
+                            "type": "string"
+                          },
+                          "razonSocial": {
+                            "type": "string"
+                          },
+                          "rut": {
+                            "type": "string"
+                          },
+                          "giro": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "lat": {
                             "type": "number"
                           },
-                          "errores": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "codigo": {
-                                  "type": "string"
-                                },
-                                "mensaje": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "codigo",
-                                "mensaje"
-                              ],
-                              "additionalProperties": false
-                            }
+                          "lng": {
+                            "type": "number"
+                          },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
+                          },
+                          "nota": {
+                            "type": "string"
+                          },
+                          "streetviewRumbo": {
+                            "type": "number"
+                          },
+                          "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "entregas": {
+                            "type": "number"
                           }
                         },
                         "required": [
-                          "fila",
-                          "errores"
+                          "localId",
+                          "clienteId",
+                          "razonSocial",
+                          "direccion",
+                          "comuna",
+                          "pinVerificado",
+                          "tieneFoto",
+                          "entregas"
                         ],
                         "additionalProperties": false
                       }
                     }
                   },
                   "required": [
-                    "recibidas",
-                    "pendientes",
-                    "sinLocal",
-                    "errores"
+                    "total",
+                    "locales"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/locales/comunas": {
+      "get": {
+        "summary": "Por comuna: cuántos locales hay, cuántos con pin verificado y cuántos sin pin",
+        "tags": [
+          "clientes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "comunas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "total": {
+                            "type": "number"
+                          },
+                          "verificados": {
+                            "type": "number"
+                          },
+                          "sinPin": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "comuna",
+                          "total",
+                          "verificados",
+                          "sinPin"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "comunas"
                   ],
                   "additionalProperties": false
                 }
@@ -5409,6 +6485,579 @@
                     "lng"
                   ],
                   "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/pines/revision": {
+      "get": {
+        "summary": "Pines para revisar: «por verificar» (con cuánto los respaldan las entregas; lo más seguro primero) o «verificados» (los más recientes primero). Hasta 100.",
+        "tags": [
+          "pines"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "default": "por_verificar",
+              "type": "string",
+              "enum": [
+                "por_verificar",
+                "verificados"
+              ]
+            },
+            "in": "query",
+            "name": "estado",
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "number"
+                    },
+                    "pines": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "razonSocial": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
+                          },
+                          "verificadoEn": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          },
+                          "respaldo": {
+                            "type": "object",
+                            "properties": {
+                              "nivel": {
+                                "type": "string",
+                                "enum": [
+                                  "verificado",
+                                  "respaldado",
+                                  "en_conflicto",
+                                  "sin_respaldo"
+                                ]
+                              },
+                              "entregas": {
+                                "type": "number"
+                              },
+                              "dias": {
+                                "type": "number"
+                              },
+                              "distanciaM": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "nivel",
+                              "entregas",
+                              "dias"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "razonSocial",
+                          "direccion",
+                          "comuna",
+                          "lat",
+                          "lng",
+                          "respaldo"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "total",
+                    "pines"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/locales/{id}/pin/verificacion": {
+      "put": {
+        "summary": "Verificar el pin de un local (admin, despachador o chofer editor): un pin verificado ya no se mueve solo con las entregas; con verificado=false vuelve a «por verificar» y se sigue ajustando",
+        "tags": [
+          "pines"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "verificado": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "verificado"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    null
+                  ]
                 }
               }
             }
@@ -10109,7 +11758,7 @@
     },
     "/v1/fotos/revision": {
       "get": {
-        "summary": "Fotos para revisar (solo admin): las reportadas y las subidas hace poco, con quién y cuándo",
+        "summary": "Fotos para revisar (solo admin): las reportadas, las que faltan por verificar y las ya verificadas, con quién y cuándo",
         "tags": [
           "archivos"
         ],
@@ -10164,6 +11813,9 @@
                           "reportadoEn": {
                             "type": "string"
                           },
+                          "fotoReemplazada": {
+                            "type": "boolean"
+                          },
                           "subidaPor": {
                             "type": "string"
                           },
@@ -10178,17 +11830,21 @@
                           "direccion",
                           "comuna",
                           "motivo",
-                          "reportadoEn"
+                          "reportadoEn",
+                          "fotoReemplazada"
                         ],
                         "additionalProperties": false
                       }
                     },
-                    "recientes": {
+                    "porVerificar": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "properties": {
                           "localId": {
+                            "type": "string"
+                          },
+                          "fotoPath": {
                             "type": "string"
                           },
                           "razonSocial": {
@@ -10209,9 +11865,54 @@
                         },
                         "required": [
                           "localId",
+                          "fotoPath",
                           "razonSocial",
                           "direccion",
                           "comuna"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "verificadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "localId": {
+                            "type": "string"
+                          },
+                          "fotoPath": {
+                            "type": "string"
+                          },
+                          "razonSocial": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "subidaPor": {
+                            "type": "string"
+                          },
+                          "subidaEn": {
+                            "type": "string"
+                          },
+                          "verificadaPor": {
+                            "type": "string"
+                          },
+                          "verificadaEn": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "localId",
+                          "fotoPath",
+                          "razonSocial",
+                          "direccion",
+                          "comuna",
+                          "verificadaEn"
                         ],
                         "additionalProperties": false
                       }
@@ -10219,9 +11920,266 @@
                   },
                   "required": [
                     "reportadas",
-                    "recientes"
+                    "porVerificar",
+                    "verificadas"
                   ],
                   "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/locales/{id}/foto/verificacion": {
+      "put": {
+        "summary": "Verificar la foto de un local (solo admin): sale de «por verificar» y pasa a «verificadas»; con verificada=false vuelve. Se indica la foto vista para no verificar otra que la cambiaron",
+        "tags": [
+          "archivos"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fotoPath": {
+                    "type": "string",
+                    "maxLength": 300
+                  },
+                  "verificada": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "fotoPath",
+                  "verificada"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    null
+                  ]
                 }
               }
             }
@@ -10438,6 +12396,828 @@
                     "type": "string",
                     "enum": [
                       "eliminar",
+                      "descartar"
+                    ]
+                  }
+                },
+                "required": [
+                  "accion"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    null
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/locales/{id}/reportes": {
+      "post": {
+        "summary": "Reportar el nombre o la ubicación (pin) de un local; el admin lo revisa. Reportar la ubicación saca al pin de «verificado». (La foto se reporta aparte.)",
+        "tags": [
+          "reportes"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tipo": {
+                    "type": "string",
+                    "enum": [
+                      "nombre",
+                      "ubicacion"
+                    ]
+                  },
+                  "detalle": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "sugerido": {
+                    "type": "string",
+                    "maxLength": 120
+                  }
+                },
+                "required": [
+                  "tipo"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    null
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/reportes": {
+      "get": {
+        "summary": "Todo lo reportado y sin resolver (fotos, nombres y ubicaciones), del más nuevo al más antiguo",
+        "tags": [
+          "reportes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "number"
+                    },
+                    "reportes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "foto",
+                              "nombre",
+                              "ubicacion"
+                            ]
+                          },
+                          "localId": {
+                            "type": "string"
+                          },
+                          "razonSocial": {
+                            "type": "string"
+                          },
+                          "direccion": {
+                            "type": "string"
+                          },
+                          "comuna": {
+                            "type": "string"
+                          },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
+                          "motivo": {
+                            "type": "string"
+                          },
+                          "detalle": {
+                            "type": "string"
+                          },
+                          "sugerido": {
+                            "type": "string"
+                          },
+                          "reportadoPor": {
+                            "type": "string"
+                          },
+                          "reportadoEn": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          },
+                          "yaCambio": {
+                            "type": "boolean"
+                          },
+                          "subidaPor": {
+                            "type": "string"
+                          },
+                          "subidaEn": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "tipo",
+                          "localId",
+                          "razonSocial",
+                          "direccion",
+                          "comuna",
+                          "reportadoEn",
+                          "yaCambio"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "total",
+                    "reportes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/reportes/{id}/resolver": {
+      "post": {
+        "summary": "Cerrar un reporte de nombre o ubicación: corregido, descartar o (ubicación) el pin está bien y queda verificado. Los de foto se cierran en /v1/fotos/reportes/:id/resolver",
+        "tags": [
+          "reportes"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accion": {
+                    "type": "string",
+                    "enum": [
+                      "verificar_pin",
+                      "corregido",
                       "descartar"
                     ]
                   }
@@ -11353,7 +14133,16 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "fotoVerificada": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -11454,7 +14243,16 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "fotoVerificada": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -11511,7 +14309,16 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "fotoVerificada": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -11576,7 +14383,16 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "fotoVerificada": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -11633,7 +14449,16 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "fotoVerificada": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -11698,7 +14523,16 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "fotoVerificada": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -12113,7 +14947,16 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "fotoVerificada": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -12214,7 +15057,16 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "fotoVerificada": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -12271,7 +15123,16 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "fotoVerificada": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -12336,7 +15197,16 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "fotoVerificada": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -12393,7 +15263,16 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "fotoVerificada": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -12458,7 +15337,16 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "fotoVerificada": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -12797,6 +15685,32 @@
                           "tipo": {
                             "type": "string",
                             "enum": [
+                              "mover"
+                            ]
+                          },
+                          "facturaId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "posicion": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 999
+                          }
+                        },
+                        "required": [
+                          "tipo",
+                          "facturaId",
+                          "posicion"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
                               "ordenar",
                               "insertar"
                             ]
@@ -12938,7 +15852,16 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "fotoVerificada": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -13039,7 +15962,16 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "fotoVerificada": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -13096,7 +16028,16 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "fotoVerificada": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -13161,7 +16102,16 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "fotoVerificada": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -13218,7 +16168,16 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "fotoVerificada": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -13283,7 +16242,16 @@
                           "ubicacionAproximada": {
                             "type": "boolean"
                           },
+                          "noEncontradaEnMapa": {
+                            "type": "boolean"
+                          },
                           "tieneFoto": {
+                            "type": "boolean"
+                          },
+                          "pinVerificado": {
+                            "type": "boolean"
+                          },
+                          "fotoVerificada": {
                             "type": "boolean"
                           },
                           "urgente": {
@@ -15771,6 +18739,26 @@
                       ],
                       "additionalProperties": false
                     },
+                    "pines": {
+                      "type": "object",
+                      "properties": {
+                        "verificados": {
+                          "type": "number"
+                        },
+                        "porVerificar": {
+                          "type": "number"
+                        },
+                        "sinPin": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "verificados",
+                        "porVerificar",
+                        "sinPin"
+                      ],
+                      "additionalProperties": false
+                    },
                     "porDia": {
                       "type": "array",
                       "items": {
@@ -16070,6 +19058,52 @@
                         "additionalProperties": false
                       }
                     },
+                    "pinesDudosos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "localId": {
+                            "type": "string"
+                          },
+                          "distanciaM": {
+                            "type": "number"
+                          },
+                          "visitas": {
+                            "type": "number"
+                          },
+                          "fuente": {
+                            "type": "string"
+                          },
+                          "etiqueta": {
+                            "type": "object",
+                            "properties": {
+                              "razonSocial": {
+                                "type": "string"
+                              },
+                              "direccion": {
+                                "type": "string"
+                              },
+                              "comuna": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "razonSocial",
+                              "direccion",
+                              "comuna"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "localId",
+                          "distanciaM",
+                          "visitas"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "ultimaEjecucion": {
                       "type": "object",
                       "properties": {
@@ -16099,6 +19133,33 @@
                             },
                             "pinesProponidos": {
                               "type": "number"
+                            },
+                            "llegadasDeducidas": {
+                              "type": "number"
+                            },
+                            "seguimientoRuta": {
+                              "type": "object",
+                              "properties": {
+                                "entregas": {
+                                  "type": "number"
+                                },
+                                "primeraDeLaLista": {
+                                  "type": "number"
+                                },
+                                "conRutaDelSistema": {
+                                  "type": "number"
+                                },
+                                "primeraDeLaRutaDelSistema": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "entregas",
+                                "primeraDeLaLista",
+                                "conRutaDelSistema",
+                                "primeraDeLaRutaDelSistema"
+                              ],
+                              "additionalProperties": false
                             },
                             "cierresFrecuentes": {
                               "type": "array",
@@ -16142,6 +19203,8 @@
                             "jornadasComparadas",
                             "pinesSugeridos",
                             "pinesProponidos",
+                            "llegadasDeducidas",
+                            "seguimientoRuta",
                             "cierresFrecuentes"
                           ],
                           "additionalProperties": false
@@ -16158,10 +19221,12 @@
                   "required": [
                     "desde",
                     "cobertura",
+                    "pines",
                     "porDia",
                     "calidad",
                     "aprendido",
-                    "cierres"
+                    "cierres",
+                    "pinesDudosos"
                   ],
                   "additionalProperties": false
                 }
@@ -16400,6 +19465,33 @@
                     "pinesProponidos": {
                       "type": "number"
                     },
+                    "llegadasDeducidas": {
+                      "type": "number"
+                    },
+                    "seguimientoRuta": {
+                      "type": "object",
+                      "properties": {
+                        "entregas": {
+                          "type": "number"
+                        },
+                        "primeraDeLaLista": {
+                          "type": "number"
+                        },
+                        "conRutaDelSistema": {
+                          "type": "number"
+                        },
+                        "primeraDeLaRutaDelSistema": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "entregas",
+                        "primeraDeLaLista",
+                        "conRutaDelSistema",
+                        "primeraDeLaRutaDelSistema"
+                      ],
+                      "additionalProperties": false
+                    },
                     "cierresFrecuentes": {
                       "type": "array",
                       "items": {
@@ -16442,6 +19534,8 @@
                     "jornadasComparadas",
                     "pinesSugeridos",
                     "pinesProponidos",
+                    "llegadasDeducidas",
+                    "seguimientoRuta",
                     "cierresFrecuentes"
                   ],
                   "additionalProperties": false

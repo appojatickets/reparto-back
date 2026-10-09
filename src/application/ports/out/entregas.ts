@@ -1,4 +1,5 @@
 import type { EventoValido } from '../../../domain/entidades/entrega.js';
+import type { VisitaConGps } from '../../../domain/entidades/respaldo-del-pin.js';
 
 export type NuevoEvento = EventoValido & {
   readonly facturaId: string;
@@ -20,6 +21,12 @@ export interface EntregaRepository {
   registrar(empresaId: string, evento: NuevoEvento): Promise<void>;
   /** La última posición informada por ese camión en ese día de reparto (hora de Chile), si hay. */
   ultimaPosicion(empresaId: string, camionId: string, fecha: string): Promise<PosicionConocida | undefined>;
+  /** Dónde se avisó ENTREGADO en ese local con buen GPS (la más reciente primero, hasta `limite`): de ahí sale el pin. */
+  posicionesDeEntrega(empresaId: string, localId: string, limite: number): Promise<readonly { readonly lat: number; readonly lng: number; readonly precisionM: number }[]>;
+  /** Dónde y cuándo se avisó ENTREGADO en ese local con buen GPS (la más reciente primero, hasta `limite`): de ahí sale cuánto respaldan las entregas a su pin. */
+  visitasConGps(empresaId: string, localId: string, limite: number): Promise<readonly VisitaConGps[]>;
+  /** Lo mismo para varios locales a la vez: hasta `porLocal` entregas por local (las más recientes), en una sola consulta. */
+  visitasConGpsDeLocales(empresaId: string, localIds: readonly string[], porLocal: number): Promise<ReadonlyMap<string, readonly VisitaConGps[]>>;
   /** De estas facturas, las que ya tienen un aviso de llegada. */
   conLlegada(empresaId: string, facturaIds: readonly string[]): Promise<ReadonlySet<string>>;
 }

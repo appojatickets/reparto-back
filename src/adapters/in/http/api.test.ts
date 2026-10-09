@@ -14,6 +14,7 @@ const USUARIOS: Record<string, Usuario> = {
   't-desp': usuarioDe({ id: 'u-d', rol: 'despachador', username: 'desp' }),
   't-chofer': usuarioDe({ id: 'u-c', rol: 'chofer', username: 'chofer' }),
   't-ayud': usuarioDe({ id: 'u-y', rol: 'ayudante', username: 'ayud' }),
+  't-chofer-editor': usuarioDe({ id: 'u-ce', rol: 'chofer', username: 'chofered', editor: true }),
 };
 const ROLES: Record<Rol, string> = { admin: 't-admin', despachador: 't-desp', chofer: 't-chofer', ayudante: 't-ayud' };
 
@@ -38,12 +39,14 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'POST', url: '/v1/usuarios', body: { nombre: 'Juan', apellidoPaterno: 'Pérez', rol: 'chofer', pin: '482915' }, permiso: 'usuarios:gestionar', caso: 'crearUsuario' },
   { metodo: 'POST', url: `/v1/usuarios/${UUID}/pin`, body: { pin: '482915' }, permiso: 'usuarios:gestionar', caso: 'resetearPin' },
   { metodo: 'PATCH', url: `/v1/usuarios/${UUID}`, body: { activo: false }, permiso: 'usuarios:gestionar', caso: 'cambiarEstadoUsuario' },
+  { metodo: 'PUT', url: `/v1/usuarios/${UUID}/editor`, body: { editor: true }, permiso: 'usuarios:gestionar', caso: 'cambiarEditorUsuario' },
   { metodo: 'GET', url: '/v1/clientes/buscar?q=rabe', permiso: 'clientes:leer', caso: 'buscarClientes' },
   { metodo: 'POST', url: '/v1/clientes', body: filaCliente, permiso: 'clientes:crear', caso: 'crearClienteNuevo' },
   { metodo: 'POST', url: '/v1/clientes/importaciones', body: { filas: [filaCliente] }, permiso: 'clientes:importar', caso: 'importarClientes' },
+  { metodo: 'GET', url: '/v1/locales?comuna=Maip%C3%BA&texto=rabelo', permiso: 'clientes:escribir', caso: 'listarLocales' },
+  { metodo: 'GET', url: '/v1/locales/comunas', permiso: 'clientes:escribir', caso: 'resumenComunas' },
   { metodo: 'GET', url: `/v1/locales/${UUID}`, permiso: 'clientes:leer', caso: 'obtenerLocal' },
   { metodo: 'PATCH', url: `/v1/locales/${UUID}`, body: { nota: 'portón verde' }, permiso: 'clientes:escribir', caso: 'actualizarLocal' },
-  { metodo: 'POST', url: '/v1/pines/importaciones', body: { pines: [{ direccion: 'x', lat: -33.4, lng: -70.6 }] }, permiso: 'pines:proponer', caso: 'importarPines' },
   { metodo: 'GET', url: '/v1/pines/propuestas', permiso: 'pines:revisar', caso: 'listarPropuestasPin' },
   { metodo: 'POST', url: `/v1/pines/propuestas/${UUID}/resolver`, body: { accion: 'aceptar' }, permiso: 'pines:revisar', caso: 'resolverPropuestaPin' },
   { metodo: 'POST', url: '/v1/archivos/url-subida', body: { localId: UUID, tipo: 'webp' }, permiso: 'archivos:subir', caso: 'solicitarUrlSubida' },
@@ -57,6 +60,8 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'GET', url: '/v1/locales/buscar-pines', permiso: 'pines:revisar', caso: 'estadoBusquedaPines' },
   { metodo: 'GET', url: '/v1/exportaciones/locales', permiso: 'datos:exportar', caso: 'exportarLocales' },
   { metodo: 'DELETE', url: `/v1/locales/${UUID}/foto`, permiso: 'clientes:escribir', caso: 'quitarFotoLocal' },
+  { metodo: 'PATCH', url: `/v1/clientes/${UUID}`, body: { razonSocial: 'Botillería El Sol' }, permiso: 'clientes:escribir', caso: 'corregirCliente' },
+  { metodo: 'DELETE', url: `/v1/locales/${UUID}`, permiso: 'locales:eliminar', caso: 'eliminarLocal' },
   { metodo: 'GET', url: '/v1/vendedores', permiso: 'vendedores:leer', caso: 'listarVendedores' },
   { metodo: 'POST', url: '/v1/vendedores', body: { codigo: 'V01', nombre: 'Ana' }, permiso: 'vendedores:gestionar', caso: 'crearVendedor' },
   { metodo: 'PATCH', url: `/v1/vendedores/${UUID}`, body: { activo: false }, permiso: 'vendedores:gestionar', caso: 'actualizarVendedor' },
@@ -70,16 +75,22 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'POST', url: '/v1/rutas/operaciones', body: { camionId: UUID, fecha: '2026-10-05', version: 1, operacion: { tipo: 'ordenar' } }, permiso: 'rutas:escribir', caso: 'operarRuta' },
   { metodo: 'GET', url: '/v1/planilla', permiso: 'planilla:gestionar', caso: 'obtenerPlanilla' },
   { metodo: 'POST', url: '/v1/planilla', body: { fecha: '2026-10-05', filas: [{ patente: 'ABCD12' }] }, permiso: 'planilla:gestionar', caso: 'aplicarPlanilla' },
+  { metodo: 'POST', url: '/v1/rutas/operaciones', body: { camionId: UUID, fecha: '2026-10-05', version: 1, operacion: { tipo: 'mover', facturaId: UUID, posicion: 2 } }, permiso: 'rutas:escribir', caso: 'operarRuta' },
   { metodo: 'POST', url: `/v1/entregas/${UUID}/eventos`, body: { tipo: 'llegada' }, permiso: 'entregas:registrar', caso: 'registrarEvento' },
   { metodo: 'GET', url: '/v1/analitica', permiso: 'metricas:leer', caso: 'verAnalitica' },
   { metodo: 'POST', url: '/v1/analitica/ejecutar', permiso: 'metricas:leer', caso: 'ejecutarAnalisis' },
+  { metodo: 'PUT', url: `/v1/locales/${UUID}/pin/verificacion`, body: { verificado: true }, permiso: 'pines:verificar', caso: 'verificarPin' },
   { metodo: 'GET', url: '/v1/jornada', permiso: 'jornada:gestionar', caso: 'miJornada' },
   { metodo: 'POST', url: '/v1/jornada', body: { camionId: UUID }, permiso: 'jornada:gestionar', caso: 'iniciarJornada' },
   { metodo: 'DELETE', url: '/v1/jornada', permiso: 'jornada:gestionar', caso: 'terminarJornada' },
   { metodo: 'POST', url: '/v1/jornada/terminar', permiso: 'jornada:gestionar', caso: 'terminarJornada' },
   { metodo: 'POST', url: '/v1/jornada/posiciones', body: { puntos: [{ lat: -33.5, lng: -70.7, tomadoEn: '2026-10-05T12:00:00.000Z' }] }, permiso: 'jornada:gestionar', caso: 'registrarPosiciones' },
   { metodo: 'POST', url: `/v1/locales/${UUID}/foto/reportar`, body: { motivo: 'borrosa' }, permiso: 'archivos:subir', caso: 'reportarFoto' },
+  { metodo: 'POST', url: `/v1/locales/${UUID}/reportes`, body: { tipo: 'ubicacion' }, permiso: 'archivos:subir', caso: 'reportarLocal' },
+  { metodo: 'GET', url: '/v1/reportes', permiso: 'reportes:revisar', caso: 'verReportes' },
+  { metodo: 'POST', url: `/v1/reportes/${UUID}/resolver`, body: { accion: 'descartar' }, permiso: 'reportes:revisar', caso: 'resolverReporteLocal' },
   { metodo: 'GET', url: '/v1/fotos/revision', permiso: 'fotos:revisar', caso: 'fotosParaRevision' },
+  { metodo: 'PUT', url: `/v1/locales/${UUID}/foto/verificacion`, body: { fotoPath: 'a/b.webp', verificada: true }, permiso: 'fotos:revisar', caso: 'verificarFoto' },
   { metodo: 'POST', url: `/v1/fotos/reportes/${UUID}/resolver`, body: { accion: 'eliminar' }, permiso: 'fotos:revisar', caso: 'resolverReporteFoto' },
   { metodo: 'GET', url: `/v1/locales/${UUID}/horario`, permiso: 'clientes:leer', caso: 'obtenerHorario' },
   { metodo: 'PUT', url: `/v1/locales/${UUID}/horario`, body: { dias: [{ dia: 1, cerrado: false, tramos: [{ desde: 600, hasta: 1080 }] }] }, permiso: 'clientes:escribir', caso: 'guardarHorario' },
@@ -118,6 +129,27 @@ describe('permisos: cada ruta exige su permiso y no llega al caso de uso sin él
     });
   }
 
+  it('un chofer con permiso de editor corrige y elimina; sin el permiso recibe 403 en lo mismo; y el permiso no le abre lo del admin', async () => {
+    const eliminarLocal = vi.fn(() => Promise.resolve(ok(undefined)));
+    const corregirCliente = vi.fn(() => Promise.resolve(ok(undefined)));
+    const quitarFotoLocal = vi.fn(() => Promise.resolve(ok(undefined)));
+    const app = await construir({ eliminarLocal, corregirCliente, quitarFotoLocal });
+    const como = (token: string) => ({ authorization: `Bearer ${token}` });
+    for (const [metodo, url, payload] of [['DELETE', `/v1/locales/${UUID}`, undefined], ['PATCH', `/v1/clientes/${UUID}`, { razonSocial: 'Kiosko Sol' }], ['DELETE', `/v1/locales/${UUID}/foto`, undefined]] as const) {
+      const sin = await app.inject({ method: metodo, url, headers: como('t-chofer'), ...(payload ? { payload } : {}) });
+      expect(sin.statusCode, `${metodo} ${url} sin permiso`).toBe(403);
+      const con = await app.inject({ method: metodo, url, headers: como('t-chofer-editor'), ...(payload ? { payload } : {}) });
+      expect(con.statusCode, `${metodo} ${url} como editor`).toBe(204);
+    }
+    expect(eliminarLocal).toHaveBeenCalledTimes(1);
+    expect(corregirCliente).toHaveBeenCalledWith(expect.objectContaining({ id: 'u-ce' }), UUID, { razonSocial: 'Kiosko Sol' });
+    expect(quitarFotoLocal).toHaveBeenCalledTimes(1);
+    // Ser editor no da acceso a lo del admin.
+    for (const [metodo, url] of [['GET', '/v1/usuarios'], ['GET', '/v1/fotos/revision'], ['GET', '/v1/analitica']] as const) {
+      expect((await app.inject({ method: metodo, url, headers: como('t-chofer-editor') })).statusCode, `${url} como editor`).toBe(403);
+    }
+  });
+
   it('un chofer recibe 403 en CUALQUIER ruta que no sea suya (clientes, usuarios, pines por revisar, importaciones)', async () => {
     const denegadas = RUTAS.filter((r) => r.permiso !== undefined && !puede('chofer', r.permiso));
     expect(denegadas.length).toBeGreaterThanOrEqual(10);
@@ -147,7 +179,7 @@ describe('sesión', () => {
     const iniciarSesion = vi.fn(() => Promise.resolve(ok({ sesion: { accessToken: 'at', refreshToken: 'rt', expiraEnSegundos: 3600 }, usuario })));
     const r = await (await construir({ iniciarSesion })).inject({ method: 'POST', url: '/v1/auth/login', payload: { username: 'chofer', pin: '482915' } });
     expect(r.statusCode).toBe(200);
-    expect(r.json()).toEqual({ accessToken: 'at', refreshToken: 'rt', expiraEnSegundos: 3600, usuario: { id: 'u-c', username: 'chofer', nombre: usuario.nombre, rol: 'chofer', activo: true } });
+    expect(r.json()).toEqual({ accessToken: 'at', refreshToken: 'rt', expiraEnSegundos: 3600, usuario: { id: 'u-c', username: 'chofer', nombre: usuario.nombre, rol: 'chofer', activo: true, editor: false } });
     expect(iniciarSesion).toHaveBeenCalledWith({ username: 'chofer', pin: '482915' });
   });
 

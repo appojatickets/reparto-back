@@ -13,8 +13,8 @@ const ev = (facturaId: string, localId: string, tipo: EventoObs['tipo'], min: nu
 
 const datos = (): DatosAnalisis => ({
   locales: [
-    ...[1, 2, 3, 4, 5].map((n) => ({ id: `l${n}`, comuna: 'San Bernardo', direccion: `Calle ${n}`, lat: -33.5 + n * 0.01, lng: -70.7 })),
-    { id: 'lp', comuna: 'Buin', direccion: 'Pasaje Mal Pinchado 1', lat: -33.7, lng: -70.7 },
+    ...[1, 2, 3, 4, 5].map((n) => ({ id: `l${n}`, comuna: 'San Bernardo', direccion: `Calle ${n}`, lat: -33.5 + n * 0.01, lng: -70.7, pinVerificado: true })),
+    { id: 'lp', comuna: 'Buin', direccion: 'Pasaje Mal Pinchado 1', lat: -33.7, lng: -70.7, pinVerificado: true },
   ],
   eventos: [
     ...[1, 2, 3, 4, 5].flatMap((n) => [ev(`f${n}`, `l${n}`, 'llegada', n * 30), ev(`f${n}`, `l${n}`, 'entregado', n * 30 + 8)]),
@@ -22,7 +22,7 @@ const datos = (): DatosAnalisis => ({
     ...[0, 1, 2].map((d) => ev(`p${d}`, 'lp', 'llegada', d * 1440, { lat: -33.7 + 0.012, lng: -70.7, precisionM: 10 })),
   ],
   jornadas: [{ id: 'j-1', camionId: 'cam-1', fecha: '2026-10-01', desde: en(-30), hasta: en(400) }],
-  resumenes: [],
+  posiciones: [],
   operaciones: [{ camionId: 'cam-1', fecha: '2026-10-01', tipo: 'planificar', modo: 'sugerida', orden: ['f1', 'f2', 'f3', 'f4', 'f5'], creadoEn: en(-20) }],
 });
 
@@ -65,8 +65,31 @@ describe('analizador de segundo plano', () => {
     expect(repetido.pines.crearLote).not.toHaveBeenCalled();
   });
 
+  it('mide la atención con el recorrido cuando el chofer toca ENTREGADO al llegar y nunca avisa LLEGUÉ', async () => {
+    const d = datos();
+    // Cinco entregas avisadas al llegar; el camión se queda 8 min junto al pin (puntos cada 4 min, llegando y yéndose).
+    const sinLlegada = [1, 2, 3, 4, 5].map((n) => ev(`g${n}`, `l${n}`, 'entregado', 200 + n * 30));
+    const recorrido = [1, 2, 3, 4, 5].flatMap((n) => {
+      const base = 200 + n * 30;
+      const cerca = -33.5 + n * 0.01 + 0.0001;
+      return [{ camionId: 'cam-1', lat: -33.5 + n * 0.01 + 0.03, lng: -70.7, precisionM: 15, tomadoEn: en(base - 4) }, { camionId: 'cam-1', lat: cerca, lng: -70.7, precisionM: 15, tomadoEn: en(base) }, { camionId: 'cam-1', lat: cerca, lng: -70.7, precisionM: 15, tomadoEn: en(base + 4) }, { camionId: 'cam-1', lat: -33.5 + n * 0.01 + 0.03, lng: -70.7, precisionM: 15, tomadoEn: en(base + 8) }];
+    });
+    const t = montar({ ...d, eventos: sinLlegada, posiciones: recorrido });
+    const r = await t.analizar('empresa-1');
+    expect(r.llegadasDeducidas).toBe(5);
+    const guardados = t.aprendizaje.guardarParametros.mock.calls[0]?.[1] ?? [];
+    expect(guardados.find((p) => p.clave === 'servicio_min' && p.ambito === 'global')).toMatchObject({ valor: 8, muestras: 5 });
+  });
+
+  it('avisa de los locales donde se entregó lejos del pin', async () => {
+    const d = datos();
+    const t = montar({ ...d, eventos: [...d.eventos, ev('z1', 'l1', 'entregado', 500, { lat: -33.5 + 0.01 + 0.02, lng: -70.7, precisionM: 10 })] });
+    const r = await t.analizar('empresa-1');
+    expect(r.pinesDudosos[0]).toMatchObject({ localId: 'l1', visitas: 1 });
+  });
+
   it('sin datos no inventa nada', async () => {
-    const t = montar({ locales: [], eventos: [], jornadas: [], resumenes: [], operaciones: [] });
+    const t = montar({ locales: [], eventos: [], jornadas: [], operaciones: [], posiciones: [] });
     expect(await t.analizar('empresa-1')).toMatchObject({ eventos: 0, parametros: 0, pinesSugeridos: 0, cierresFrecuentes: [] });
     expect(t.aprendizaje.guardarCalidad).not.toHaveBeenCalled();
   });

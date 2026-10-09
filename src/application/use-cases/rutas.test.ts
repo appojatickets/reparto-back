@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { err } from '../../domain/shared/result.js';
 import { crearReloj, usuarioDe } from './fakes.test-util.js';
 import { fakeJornadas, fakeRegistro, resolverDePrueba } from './fakes-facturas.test-util.js';
@@ -70,6 +70,17 @@ describe('planificar', () => {
     expect(z?.lat).toBeUndefined();
     const a = r.ok ? r.value.paradas.find((p) => p.facturaId === 'f-A') : undefined;
     expect(a?.ubicacionAproximada).toBeUndefined();
+  });
+
+  it('si la dirección ya se buscó en el mapa y no se encontró, la parada sin pin lo dice (noEncontradaEnMapa); si aún no se busca, no', async () => {
+    const { facturaId, localId, razonSocial, direccion, comuna, urgente, horarios } = paradaDe('Z');
+    const base = { facturaId, localId, razonSocial, direccion, comuna, urgente, horarios };
+    const s = montar({ pendientes: [paradaDe('A'), { ...base, busquedaSinResultado: true }, { ...base, facturaId: 'f-Y', busquedaSinResultado: false }] });
+    const r = await s.planificar(despachador, entrada);
+    const por = (id: string) => (r.ok ? r.value.paradas.find((p) => p.facturaId === id) : undefined);
+    expect(por('f-Z')).toMatchObject({ ubicacionAproximada: true, noEncontradaEnMapa: true });
+    expect(por('f-Y')?.noEncontradaEnMapa).toBeUndefined();
+    expect(por('f-A')?.noEncontradaEnMapa).toBeUndefined();
   });
 
   it('la parada avisa si el local tiene foto de la fachada', async () => {
@@ -194,6 +205,10 @@ describe('cada cálculo y cada movimiento de la ruta queda guardado para aprende
     const r = await s.operar(despachador, { ...entrada, version: vista?.version ?? 0, operacion: { tipo: 'bajar', facturaId: primera } });
     expect(r.ok).toBe(true);
     expect(registro.registrarOperacion).toHaveBeenLastCalledWith('empresa-1', expect.objectContaining({ tipo: 'bajar', facturaId: primera, modo: 'manual' }));
+    const ultima = vista?.paradas[vista.paradas.length - 1]?.facturaId ?? '';
+    const m = await s.operar(despachador, { ...entrada, version: r.ok ? r.value.version ?? 0 : 0, operacion: { tipo: 'mover', facturaId: ultima, posicion: 0 } });
+    expect(m.ok).toBe(true);
+    expect(registro.registrarOperacion).toHaveBeenLastCalledWith('empresa-1', expect.objectContaining({ tipo: 'mover', facturaId: ultima, modo: 'manual' }));
     registro.registrarOperacion.mockRejectedValue(new Error('base caída'));
     expect((await s.planificar(despachador, entrada)).ok).toBe(true);
   });
@@ -218,11 +233,67 @@ describe('la ruta usa lo que el sistema aprendió', () => {
   });
 });
 
+describe('el orden en que el chofer cargó las facturas', () => {
+  it('una factura sin pin queda entre las que se cargaron justo antes y justo después (y no en el centro de la comuna)', async () => {
+    const { facturaId, localId, razonSocial, direccion, comuna, urgente, horarios } = paradaDe('X');
+    const sinCoord = { facturaId, localId, razonSocial, direccion, comuna, urgente, horarios, cargadaEn: 2000 };
+    // El centro de Santiago (-70.66) queda junto al depósito (-70.7): ahí la parada iría primera o última, no entre A y B.
+    const oeste = paradaDe('A', { lat: -33.45, lng: -71.0, cargadaEn: 1000 });
+    const este = paradaDe('B', { lat: -33.45, lng: -70.9, cargadaEn: 3000 });
+    const s = montar({ pendientes: [este, sinCoord, oeste] });
+    const r = await s.planificar(despachador, entrada);
+    expect(r.ok && ids(r.value).indexOf('f-X')).toBe(1);
+    expect(r.ok && r.value.paradas.find((x) => x.facturaId === 'f-X')).toMatchObject({ ubicacionAproximada: true });
+    expect(s.rutas.repo.hechasConUbicacion).toHaveBeenCalled();
+  });
+
+  it('si no se pueden leer las ya entregadas, la ruta se calcula igual', async () => {
+    const s = montar({ pendientes: [paradaDe('A', { cargadaEn: 1 }), paradaDe('B', { cargadaEn: 2 })] });
+    s.rutas.repo.hechasConUbicacion.mockRejectedValueOnce(new Error('caída'));
+    expect((await s.planificar(despachador, entrada)).ok).toBe(true);
+  });
+});
+
+describe('la ruta con tiempos por calles', () => {
+  it('pide los tiempos al servicio solo para el depósito, el origen y las paradas con pin, y usa lo que responde (sin el ritmo aprendido)', async () => {
+    const viajes = vi.fn(() => Promise.resolve({ minutos: () => 100, conCalles: true }));
+    const { facturaId, localId, razonSocial, direccion, comuna, urgente, horarios } = paradaDe('S');
+    const sinCoord = { facturaId, localId, razonSocial, direccion, comuna, urgente, horarios };
+    const rutas = fakeRutas([paradaDe('A', { lat: -33.45, lng: -70.65 }), paradaDe('B', { lat: -33.46, lng: -70.66 }), sinCoord]);
+    const aprendizaje = { parametros: () => Promise.resolve([{ clave: 'ritmo' as const, ambito: 'global', valor: 2, muestras: 50, confianza: 1 }]) };
+    const construir = (v?: typeof viajes) => crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), entregas: fakeEntregasRuta(), jornadas: fakeJornadas(), registro: fakeRegistro(), aprendizaje, ...(v ? { viajes: v } : {}), clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba() });
+    const conCalles = await construir(viajes).planificar(despachador, entrada);
+    const enLinea = await construir().planificar(despachador, entrada);
+    const nodos = (viajes.mock.calls[0] as unknown as [readonly { id: string; rol: string }[]])[0];
+    expect(nodos.map((n) => `${n.rol}:${n.id}`).sort()).toEqual(['deposito:__deposito__', 'origen:__origen__', 'parada:f-A', 'parada:f-B']);
+    // 100 min por tramo: depósito→A→B→depósito = tres tramos de 100 más dos servicios de 8 min, desde las 08:00 (480).
+    expect(conCalles.ok && conCalles.value.regreso).toBeGreaterThanOrEqual(480 + 300);
+    expect(enLinea.ok && enLinea.value.regreso).toBeLessThan(480 + 300);
+  });
+
+  it('si el servicio de calles falla, la ruta se calcula igual en línea recta', async () => {
+    const viajes = vi.fn(() => Promise.reject(new Error('sin red')));
+    const servicios = crearServiciosDeRuta({ rutas: fakeRutas([paradaDe('A')]).repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), entregas: fakeEntregasRuta(), jornadas: fakeJornadas(), registro: fakeRegistro(), viajes, clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba() });
+    expect((await servicios.planificar(despachador, entrada)).ok).toBe(true);
+  });
+});
+
+describe('insignias de verificación en la fila de la ruta', () => {
+  it('cada parada dice si su pin y su foto están verificados', async () => {
+    const s = montar({ pendientes: [paradaDe('A', { pinVerificado: true, fotoVerificada: true }), paradaDe('B')] });
+    const r = await s.planificar(despachador, entrada);
+    const por = (id: string) => (r.ok ? r.value.paradas.find((x) => x.facturaId === id) : undefined);
+    expect(por('f-A')).toMatchObject({ pinVerificado: true, fotoVerificada: true });
+    expect(por('f-B')).not.toHaveProperty('pinVerificado');
+    expect(por('f-B')).not.toHaveProperty('fotoVerificada');
+  });
+});
+
 describe('coordenadas para navegar', () => {
   it('cada parada trae el pin del local; las sin pin no traen coordenadas', async () => {
     const s = montar({ pendientes: [paradaDe('A', { lat: -33.45, lng: -70.65 }), paradaDe('B')] });
     const r = await s.planificar(despachador, entrada);
-    expect(r.ok && r.value.paradas[0]).toMatchObject({ lat: -33.45, lng: -70.65 });
+    expect(r.ok && r.value.paradas.find((x) => x.facturaId === 'f-A')).toMatchObject({ lat: -33.45, lng: -70.65 });
   });
 });
 
@@ -234,23 +305,65 @@ describe('acomodar la ruta', () => {
     return { s, orden: ids(p.value), version: p.value.version ?? 0 };
   };
 
-  it('SUBIR y BAJAR mueven una posición, pasan a modo manual y suben la versión', async () => {
+  it('SUBIR y BAJAR mueven una posición, pasan a modo manual y suben la versión; lo de arriba queda fijado', async () => {
     const { s, orden, version } = await planificada();
     const tercero = orden[2] ?? '';
     const r = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'subir', facturaId: tercero } });
-    expect(r.ok && ids(r.value)).toEqual([orden[0], tercero, orden[1], orden[3]]);
+    expect(r.ok && ids(r.value).slice(0, 2)).toEqual([orden[0], tercero]);
+    expect(r.ok && [...ids(r.value)].sort()).toEqual([...orden].sort());
+    expect(r.ok && r.value.paradas.map((p) => p.fijada)).toEqual([true, true, false, false]);
     expect(r.ok && r.value).toMatchObject({ modo: 'manual', version: version + 1 });
+    const debajo = r.ok ? (ids(r.value)[2] ?? '') : '';
     const b = await s.operar(despachador, { ...entrada, version: version + 1, operacion: { tipo: 'bajar', facturaId: tercero } });
-    expect(b.ok && ids(b.value)).toEqual(orden);
+    expect(b.ok && ids(b.value).slice(0, 3)).toEqual([orden[0], debajo, tercero]);
   });
 
-  it('en modo manual IR PRIMERO solo pasa al frente, sin reordenar el resto', async () => {
+  it('MOVER (arrastrar y soltar) deja la parada en la posición pedida, pasa a modo manual y sube la versión', async () => {
+    const { s, orden, version } = await planificada();
+    const ultimo = orden[orden.length - 1] ?? '';
+    const alFrente = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'mover', facturaId: ultimo, posicion: 0 } });
+    expect(alFrente.ok && ids(alFrente.value)[0]).toBe(ultimo);
+    expect(alFrente.ok && alFrente.value).toMatchObject({ modo: 'manual', version: version + 1 });
+    const actual = alFrente.ok ? ids(alFrente.value) : [];
+    const alMedio = await s.operar(despachador, { ...entrada, version: version + 1, operacion: { tipo: 'mover', facturaId: ultimo, posicion: 2 } });
+    expect(alMedio.ok && ids(alMedio.value).slice(0, 3)).toEqual([actual[1], actual[2], ultimo]);
+  });
+
+  it('al mover una parada a mano, lo de abajo se ordena solo desde ahí', async () => {
+    // Cuatro locales en fila hacia el este del depósito: la ruta va A, B, C, D. Si el chofer pone D primero, lo que queda se ordena desde D.
+    const enFila = ['A', 'B', 'C', 'D'].map((n, i) => paradaDe(n, { lat: -33.5, lng: -70.69 + i * 0.01 }));
+    const s = montar({ pendientes: enFila });
+    const p = await s.planificar(despachador, entrada);
+    expect(p.ok && ids(p.value)).toEqual(['f-A', 'f-B', 'f-C', 'f-D']);
+    const r = await s.operar(despachador, { ...entrada, version: p.ok ? (p.value.version ?? 0) : 0, operacion: { tipo: 'mover', facturaId: 'f-D', posicion: 0 } });
+    expect(r.ok && ids(r.value)).toEqual(['f-D', 'f-C', 'f-B', 'f-A']);
+    expect(r.ok && r.value.paradas[0]).toMatchObject({ fijada: true });
+  });
+
+  it('con lo de arriba fijado a mano, las facturas nuevas entran debajo y no lo mueven', async () => {
+    const { s, orden, version } = await planificada();
+    const r = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'mover', facturaId: orden[3] ?? '', posicion: 1 } });
+    const arriba = r.ok ? ids(r.value).slice(0, 2) : [];
+    s.rutas.estado.pendientes = [...s.rutas.estado.pendientes, paradaDe('E')];
+    const i = await s.operar(despachador, { ...entrada, version: version + 1, operacion: { tipo: 'insertar' } });
+    expect(i.ok && ids(i.value).slice(0, 2)).toEqual(arriba);
+    expect(i.ok && ids(i.value)).toContain('f-E');
+    expect(i.ok && i.value.modo).toBe('manual');
+  });
+
+  it('MOVER con una posición fuera de la lista deja la parada en el extremo', async () => {
+    const { s, orden, version } = await planificada();
+    const r = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'mover', facturaId: orden[0] ?? '', posicion: 99 } });
+    expect(r.ok && ids(r.value)).toEqual([...orden.slice(1), orden[0]]);
+  });
+
+  it('en modo manual IR PRIMERO la deja al frente y lo que se fijó antes a mano sigue detrás de ella', async () => {
     const { s, orden, version } = await planificada();
     const m = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'subir', facturaId: orden[1] ?? '' } });
     const actual = m.ok ? ids(m.value) : [];
     const ultimo = actual[3] ?? '';
     const r = await s.operar(despachador, { ...entrada, version: version + 1, operacion: { tipo: 'primero', facturaId: ultimo } });
-    expect(r.ok && ids(r.value)).toEqual([ultimo, ...actual.slice(0, 3)]);
+    expect(r.ok && ids(r.value).slice(0, 2)).toEqual([ultimo, orden[1]]);
     expect(r.ok && r.value.paradas[0]).toMatchObject({ fijada: true });
     expect(r.ok && r.value.modo).toBe('manual');
   });
@@ -317,6 +430,8 @@ describe('acomodar la ruta', () => {
     const { s, version } = await planificada();
     const ajena = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'subir', facturaId: 'f-ZZZ' } });
     expect(!ajena.ok && ajena.error.codigo).toBe('NO_ENCONTRADO');
+    const mover = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'mover', facturaId: 'f-ZZZ', posicion: 0 } });
+    expect(!mover.ok && mover.error.codigo).toBe('NO_ENCONTRADO');
     const q = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'quitar', facturaId: 'f-ZZZ' } });
     expect(!q.ok && q.error.codigo).toBe('NO_ENCONTRADO');
     const salida = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'salida', salidaMin: -5 } });
@@ -346,5 +461,33 @@ describe('ruta del chofer', () => {
     expect(!plan.ok && plan.error.codigo).toBe('SIN_PERMISO');
     const sin = await montarChofer().ver(chofer, entrada);
     expect(!sin.ok && sin.error).toMatchObject({ detalle: { codigo: 'SIN_JORNADA' } });
+  });
+});
+
+describe('lo que se hace manda: avisar una parada que no era la siguiente', () => {
+  const enFila = () => ['A', 'B', 'C', 'D'].map((n, i) => paradaDe(n, { lat: -33.5, lng: -70.69 + i * 0.01 }));
+
+  it('si el chofer entregó otra antes de la siguiente, lo que queda se ordena solo desde donde está', async () => {
+    const rutas = fakeRutas(enFila());
+    const entregas = fakeEntregasRuta();
+    const registro = fakeRegistro();
+    const s = crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), entregas, jornadas: fakeJornadas(), registro, clock: crearReloj('2026-10-05T12:00:00Z').clock, resolverCamion: resolverDePrueba() });
+    const p = await s.planificar(despachador, entrada);
+    expect(p.ok && ids(p.value)).toEqual(['f-A', 'f-B', 'f-C', 'f-D']);
+    // Fue directo a D (la última de la lista) y la entregó: el camión está ahí y D ya no está pendiente.
+    rutas.estado.pendientes = rutas.estado.pendientes.filter((f) => f.facturaId !== 'f-D');
+    entregas.ultimaPosicion.mockResolvedValue({ lat: -33.5, lng: -70.66, en: new Date('2026-10-05T12:00:00Z') });
+    expect(await s.reordenarTrasVisita(despachador, CAMION_ID, FECHA, 'f-D')).toBe(true);
+    expect(rutas.guardadaActual()?.orden).toEqual(['f-C', 'f-B', 'f-A']);
+    expect(registro.registrarOperacion).toHaveBeenLastCalledWith('empresa-1', expect.objectContaining({ tipo: 'ordenar', orden: ['f-C', 'f-B', 'f-A'] }));
+  });
+
+  it('si siguió la lista, no se toca nada', async () => {
+    const s = montar({ pendientes: enFila() });
+    await s.planificar(despachador, entrada);
+    s.rutas.estado.pendientes = s.rutas.estado.pendientes.filter((f) => f.facturaId !== 'f-A');
+    const llamadas = s.rutas.repo.guardar.mock.calls.length;
+    expect(await s.reordenarTrasVisita(despachador, CAMION_ID, FECHA, 'f-A')).toBe(false);
+    expect(s.rutas.repo.guardar.mock.calls.length).toBe(llamadas);
   });
 });

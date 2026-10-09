@@ -14,7 +14,9 @@ const resultadoBusqueda = z.object({
   lat: z.number().optional(),
   lng: z.number().optional(),
   pinEstado,
+  pinVerificado: z.boolean().optional(),
   fotoPath: z.string().optional(),
+  fotoVerificada: z.boolean().optional(),
   streetviewRumbo: z.number().optional(),
   nota: z.string().optional(),
   score: z.number(),
@@ -106,7 +108,13 @@ export const rutasClientes = ({ app, casos, guard }: ContextoRutas): void => {
     lat: z.number().optional(),
     lng: z.number().optional(),
     pinEstado,
+    pinFuente: z.enum(['geocodificador', 'manual', 'importado', 'aprendido', 'chofer', 'enlace']).optional(),
+    pinVerificado: z.boolean(),
+    pinVerificacion: z.enum(['persona', 'entregas']).optional(),
+    /** Qué tan firme es el pin según las entregas (solo si el local tiene pin). */
+    pinRespaldo: z.object({ nivel: z.enum(['verificado', 'respaldado', 'en_conflicto', 'sin_respaldo']), entregas: z.number(), dias: z.number(), distanciaM: z.number().optional() }).optional(),
     fotoPath: z.string().optional(),
+    fotoVerificada: z.boolean().optional(),
     streetviewRumbo: z.number().optional(),
     nota: z.string().optional(),
   });
@@ -121,15 +129,103 @@ export const rutasClientes = ({ app, casos, guard }: ContextoRutas): void => {
   );
 
   a.patch(
+    '/v1/clientes/:id',
+    {
+      preHandler: guard('clientes:escribir'),
+      schema: {
+        tags: ['clientes'],
+        summary: 'Corregir los datos del cliente: razón social, RUT y giro (RUT o giro vacíos los borran)',
+        security: SEGURIDAD,
+        params: idParam,
+        body: z.object({ razonSocial: z.string().max(400).optional(), rut: z.string().max(40).optional(), giro: z.string().max(300).optional() }),
+        response: { 204: z.null(), ...RESPUESTAS_ERROR },
+      },
+    },
+    async (req, reply) => {
+      const r = await casos.corregirCliente(actor(req), req.params.id, req.body);
+      return r.ok ? reply.code(204).send(null) : enviarError(reply, r.error);
+    },
+  );
+
+  a.delete(
+    '/v1/locales/:id',
+    {
+      preHandler: guard('locales:eliminar'),
+      schema: {
+        tags: ['clientes'],
+        summary: 'Eliminar una dirección equivocada con sus facturas pendientes (y el cliente si se queda sin direcciones); con entregas hechas responde 409',
+        security: SEGURIDAD,
+        params: idParam,
+        response: { 204: z.null(), ...RESPUESTAS_ERROR },
+      },
+    },
+    async (req, reply) => {
+      const r = await casos.eliminarLocal(actor(req), req.params.id);
+      return r.ok ? reply.code(204).send(null) : enviarError(reply, r.error);
+    },
+  );
+
+  const localParaLista = z.object({
+    localId: z.string(),
+    clienteId: z.string(),
+    razonSocial: z.string(),
+    rut: z.string().optional(),
+    giro: z.string().optional(),
+    direccion: z.string(),
+    comuna: z.string(),
+    lat: z.number().optional(),
+    lng: z.number().optional(),
+    pinFuente: z.string().optional(),
+    pinVerificado: z.boolean(),
+    pinVerificacion: z.enum(['persona', 'entregas']).optional(),
+    nota: z.string().optional(),
+    streetviewRumbo: z.number().optional(),
+    tieneFoto: z.boolean(),
+    entregas: z.number(),
+  });
+
+  a.get(
+    '/v1/locales',
+    {
+      preHandler: guard('clientes:escribir'),
+      schema: {
+        tags: ['clientes'],
+        summary: 'Locales con los datos de su cliente y cuántas entregas tiene: de una comuna o los que coinciden con un texto (razón social, RUT o dirección); primero los de pin por verificar',
+        security: SEGURIDAD,
+        querystring: z.object({ comuna: z.string().max(100).optional(), texto: z.string().max(100).optional(), limite: z.coerce.number().int().optional() }),
+        response: { 200: z.object({ total: z.number(), locales: z.array(localParaLista) }), ...RESPUESTAS_ERROR },
+      },
+    },
+    async (req, reply) => {
+      const r = await casos.listarLocales(actor(req), { comuna: req.query.comuna, texto: req.query.texto }, req.query.limite);
+      return reply.send({ total: r.total, locales: [...r.locales] });
+    },
+  );
+
+  a.get(
+    '/v1/locales/comunas',
+    {
+      preHandler: guard('clientes:escribir'),
+      schema: {
+        tags: ['clientes'],
+        summary: 'Por comuna: cuántos locales hay, cuántos con pin verificado y cuántos sin pin',
+        security: SEGURIDAD,
+        response: { 200: z.object({ comunas: z.array(z.object({ comuna: z.string(), total: z.number(), verificados: z.number(), sinPin: z.number() })) }), ...RESPUESTAS_ERROR },
+      },
+    },
+    async (req, reply) => reply.send({ comunas: [...(await casos.resumenComunas(actor(req)))] }),
+  );
+
+  a.patch(
     '/v1/locales/:id',
     {
       preHandler: guard('clientes:escribir'),
       schema: {
         tags: ['clientes'],
-        summary: 'Nota, rumbo de Street View (solo la referencia) y pin del local',
+        summary: 'Dirección y comuna, nota, rumbo de Street View (solo la referencia) y pin del local',
         security: SEGURIDAD,
         params: idParam,
-        body: z.object({ nota: z.string().max(1000).optional(), streetviewRumbo: z.number().optional(), lat: z.number().optional(), lng: z.number().optional() }),
+        body: z.object({ direccion: z.string().max(600).optional(), comuna: z.string().max(100).optional(), nota: z.string().max(1000).optional(), streetviewRumbo: z.number().optional(), lat: z.number().optional(), lng: z.number().optional() }),
         response: { 204: z.null(), ...RESPUESTAS_ERROR },
       },
     },

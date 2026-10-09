@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { crearCrearUsuario } from './crear-usuario.js';
-import { crearCambiarEstadoUsuario, crearListarUsuarios, crearResetearPin } from './gestionar-usuarios.js';
+import { crearCambiarEditorUsuario, crearCambiarEstadoUsuario, crearListarUsuarios, crearResetearPin } from './gestionar-usuarios.js';
 import { fakeIdentidad, fakeIntentos, fakeUsuarios, usuarioDe } from './fakes.test-util.js';
 
 const DOMINIO = 'usuarios.test';
@@ -112,5 +112,35 @@ describe('gestión de usuarios', () => {
     expect(usuarios.filas.get(creado.value.id)?.activo).toBe(false);
     expect((await cambiar(admin, creado.value.id, true)).ok).toBe(true);
     expect(usuarios.filas.get(creado.value.id)?.activo).toBe(true);
+  });
+});
+
+describe('permiso de editor', () => {
+  it('el admin le da y le quita el permiso de editor a un chofer o ayudante', async () => {
+    for (const rol of ['chofer', 'ayudante'] as const) {
+      const u = fakeUsuarios([usuarioDe({ id: 'u-x', rol, username: 'x' })]);
+      const cambiar = crearCambiarEditorUsuario({ usuarios: u.repo });
+      expect((await cambiar(usuarioDe(), 'u-x', true)).ok).toBe(true);
+      expect((await u.repo.porId('u-x'))?.editor).toBe(true);
+      expect((await cambiar(usuarioDe(), 'u-x', false)).ok).toBe(true);
+      expect((await u.repo.porId('u-x'))?.editor).toBe(false);
+    }
+  });
+
+  it('solo aplica a choferes y ayudantes: al admin y al despachador no (ya tienen esos permisos)', async () => {
+    const u = fakeUsuarios([usuarioDe({ id: 'u-d', rol: 'despachador', username: 'd' })]);
+    const r = await crearCambiarEditorUsuario({ usuarios: u.repo })(usuarioDe(), 'u-d', true);
+    expect(!r.ok && r.error.codigo).toBe('VALIDACION');
+    expect((await u.repo.porId('u-d'))?.editor).toBe(false);
+  });
+
+  it('un usuario inexistente o de otra empresa es NO_ENCONTRADO', async () => {
+    const u = fakeUsuarios([usuarioDe({ id: 'u-o', rol: 'chofer', username: 'o', empresaId: 'otra' })]);
+    const cambiar = crearCambiarEditorUsuario({ usuarios: u.repo });
+    const ajeno = await cambiar(usuarioDe(), 'u-o', true);
+    expect(!ajeno.ok && ajeno.error.codigo).toBe('NO_ENCONTRADO');
+    expect((await u.repo.porId('u-o'))?.editor).toBe(false);
+    const noExiste = await cambiar(usuarioDe(), 'u-zzz', true);
+    expect(!noExiste.ok && noExiste.error.codigo).toBe('NO_ENCONTRADO');
   });
 });

@@ -2,8 +2,8 @@ import { resolverHorario, ventanasParaRuta, type HorarioLocal } from '../entidad
 import type { Fecha } from '../shared/fechas.js';
 import { diaDeSemana } from '../shared/fechas.js';
 import type { Coordenada } from '../valor/coordenada.js';
-import { PARAMETROS_POR_DEFECTO, SERVICIO_POR_DEFECTO_MIN } from './parametros.js';
-import { crearTiemposHaversine, DEPOSITO, ORIGEN } from './tiempos.js';
+import { EPS_LLEGADA_CALIBRADO, PARAMETROS_POR_DEFECTO, PESO_ORDEN_CARGA_CALIBRADO, SERVICIO_POR_DEFECTO_MIN } from './parametros.js';
+import { crearFactorHorario, crearTiemposConViajes, crearTiemposHaversine, DEPOSITO, ORIGEN } from './tiempos.js';
 import type { ParadaRuta, ProblemaRuta } from './tipos.js';
 
 /** Una factura por entregar, ya con lo que el motor necesita saber del local. */
@@ -17,6 +17,8 @@ export type EntradaParada = {
   readonly antesDeMin?: number;
   readonly urgente: boolean;
   readonly servicioMin?: number;
+  /** En qué orden se cargó la factura ese día (0 = la primera). */
+  readonly ordenCarga?: number;
 };
 
 export type DatosProblema = {
@@ -30,6 +32,8 @@ export type DatosProblema = {
   readonly fijas?: readonly string[];
   /** Cuánto demora este camión frente a lo calculado (lo aprendido de sus rutas reales); 1 si no se sabe. */
   readonly ritmo?: number;
+  /** Minutos reales de manejar entre dos nodos (ids de parada, `ORIGEN`, `DEPOSITO`), si se conocen: reemplazan al cálculo en línea recta. */
+  readonly viajeMin?: (desde: string, hasta: string) => number | undefined;
 };
 
 /**
@@ -56,6 +60,7 @@ export const armarProblema = (d: DatosProblema): { readonly problema: ProblemaRu
       ventanas: ventanasParaRuta(resolucion),
       servicioMin: e.servicioMin ?? SERVICIO_POR_DEFECTO_MIN,
       prioridad: e.urgente,
+      ...(e.ordenCarga !== undefined ? { ordenCarga: e.ordenCarga } : {}),
     });
   }
 
@@ -66,9 +71,9 @@ export const armarProblema = (d: DatosProblema): { readonly problema: ProblemaRu
       salida: d.salida,
       paradas,
       fijas: (d.fijas ?? []).filter((id) => ids.has(id)),
-      tiempos: crearTiemposHaversine(coordenadas),
+      tiempos: d.viajeMin ? crearTiemposConViajes(crearTiemposHaversine(coordenadas), d.viajeMin, crearFactorHorario()) : crearTiemposHaversine(coordenadas),
       ritmo: d.ritmo ?? 1,
-      parametros: { ...PARAMETROS_POR_DEFECTO, horaLimiteRegresoMin: d.horaLimiteRegresoMin },
+      parametros: { ...PARAMETROS_POR_DEFECTO, epsLlegada: EPS_LLEGADA_CALIBRADO, pesoOrdenCarga: PESO_ORDEN_CARGA_CALIBRADO, horaLimiteRegresoMin: d.horaLimiteRegresoMin },
     },
   };
 };
