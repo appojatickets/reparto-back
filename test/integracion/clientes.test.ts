@@ -138,9 +138,10 @@ describe('crearConLocal', () => {
     expect(a.ok && repetida.ok && repetida.value.localId === a.value.localId).toBe(true);
     const otraDir = await repo.crearConLocal(e, { ...datos, rut: '12345678-5', local: { ...datos.local, direccion: 'Otra 55' } });
     expect(a.ok && otraDir.ok && otraDir.value.clienteId === a.value.clienteId).toBe(true);
-    const s1 = await repo.crearConLocal(e, datos);
+    const sinRut = { ...datos, razonSocial: 'Botillería Sin RUT' };
+    const s1 = await repo.crearConLocal(e, sinRut);
     expect(s1.ok && s1.value.existente).toBe(false);
-    const s2 = await repo.crearConLocal(e, datos);
+    const s2 = await repo.crearConLocal(e, sinRut);
     expect(s1.ok && s2.ok && s2.value.existente && s2.value.localId === s1.value.localId).toBe(true);
   });
 

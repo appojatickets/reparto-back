@@ -8769,6 +8769,723 @@
         }
       }
     },
+    "/v1/planilla": {
+      "get": {
+        "summary": "Qué lleva cada camión un día (chofer, ayudante, vendedores y comunas); hoy si no se indica",
+        "tags": [
+          "planilla"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            },
+            "in": "query",
+            "name": "fecha",
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "asignaciones": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "fecha": {
+                            "type": "string"
+                          },
+                          "camion": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "patente": {
+                                "type": "string"
+                              },
+                              "alias": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "patente"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "chofer": {
+                            "type": "object",
+                            "properties": {
+                              "nombre": {
+                                "type": "string"
+                              },
+                              "usuarioId": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "nombre"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "ayudante": {
+                            "type": "object",
+                            "properties": {
+                              "nombre": {
+                                "type": "string"
+                              },
+                              "usuarioId": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "nombre"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "comunas": {
+                            "readOnly": true,
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "vendedores": {
+                            "readOnly": true,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "codigo": {
+                                  "type": "string"
+                                },
+                                "nombre": {
+                                  "type": "string"
+                                },
+                                "celular": {
+                                  "type": "string"
+                                },
+                                "activo": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "codigo",
+                                "nombre",
+                                "activo"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "fecha",
+                          "camion",
+                          "comunas",
+                          "vendedores"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "asignaciones"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Aplicar la planilla de la mañana: crea camiones y vendedores que falten, enlaza chofer y ayudante y, si es de hoy, deja a cada uno con su camión elegido",
+        "tags": [
+          "planilla"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fecha": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "filas": {
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "patente": {
+                          "type": "string",
+                          "maxLength": 30
+                        },
+                        "chofer": {
+                          "type": "string",
+                          "maxLength": 120
+                        },
+                        "ayudante": {
+                          "type": "string",
+                          "maxLength": 120
+                        },
+                        "vendedores": {
+                          "maxItems": 20,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "codigo": {
+                                "type": "string",
+                                "maxLength": 10
+                              },
+                              "nombre": {
+                                "type": "string",
+                                "maxLength": 100
+                              }
+                            },
+                            "required": [
+                              "codigo"
+                            ]
+                          }
+                        },
+                        "comunas": {
+                          "maxItems": 60,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "maxLength": 60
+                          }
+                        }
+                      },
+                      "required": [
+                        "patente"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "fecha",
+                  "filas"
+                ]
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "filas": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "patente": {
+                            "type": "string"
+                          },
+                          "valida": {
+                            "type": "boolean"
+                          },
+                          "errores": {
+                            "readOnly": true,
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "camionCreado": {
+                            "type": "boolean"
+                          },
+                          "alias": {
+                            "type": "string"
+                          },
+                          "vendedoresCreados": {
+                            "type": "number"
+                          },
+                          "chofer": {
+                            "type": "object",
+                            "properties": {
+                              "nombre": {
+                                "type": "string"
+                              },
+                              "estado": {
+                                "type": "string",
+                                "enum": [
+                                  "enlazada",
+                                  "sin_usuario"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "nombre",
+                              "estado"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "ayudante": {
+                            "type": "object",
+                            "properties": {
+                              "nombre": {
+                                "type": "string"
+                              },
+                              "estado": {
+                                "type": "string",
+                                "enum": [
+                                  "enlazada",
+                                  "sin_usuario"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "nombre",
+                              "estado"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "jornadasAbiertas": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "patente",
+                          "valida",
+                          "errores",
+                          "camionCreado",
+                          "vendedoresCreados",
+                          "jornadasAbiertas"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "filas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/exportaciones/locales": {
       "get": {
         "summary": "Datos de los locales y sus clientes para exportar (solo admin). Filtros opcionales; la pantalla elige las columnas.",
@@ -13520,6 +14237,108 @@
                             "patente"
                           ],
                           "additionalProperties": false
+                        },
+                        "asignacion": {
+                          "type": "object",
+                          "properties": {
+                            "fecha": {
+                              "type": "string"
+                            },
+                            "camion": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "patente": {
+                                  "type": "string"
+                                },
+                                "alias": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "patente"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "chofer": {
+                              "type": "object",
+                              "properties": {
+                                "nombre": {
+                                  "type": "string"
+                                },
+                                "usuarioId": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "nombre"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "ayudante": {
+                              "type": "object",
+                              "properties": {
+                                "nombre": {
+                                  "type": "string"
+                                },
+                                "usuarioId": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "nombre"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "comunas": {
+                              "readOnly": true,
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "vendedores": {
+                              "readOnly": true,
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "codigo": {
+                                    "type": "string"
+                                  },
+                                  "nombre": {
+                                    "type": "string"
+                                  },
+                                  "celular": {
+                                    "type": "string"
+                                  },
+                                  "activo": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "codigo",
+                                  "nombre",
+                                  "activo"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "fecha",
+                            "camion",
+                            "comunas",
+                            "vendedores"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -13796,6 +14615,108 @@
                       "required": [
                         "id",
                         "patente"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "asignacion": {
+                      "type": "object",
+                      "properties": {
+                        "fecha": {
+                          "type": "string"
+                        },
+                        "camion": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "patente": {
+                              "type": "string"
+                            },
+                            "alias": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "patente"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "chofer": {
+                          "type": "object",
+                          "properties": {
+                            "nombre": {
+                              "type": "string"
+                            },
+                            "usuarioId": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "nombre"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "ayudante": {
+                          "type": "object",
+                          "properties": {
+                            "nombre": {
+                              "type": "string"
+                            },
+                            "usuarioId": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "nombre"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "comunas": {
+                          "readOnly": true,
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "vendedores": {
+                          "readOnly": true,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "codigo": {
+                                "type": "string"
+                              },
+                              "nombre": {
+                                "type": "string"
+                              },
+                              "celular": {
+                                "type": "string"
+                              },
+                              "activo": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "codigo",
+                              "nombre",
+                              "activo"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "fecha",
+                        "camion",
+                        "comunas",
+                        "vendedores"
                       ],
                       "additionalProperties": false
                     }

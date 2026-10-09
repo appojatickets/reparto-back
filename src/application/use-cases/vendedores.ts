@@ -1,4 +1,5 @@
 import type { Usuario } from '../../domain/entidades/usuario.js';
+import { normalizarCodigoVendedor } from '../../domain/entidades/vendedor.js';
 import { err, ok, type Result } from '../../domain/shared/result.js';
 import { parsearCelular } from '../../domain/valor/telefono.js';
 import { errorApp, type ErrorApp } from '../errores.js';
@@ -9,8 +10,11 @@ const limpiar = (t: string): string => t.replace(/\s+/g, ' ').trim();
 const nombreValido = (nombre: string): ErrorApp | undefined =>
   nombre.length === 0 || nombre.length > 60 ? errorApp('VALIDACION', 'El nombre debe tener entre 1 y 60 caracteres.') : undefined;
 
-/** «v1», «V 01» → V1, V01: solo letras, números y guion, en mayúsculas. */
-const codigoDe = (texto: string): string => texto.replace(/\s+/g, '').toUpperCase();
+/** «v1», «V 01» → V01 (igual que en la planilla); otros códigos: solo letras, números y guion, en mayúsculas. */
+const codigoDe = (texto: string): string => {
+  const v = normalizarCodigoVendedor(texto);
+  return v.ok ? v.value : texto.replace(/\s+/g, '').toUpperCase();
+};
 
 export const crearCrearVendedor = ({ vendedores }: { vendedores: VendedorRepository }) =>
   async (actor: Usuario, entrada: { codigo: string; nombre: string; celular?: string | undefined }): Promise<Result<Vendedor, ErrorApp>> => {

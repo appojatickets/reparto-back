@@ -80,6 +80,20 @@ export type Tabla = {
     resolucion: 'eliminada' | 'descartada' | null;
   };
   vendedor: { id: Generated<string>; empresa_id: string; codigo: string; nombre: string; celular: string | null; activo: Generated<boolean>; creado_en: Generated<Date> };
+  asignacion_dia: {
+    id: Generated<string>;
+    empresa_id: string;
+    fecha_reparto: string;
+    camion_id: string;
+    chofer_usuario_id: string | null;
+    chofer_nombre: string | null;
+    ayudante_usuario_id: string | null;
+    ayudante_nombre: string | null;
+    comunas: Generated<string[]>;
+    creado_por: string | null;
+    creado_en: Generated<Date>;
+  };
+  asignacion_vendedor: { asignacion_id: string; vendedor_id: string };
   factura: {
     id: Generated<string>;
     empresa_id: string;

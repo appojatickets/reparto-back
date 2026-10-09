@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { crearReloj, usuarioDe } from './fakes.test-util.js';
-import { fakeFacturas, fakeJornadas, fakeRegistro, JORNADA, facturaDe, resolverDePrueba } from './fakes-facturas.test-util.js';
+import { fakeFacturas, fakeJornadas, fakePlanillas, fakeRegistro, JORNADA, facturaDe, resolverDePrueba } from './fakes-facturas.test-util.js';
 import { crearActualizarFactura, crearListarFacturas, crearRegistrarFactura } from './facturas.js';
 import { fakeRutas } from './fakes-rutas.test-util.js';
 import { crearIniciarJornada, crearMiJornada, crearResolverCamion, crearTerminarJornada } from './jornada.js';
@@ -14,19 +14,38 @@ const { clock } = crearReloj();
 describe('jornada', () => {
   it('iniciar usa la fecha de hoy en Chile y el reloj inyectado; cerrar y consultar pasan por el repositorio', async () => {
     const jornadas = fakeJornadas();
-    const r = await crearIniciarJornada({ jornadas, rutas: fakeRutas().repo, clock })(chofer, 'cam-7');
+    const r = await crearIniciarJornada({ jornadas, rutas: fakeRutas().repo, planillas: fakePlanillas(), clock })(chofer, 'cam-7');
     expect(r.ok && r.value.camion.id).toBe('cam-7');
     expect(jornadas.iniciar).toHaveBeenCalledWith('empresa-1', 'u-chofer', 'cam-7', '2026-10-05', new Date('2026-10-05T12:00:00.000Z'));
     await crearTerminarJornada({ jornadas, facturas: fakeFacturas(), rutas: fakeRutas().repo, registro: fakeRegistro(), clock })(chofer);
     expect(jornadas.terminar).toHaveBeenCalledWith('empresa-1', 'u-chofer', new Date('2026-10-05T12:00:00.000Z'));
-    await crearMiJornada({ jornadas, clock })(chofer);
+    await crearMiJornada({ jornadas, planillas: fakePlanillas(), clock })(chofer);
     expect(jornadas.activa).toHaveBeenCalledWith('empresa-1', 'u-chofer', '2026-10-05');
+  });
+
+  it('la jornada trae lo que dice la planilla de hoy para ese camión (quiénes van, comunas y vendedores), si la hay', async () => {
+    const asignacion = {
+      fecha: '2026-10-05',
+      camion: { id: 'cam-7', patente: 'ABCD12', alias: '12' },
+      chofer: { nombre: 'Juan Pérez', usuarioId: 'u-chofer' },
+      comunas: ['Maipú'],
+      vendedores: [{ id: 'v-1', codigo: 'V12', nombre: 'Ana', celular: '56912345678', activo: true }],
+    };
+    const planillas = fakePlanillas(asignacion);
+    const r = await crearIniciarJornada({ jornadas: fakeJornadas(), rutas: fakeRutas().repo, planillas, clock })(chofer, 'cam-7');
+    expect(r.ok && r.value.asignacion).toEqual(asignacion);
+    expect(planillas.deCamion).toHaveBeenCalledWith('empresa-1', '2026-10-05', 'cam-7');
+    const mi = await crearMiJornada({ jornadas: fakeJornadas(JORNADA), planillas: fakePlanillas(asignacion), clock })(chofer);
+    expect(mi?.asignacion).toEqual(asignacion);
+    const sin = await crearMiJornada({ jornadas: fakeJornadas(JORNADA), planillas: fakePlanillas(), clock })(chofer);
+    expect(sin).toEqual(JORNADA);
+    expect(sin && 'asignacion' in sin).toBe(false);
   });
 
   it('un camión que no existe o está fuera de servicio es NO_ENCONTRADO', async () => {
     const jornadas = fakeJornadas();
     jornadas.iniciar.mockResolvedValueOnce(err('CAMION_NO_DISPONIBLE'));
-    const r = await crearIniciarJornada({ jornadas, rutas: fakeRutas().repo, clock })(chofer, 'cam-x');
+    const r = await crearIniciarJornada({ jornadas, rutas: fakeRutas().repo, planillas: fakePlanillas(), clock })(chofer, 'cam-x');
     expect(!r.ok && r.error.codigo).toBe('NO_ENCONTRADO');
   });
 });
@@ -83,7 +102,7 @@ describe('terminar la ruta: queda el resumen del día', () => {
 describe('empezar el día: la ruta no se reutiliza', () => {
   it('al iniciar la jornada se borran las rutas guardadas de días anteriores', async () => {
     const rutas = fakeRutas().repo;
-    await crearIniciarJornada({ jornadas: fakeJornadas(), rutas, clock })(chofer, 'cam-7');
+    await crearIniciarJornada({ jornadas: fakeJornadas(), rutas, planillas: fakePlanillas(), clock })(chofer, 'cam-7');
     expect(rutas.borrarAnteriores).toHaveBeenCalledWith('empresa-1', '2026-10-05');
   });
 });

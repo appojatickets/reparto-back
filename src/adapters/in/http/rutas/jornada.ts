@@ -2,14 +2,18 @@ import { z } from 'zod';
 import { actor } from '../auth.js';
 import { enviarError, RESPUESTAS_ERROR } from '../errores.js';
 import { SEGURIDAD, tipada, type ContextoRutas } from './comunes.js';
+import { asignacionSchema } from './planilla.js';
+import type { JornadaConAsignacion } from '../../../../application/use-cases/jornada.js';
 
 const jornadaSchema = z.object({
   id: z.string(),
   fecha: z.string(),
   desde: z.string(),
   camion: z.object({ id: z.string(), patente: z.string(), alias: z.string().optional() }),
+  /** Lo que dice la planilla de hoy para ese camión: quiénes van, comunas y vendedores con su celular. */
+  asignacion: asignacionSchema.optional(),
 });
-const aJson = (j: { id: string; fecha: string; desde: Date; camion: { id: string; patente: string; alias?: string } }) => ({ id: j.id, fecha: j.fecha, desde: j.desde.toISOString(), camion: j.camion });
+const aJson = (j: JornadaConAsignacion) => ({ id: j.id, fecha: j.fecha, desde: j.desde.toISOString(), camion: j.camion, ...(j.asignacion ? { asignacion: j.asignacion } : {}) });
 
 export const rutasJornada = ({ app, casos, guard }: ContextoRutas): void => {
   const a = tipada(app);

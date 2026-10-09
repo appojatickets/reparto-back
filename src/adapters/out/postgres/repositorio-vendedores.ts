@@ -44,4 +44,26 @@ export class PostgresVendedorRepository implements VendedorRepository {
       .executeTakeFirst();
     return f && aVendedor(f);
   }
+
+  async asegurar(empresaId: string, vendedores: readonly { codigo: string; nombre?: string }[]): Promise<{ vendedores: readonly Vendedor[]; creados: number }> {
+    if (vendedores.length === 0) return { vendedores: [], creados: 0 };
+    const codigos = vendedores.map((v) => v.codigo);
+    return this.db.transaction().execute(async (trx) => {
+      const existentes = await trx.selectFrom('vendedor').select(COLUMNAS).where('empresa_id', '=', empresaId).where('codigo', 'in', codigos).execute();
+      const porCodigo = new Map(existentes.map((f) => [f.codigo, f]));
+      let creados = 0;
+      for (const v of vendedores) {
+        const previo = porCodigo.get(v.codigo);
+        if (!previo) {
+          const f = await trx.insertInto('vendedor').values({ empresa_id: empresaId, codigo: v.codigo, nombre: v.nombre ?? v.codigo }).returning(COLUMNAS).executeTakeFirstOrThrow();
+          porCodigo.set(v.codigo, f);
+          creados++;
+        } else if (previo.nombre === previo.codigo && v.nombre !== undefined) {
+          const f = await trx.updateTable('vendedor').set({ nombre: v.nombre }).where('id', '=', previo.id).returning(COLUMNAS).executeTakeFirstOrThrow();
+          porCodigo.set(v.codigo, f);
+        }
+      }
+      return { vendedores: codigos.flatMap((c) => { const f = porCodigo.get(c); return f ? [aVendedor(f)] : []; }), creados };
+    });
+  }
 }

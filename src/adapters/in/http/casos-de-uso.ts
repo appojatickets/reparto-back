@@ -5,6 +5,7 @@ import type { crearActualizarCamion, crearCrearCamion, crearListarCamiones } fro
 import type { crearExportarLocales } from '../../../application/use-cases/exportar-locales.js';
 import type { crearBuscarPinesPendientes, crearEstadoBusquedaPines } from '../../../application/use-cases/buscar-pines.js';
 import type { crearFijarPinDesdeEnlace } from '../../../application/use-cases/pin-desde-enlace.js';
+import type { crearAplicarPlanilla, crearObtenerPlanilla } from '../../../application/use-cases/planilla.js';
 import type { crearActualizarVendedor, crearCrearVendedor, crearListarVendedores } from '../../../application/use-cases/vendedores.js';
 import type { crearActualizarFactura, crearListarFacturas, crearRegistrarFactura } from '../../../application/use-cases/facturas.js';
 import type { crearGuardarConfigEmpresa, crearObtenerConfigEmpresa } from '../../../application/use-cases/config-empresa.js';
@@ -62,6 +63,8 @@ export type CasosDeUso = {
   readonly listarVendedores: ReturnType<typeof crearListarVendedores>;
   readonly crearVendedor: ReturnType<typeof crearCrearVendedor>;
   readonly actualizarVendedor: ReturnType<typeof crearActualizarVendedor>;
+  readonly aplicarPlanilla: ReturnType<typeof crearAplicarPlanilla>;
+  readonly obtenerPlanilla: ReturnType<typeof crearObtenerPlanilla>;
   readonly registrarFactura: ReturnType<typeof crearRegistrarFactura>;
   readonly listarFacturas: ReturnType<typeof crearListarFacturas>;
   readonly actualizarFactura: ReturnType<typeof crearActualizarFactura>;

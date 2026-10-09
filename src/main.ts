@@ -34,6 +34,7 @@ import { PostgresHorarioRepository } from './adapters/out/postgres/repositorio-h
 import { PostgresJornadaRepository } from './adapters/out/postgres/repositorio-jornadas.js';
 import { PostgresEntregaRepository } from './adapters/out/postgres/repositorio-entregas.js';
 import { crearFotosParaRevision, crearReportarFoto, crearResolverReporteFoto } from './application/use-cases/fotos-revision.js';
+import { crearAplicarPlanilla, crearObtenerPlanilla } from './application/use-cases/planilla.js';
 import { crearActualizarVendedor, crearCrearVendedor, crearListarVendedores } from './application/use-cases/vendedores.js';
 import { crearExportarLocales } from './application/use-cases/exportar-locales.js';
 import { crearBuscarPinesPendientes, crearEstadoBusquedaPines } from './application/use-cases/buscar-pines.js';
@@ -43,6 +44,7 @@ import { crearNominatimGeocodificador } from './adapters/out/red/nominatim-geoco
 import { crearFijarPinDesdeEnlace } from './application/use-cases/pin-desde-enlace.js';
 import { crearResolvedorEnlacesHttp } from './adapters/out/red/resolvedor-enlaces-http.js';
 import { PostgresFotoReporteRepository } from './adapters/out/postgres/repositorio-fotos.js';
+import { PostgresPlanillaRepository } from './adapters/out/postgres/repositorio-planillas.js';
 import { PostgresVendedorRepository } from './adapters/out/postgres/repositorio-vendedores.js';
 import { PostgresCamionRepository } from './adapters/out/postgres/repositorio-camiones.js';
 import { PostgresFacturaRepository } from './adapters/out/postgres/repositorio-facturas.js';
@@ -64,6 +66,7 @@ const intentos = new PostgresIntentosLoginRepository(db);
 const pines = new PostgresPropuestaPinRepository(db);
 const camiones = new PostgresCamionRepository(db);
 const vendedores = new PostgresVendedorRepository(db);
+const planillas = new PostgresPlanillaRepository(db);
 const reportesFoto = new PostgresFotoReporteRepository(db);
 const facturas = new PostgresFacturaRepository(db);
 const empresas = new PostgresEmpresaRepository(db);
@@ -143,6 +146,8 @@ const casos: CasosDeUso = {
   listarVendedores: crearListarVendedores({ vendedores }),
   crearVendedor: crearCrearVendedor({ vendedores }),
   actualizarVendedor: crearActualizarVendedor({ vendedores }),
+  aplicarPlanilla: crearAplicarPlanilla({ camiones, vendedores, usuarios, planillas, jornadas, clock }),
+  obtenerPlanilla: crearObtenerPlanilla({ planillas, clock }),
   registrarFactura: crearRegistrarFactura({ facturas, clock, resolverCamion, programarPines }),
   buscarPinesPendientes: crearBuscarPinesPendientes({ clientes, cola: colaDePines, clock }),
   estadoBusquedaPines: crearEstadoBusquedaPines({ clientes, cola: colaDePines }),
@@ -151,8 +156,8 @@ const casos: CasosDeUso = {
   verRuta: serviciosDeRuta.ver,
   planificarRuta: serviciosDeRuta.planificar,
   operarRuta: serviciosDeRuta.operar,
-  miJornada: crearMiJornada({ jornadas, clock }),
-  iniciarJornada: crearIniciarJornada({ jornadas, rutas, clock }),
+  miJornada: crearMiJornada({ jornadas, clock, planillas }),
+  iniciarJornada: crearIniciarJornada({ jornadas, rutas, clock, planillas }),
   terminarJornada: async (actor) => {
     const resumen = await terminarJornada(actor);
     analizarPronto();

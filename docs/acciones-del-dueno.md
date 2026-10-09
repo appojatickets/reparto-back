@@ -124,6 +124,12 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] **Fotos:** como chofer, abre una parada con foto y toca **REPORTAR ESTA FOTO** (elige un motivo). Como admin, menú **REVISAR FOTOS**: debe aparecer el reporte con quién reportó y quién subió; prueba **LA FOTO ESTÁ BIEN** y **ELIMINAR LA FOTO**.
 - [ ] La foto de Av. Providencia 2500 que ya subiste no tiene quién/cuándo (es anterior a este cambio); aparece al final de «Subidas hace poco».
 
+### A18. Probar la planilla del día (ADR 0023)
+- [ ] Entra como admin o despachador a **PLANILLA DEL DÍA** y pega la tabla de la mañana (con los encabezados Chofer, Ayudante, Camión, Vendedor y, si la tienes, Comuna). Revisa la vista previa y confirma.
+- [ ] Mira el resultado fila por fila: camiones creados (con su nombre de dos dígitos), vendedores creados, y quién quedó **sin usuario** (hay que crearlo en USUARIOS y volver a pegar).
+- [ ] Entra como chofer (o ayudante) de esa planilla: debe abrir la app **ya con su camión del día** y ver sus vendedores y comunas.
+- [ ] En **VENDEDORES** carga el celular de cada uno; en un local cerrado, el WhatsApp debe ofrecer solo a los vendedores de ese camión.
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos

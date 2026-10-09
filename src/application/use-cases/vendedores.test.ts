@@ -11,7 +11,8 @@ const fakeRepo = () => {
   const listar = vi.fn((): Promise<readonly Vendedor[]> => Promise.resolve([V]));
   const crear = vi.fn((): ReturnType<VendedorRepository['crear']> => Promise.resolve(ok(V)));
   const actualizar = vi.fn((): Promise<Vendedor | undefined> => Promise.resolve(V));
-  const vendedores: VendedorRepository = { listar, crear, actualizar };
+  const asegurar = vi.fn((): ReturnType<VendedorRepository['asegurar']> => Promise.resolve({ vendedores: [V], creados: 0 }));
+  const vendedores: VendedorRepository = { listar, crear, actualizar, asegurar };
   return { vendedores, listar, crear, actualizar };
 };
 

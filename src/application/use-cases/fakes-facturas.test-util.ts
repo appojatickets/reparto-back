@@ -4,6 +4,8 @@ import type { Camion, CamionRepository } from '../ports/out/camiones.js';
 import type { FacturaDetallada, FacturaRepository } from '../ports/out/facturas.js';
 import type { RegistroAprendizajeRepository } from '../ports/out/registro-aprendizaje.js';
 import type { Jornada, JornadaRepository } from '../ports/out/jornadas.js';
+import type { AsignacionDia, PlanillaRepository } from '../ports/out/planillas.js';
+import type { Vendedor, VendedorRepository } from '../ports/out/vendedores.js';
 import { crearReloj } from './fakes.test-util.js';
 import { crearResolverCamion } from './jornada.js';
 
@@ -46,6 +48,25 @@ export const fakeJornadas = (activa?: Jornada) =>
     terminar: vi.fn<JornadaRepository['terminar']>(() => Promise.resolve(true)),
     ultimaDelCamion: vi.fn<JornadaRepository['ultimaDelCamion']>(() => Promise.resolve(activa && { desde: activa.desde })),
   }) satisfies JornadaRepository;
+
+export const fakePlanillas = (deCamion?: AsignacionDia) =>
+  ({
+    guardar: vi.fn<PlanillaRepository['guardar']>(() => Promise.resolve()),
+    obtener: vi.fn<PlanillaRepository['obtener']>(() => Promise.resolve(deCamion ? [deCamion] : [])),
+    deCamion: vi.fn<PlanillaRepository['deCamion']>(() => Promise.resolve(deCamion)),
+  }) satisfies PlanillaRepository;
+
+export const vendedorDe = (extra: Partial<Vendedor> = {}): Vendedor => ({ id: 'v-1', codigo: 'V12', nombre: 'V12', activo: true, ...extra });
+
+export const fakeVendedores = () =>
+  ({
+    listar: vi.fn<VendedorRepository['listar']>(() => Promise.resolve([vendedorDe()])),
+    crear: vi.fn<VendedorRepository['crear']>((_e, d) => Promise.resolve(ok(vendedorDe({ codigo: d.codigo, nombre: d.nombre, ...(d.celular !== undefined ? { celular: d.celular } : {}) })))),
+    actualizar: vi.fn<VendedorRepository['actualizar']>(() => Promise.resolve(vendedorDe())),
+    asegurar: vi.fn<VendedorRepository['asegurar']>((_e, vs) =>
+      Promise.resolve({ vendedores: vs.map((v, i) => vendedorDe({ id: `v-${String(i + 1)}`, codigo: v.codigo, nombre: v.nombre ?? v.codigo })), creados: vs.length }),
+    ),
+  }) satisfies VendedorRepository;
 
 /** El resolvedor real con una jornada fija (reloj de prueba: 2026-10-05 12:00 UTC). Despachador y admin pasan sin jornada. */
 export const resolverDePrueba = (activa?: Jornada) => crearResolverCamion({ jornadas: fakeJornadas(activa), clock: crearReloj().clock });

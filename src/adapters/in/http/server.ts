@@ -9,6 +9,7 @@ import type { CasosDeUso } from './casos-de-uso.js';
 import { rutasClientes } from './rutas/clientes.js';
 import { rutasPinesYArchivos } from './rutas/pines-y-archivos.js';
 import { rutasSesion } from './rutas/sesion.js';
+import { rutasPlanilla } from './rutas/planilla.js';
 import { rutasVendedores } from './rutas/vendedores.js';
 import { rutasExportaciones } from './rutas/exportaciones.js';
 import { rutasFotos } from './rutas/fotos.js';
@@ -81,6 +82,7 @@ export const buildServer = async (deps: HttpDeps): Promise<FastifyInstance> => {
   rutasPinesYArchivos(contexto);
   rutasCamionesYFacturas(contexto);
   rutasVendedores(contexto);
+  rutasPlanilla(contexto);
   rutasExportaciones(contexto);
   rutasFotos(contexto);
   rutasEmpresa(contexto);

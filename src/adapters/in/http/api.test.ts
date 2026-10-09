@@ -68,6 +68,8 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'GET', url: `/v1/rutas?camionId=${UUID}&fecha=2026-10-05`, permiso: 'rutas:leer', caso: 'verRuta' },
   { metodo: 'POST', url: '/v1/rutas/planificar', body: { camionId: UUID, fecha: '2026-10-05' }, permiso: 'rutas:escribir', caso: 'planificarRuta' },
   { metodo: 'POST', url: '/v1/rutas/operaciones', body: { camionId: UUID, fecha: '2026-10-05', version: 1, operacion: { tipo: 'ordenar' } }, permiso: 'rutas:escribir', caso: 'operarRuta' },
+  { metodo: 'GET', url: '/v1/planilla', permiso: 'planilla:gestionar', caso: 'obtenerPlanilla' },
+  { metodo: 'POST', url: '/v1/planilla', body: { fecha: '2026-10-05', filas: [{ patente: 'ABCD12' }] }, permiso: 'planilla:gestionar', caso: 'aplicarPlanilla' },
   { metodo: 'POST', url: `/v1/entregas/${UUID}/eventos`, body: { tipo: 'llegada' }, permiso: 'entregas:registrar', caso: 'registrarEvento' },
   { metodo: 'GET', url: '/v1/analitica', permiso: 'metricas:leer', caso: 'verAnalitica' },
   { metodo: 'POST', url: '/v1/analitica/ejecutar', permiso: 'metricas:leer', caso: 'ejecutarAnalisis' },
@@ -449,5 +451,52 @@ describe('avisos de entrega', () => {
     expect((await enviar({ tipo: 'llegada', lat: 123, lng: 0 })).statusCode).toBe(400);
     expect((await enviar({ tipo: 'espera', minutos: 500 })).statusCode).toBe(400);
     expect(registrarEvento).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('planilla del día', () => {
+  const auth = (rol: Rol) => ({ authorization: `Bearer ${ROLES[rol]}` });
+  const vendedor = { id: 'v-1', codigo: 'V12', nombre: 'Ana Soto', celular: '56912345678', activo: true };
+
+  it('aplicar la planilla pasa las filas al caso de uso y devuelve el resultado por fila', async () => {
+    const filas = [{ patente: 'ABCD12', valida: true, errores: [], camionCreado: true, alias: '12', vendedoresCreados: 1, chofer: { nombre: 'Juan Pérez', estado: 'enlazada' as const }, jornadasAbiertas: 1 }];
+    const aplicarPlanilla = vi.fn(() => Promise.resolve(ok({ filas })));
+    const app = await construir({ aplicarPlanilla });
+    const cuerpo = { fecha: '2026-10-05', filas: [{ patente: 'ABCD12', chofer: 'Juan Pérez', vendedores: [{ codigo: 'V12', nombre: 'Ana' }], comunas: ['Maipú'] }] };
+    const r = await app.inject({ method: 'POST', url: '/v1/planilla', headers: auth('despachador'), payload: cuerpo });
+    expect(r.statusCode).toBe(200);
+    expect(r.json()).toEqual({ filas });
+    expect(aplicarPlanilla).toHaveBeenCalledWith(USUARIOS['t-desp'], cuerpo);
+  });
+
+  it('la planilla valida el cuerpo: fecha mal escrita, sin filas o con demasiadas', async () => {
+    const aplicarPlanilla = vi.fn();
+    const app = await construir({ aplicarPlanilla });
+    const enviar = (payload: object) => app.inject({ method: 'POST', url: '/v1/planilla', headers: auth('admin'), payload });
+    expect((await enviar({ fecha: '5/10', filas: [{ patente: 'ABCD12' }] })).statusCode).toBe(400);
+    expect((await enviar({ fecha: '2026-10-05', filas: [] })).statusCode).toBe(400);
+    expect((await enviar({ fecha: '2026-10-05', filas: Array.from({ length: 101 }, () => ({ patente: 'ABCD12' })) })).statusCode).toBe(400);
+    expect(aplicarPlanilla).not.toHaveBeenCalled();
+  });
+
+  it('ver la planilla: sin fecha usa la de hoy (la decide el caso de uso); con fecha mal escrita es 400', async () => {
+    const asignacion = { fecha: '2026-10-05', camion: { id: 'c-1', patente: 'ABCD12', alias: '12' }, comunas: ['Maipú'], vendedores: [vendedor] };
+    const obtenerPlanilla = vi.fn(() => Promise.resolve(ok([asignacion])));
+    const app = await construir({ obtenerPlanilla });
+    const r = await app.inject({ method: 'GET', url: '/v1/planilla', headers: auth('despachador') });
+    expect(r.json()).toEqual({ asignaciones: [asignacion] });
+    expect(obtenerPlanilla).toHaveBeenCalledWith(USUARIOS['t-desp'], undefined);
+    await app.inject({ method: 'GET', url: '/v1/planilla?fecha=2026-10-01', headers: auth('despachador') });
+    expect(obtenerPlanilla).toHaveBeenLastCalledWith(USUARIOS['t-desp'], '2026-10-01');
+    expect((await app.inject({ method: 'GET', url: '/v1/planilla?fecha=ayer', headers: auth('despachador') })).statusCode).toBe(400);
+  });
+
+  it('la jornada del chofer incluye lo que dice la planilla para su camión', async () => {
+    const asignacion = { fecha: '2026-10-05', camion: { id: 'c-1', patente: 'ABCD12' }, comunas: ['Maipú'], vendedores: [vendedor] };
+    const jornada = { id: 'j-1', usuarioId: 'u-c', fecha: '2026-10-05', desde: new Date('2026-10-05T11:00:00Z'), camion: { id: 'c-1', patente: 'ABCD12' }, asignacion };
+    const app = await construir({ miJornada: vi.fn(() => Promise.resolve(jornada)) });
+    const r = await app.inject({ method: 'GET', url: '/v1/jornada', headers: auth('chofer') });
+    expect(r.statusCode).toBe(200);
+    expect(r.json<{ jornada: { asignacion: unknown } }>().jornada.asignacion).toEqual(asignacion);
   });
 });

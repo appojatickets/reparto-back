@@ -103,18 +103,20 @@ describe('rutas en Postgres', () => {
     const usuario = { id: s.usuario, empresaId: s.empresa, rol: 'despachador' as const, username: 'd', nombre: 'D', activo: true };
 
     const p = await servicios.planificar(usuario, { camionId: s.camion, fecha: FECHA });
-    expect(p.ok && p.value.paradas).toHaveLength(3);
-    expect(p.ok && p.value.sinPin.map((x) => x.folio)).toEqual(['4']);
+    // Sin pin la ruta igual se calcula: «Sin Pin D» entra con la comuna como ubicación aproximada (ADR 0019).
+    expect(p.ok && p.value.paradas).toHaveLength(4);
+    expect(p.ok && p.value.sinPin).toEqual([]);
+    expect(p.ok && p.value.paradas.filter((x) => x.ubicacionAproximada).map((x) => x.folio)).toEqual(['4']);
     const orden = p.ok ? p.value.paradas.map((x) => x.facturaId) : [];
 
     const m = await servicios.operar(usuario, { camionId: s.camion, fecha: FECHA, version: 1, operacion: { tipo: 'subir', facturaId: orden[2] ?? '' } });
     expect(m.ok && m.value).toMatchObject({ modo: 'manual', version: 2 });
 
     const v = await servicios.ver(usuario, { camionId: s.camion, fecha: FECHA });
-    expect(v.ok && v.value.paradas.map((x) => x.facturaId)).toEqual([orden[0], orden[2], orden[1]]);
+    expect(v.ok && v.value.paradas.map((x) => x.facturaId)).toEqual([orden[0], orden[2], orden[1], orden[3]]);
 
     const q = await servicios.operar(usuario, { camionId: s.camion, fecha: FECHA, version: 2, operacion: { tipo: 'quitar', facturaId: orden[0] ?? '' } });
-    expect(q.ok && q.value.paradas).toHaveLength(2);
+    expect(q.ok && q.value.paradas).toHaveLength(3);
     expect((await facturas.listar(s.empresa, { fecha: FECHA, sinCamion: true })).map((f) => f.id)).toEqual([orden[0]]);
   });
 });
