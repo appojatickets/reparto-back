@@ -9,7 +9,7 @@ export type OperacionRuta = {
   readonly usuarioId: string;
   readonly tipo: TipoOperacionRuta;
   readonly facturaId?: string;
-  readonly modo: 'sugerida' | 'manual';
+  readonly modo: 'sugerida' | 'manual' | 'carga';
   readonly version: number;
   readonly orden: readonly string[];
 };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { agregarParada, insertarNuevas, moverAlFrente, moverAPosicion, moverParada, ordenarPendientes, posponer, quitar, type EstadoRuta } from './operaciones.js';
+import { agregarParada, insertarNuevas, moverAlFrente, moverAPosicion, moverParada, ordenarPendientes, ordenarPorCarga, posponer, quitar, type EstadoRuta } from './operaciones.js';
 import { optimizar } from './optimizador.js';
 import { verificarInvariantes } from './invariantes.js';
 import { parada, problemaAleatorio, problemaPlano, tiemposFijos, v } from './problemas.test-util.js';
@@ -234,5 +234,37 @@ describe('insertarNuevas (solo insertar, sin reordenar lo que ya está)', () => 
   it('una nueva con ventana dura temprana entra al frente sin tocar el resto', () => {
     const problema = problemaPlano([parada('A'), parada('B'), parada('N', { ventanas: [v(480, 495)] })]);
     expect(insertarNuevas({ problema, orden: ['B', 'A'] }).solucion.orden).toEqual(['N', 'B', 'A']);
+  });
+});
+
+describe('ordenarPorCarga («las agrego en orden»)', () => {
+  const problema = problemaPlano([parada('A'), parada('B'), parada('C'), parada('D')]);
+  const carga = new Map([['D', 0], ['B', 1], ['A', 2], ['C', 3]]);
+
+  it('sin orden previo la ruta es exactamente el orden en que se cargaron, aunque otro orden sea más corto', () => {
+    const r = ordenarPorCarga({ problema, orden: [] }, carga);
+    expect(r.solucion.orden).toEqual(['D', 'B', 'A', 'C']);
+    expect(verificarInvariantes(r.problema, r.solucion)).toEqual([]);
+  });
+
+  it('lo que ya tenía lugar lo conserva y lo nuevo entra al final según su orden de carga', () => {
+    const r = ordenarPorCarga({ problema, orden: ['A', 'D'] }, carga);
+    expect(r.solucion.orden).toEqual(['A', 'D', 'B', 'C']);
+  });
+
+  it('ignora lo que ya no está en el problema (entregado o quitado) y no repite', () => {
+    const r = ordenarPorCarga({ problema, orden: ['X', 'A', 'A', 'B'] }, carga);
+    expect(r.solucion.orden).toEqual(['A', 'B', 'D', 'C']);
+  });
+
+  it('una parada sin lugar de carga conocido va al final, en un orden estable', () => {
+    const r = ordenarPorCarga({ problema, orden: [] }, new Map([['B', 0]]));
+    expect(r.solucion.orden).toEqual(['B', 'A', 'C', 'D']);
+  });
+
+  it('no deja fijas que ya no encabezan la ruta', () => {
+    const conFijas = { ...problema, fijas: ['C'] };
+    const r = ordenarPorCarga({ problema: conFijas, orden: ['A', 'C'] }, carga);
+    expect(r.problema.fijas).toEqual([]);
   });
 });

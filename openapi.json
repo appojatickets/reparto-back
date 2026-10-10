@@ -14060,7 +14060,8 @@
                       "type": "string",
                       "enum": [
                         "sugerida",
-                        "manual"
+                        "manual",
+                        "carga"
                       ]
                     },
                     "version": {
@@ -14814,7 +14815,7 @@
     },
     "/v1/rutas/planificar": {
       "post": {
-        "summary": "Calcular la ruta sugerida desde cero (reemplaza la actual)",
+        "summary": "Armar la ruta desde cero (reemplaza la actual): `calcular` (por defecto) la ordena el sistema; `carga` respeta el orden en que se cargaron las facturas («las agrego en orden»)",
         "tags": [
           "rutas"
         ],
@@ -14838,6 +14839,13 @@
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 1439
+                  },
+                  "orden": {
+                    "type": "string",
+                    "enum": [
+                      "calcular",
+                      "carga"
+                    ]
                   }
                 },
                 "required": [
@@ -14874,7 +14882,8 @@
                       "type": "string",
                       "enum": [
                         "sugerida",
-                        "manual"
+                        "manual",
+                        "carga"
                       ]
                     },
                     "version": {
@@ -15779,7 +15788,8 @@
                       "type": "string",
                       "enum": [
                         "sugerida",
-                        "manual"
+                        "manual",
+                        "carga"
                       ]
                     },
                     "version": {

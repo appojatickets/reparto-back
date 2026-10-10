@@ -76,6 +76,17 @@ describe('rutas en Postgres', () => {
     expect(await rutas.facturasPendientes(otra.empresa, s.camion, FECHA)).toEqual([]);
   });
 
+  it('guarda y devuelve el modo «carga» («las agrego en orden») y lo anota en el registro para aprender', async () => {
+    const s = await sembrar();
+    const [a, b] = [await factura(s, '1', 'Almacén A'), await factura(s, '2', 'Bazar B')];
+    const g = await rutas.guardar(s.empresa, { camionId: s.camion, fecha: FECHA, salidaMin: 480, modo: 'carga', usuarioId: s.usuario, orden: [b, a], fijas: [] });
+    expect(g.ok && g.value).toMatchObject({ modo: 'carga', orden: [b, a] });
+    expect(await rutas.obtener(s.empresa, s.camion, FECHA)).toMatchObject({ modo: 'carga', orden: [b, a] });
+    await new PostgresRegistroAprendizajeRepository(db).registrarOperacion(s.empresa, { camionId: s.camion, fecha: FECHA, usuarioId: s.usuario, tipo: 'planificar', modo: 'carga', version: 1, orden: [b, a] });
+    const filas = await db.selectFrom('ruta_operacion').select('modo').where('empresa_id', '=', s.empresa).execute();
+    expect(filas).toEqual([{ modo: 'carga' }]);
+  });
+
   it('guarda, vuelve a leer en el mismo orden con las fijadas, y controla la versión', async () => {
     const s = await sembrar();
     const [a, b, c] = [await factura(s, '1', 'Almacén A'), await factura(s, '2', 'Bazar B'), await factura(s, '3', 'Kiosko C')];

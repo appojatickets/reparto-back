@@ -1,8 +1,11 @@
 import type { HorarioLocal } from '../../../domain/entidades/horario.js';
 import type { Result } from '../../../domain/shared/result.js';
 
-/** `sugerida`: el sistema ordena y reordena; `manual`: la persona acomodó y el sistema solo evalúa (hasta que pida ordenar). */
-export type ModoRuta = 'sugerida' | 'manual';
+/**
+ * `sugerida`: el sistema ordena y reordena; `manual`: la persona acomodó y el sistema solo evalúa (hasta que pida ordenar);
+ * `carga`: «las agrego en orden», la ruta es el orden en que el chofer cargó las facturas y no se reordena sola.
+ */
+export type ModoRuta = 'sugerida' | 'manual' | 'carga';
 
 export type RutaGuardada = {
   readonly id: string;

@@ -131,3 +131,29 @@ export const insertarNuevas = (estado: EstadoRuta): ResultadoOperacion => ({
   problema: estado.problema,
   solucion: insertarFaltantes(estado.problema, estado.orden),
 });
+
+/**
+ * «LAS AGREGO EN ORDEN»: el chofer se sabe el recorrido y carga las facturas en el orden en que las entregará, así que la ruta es ese
+ * orden, sin optimizar. Lo que ya tenía lugar lo conserva (también lo que movió a mano) y lo nuevo entra al final según el orden en que
+ * se cargó. Una parada sin lugar de carga conocido va después de las que sí lo tienen, por su id para que el resultado sea estable.
+ */
+export const ordenarPorCarga = (estado: EstadoRuta, ordenCarga: ReadonlyMap<string, number>): ResultadoOperacion => {
+  const enProblema = new Set(estado.problema.paradas.map((p) => p.id));
+  const conservadas: string[] = [];
+  for (const id of estado.orden) if (enProblema.has(id) && !conservadas.includes(id)) conservadas.push(id);
+  const ya = new Set(conservadas);
+  const nuevas = estado.problema.paradas
+    .map((p) => p.id)
+    .filter((id) => !ya.has(id))
+    .sort((a, b) => (ordenCarga.get(a) ?? Infinity) - (ordenCarga.get(b) ?? Infinity) || (a < b ? -1 : a > b ? 1 : 0));
+  const orden = [...conservadas, ...nuevas];
+  // Una fijada solo sigue fijada mientras siga encabezando la ruta.
+  const fijadas = new Set(estado.problema.fijas);
+  const fijas: string[] = [];
+  for (const id of orden) {
+    if (!fijadas.has(id)) break;
+    fijas.push(id);
+  }
+  const problema: ProblemaRuta = { ...estado.problema, fijas };
+  return { problema, solucion: evaluarOrden(problema, orden) };
+};

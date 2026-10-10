@@ -136,7 +136,7 @@ export type Tabla = {
     camion_id: string;
     fecha_reparto: string;
     salida_min: number;
-    modo: Generated<'sugerida' | 'manual'>;
+    modo: Generated<'sugerida' | 'manual' | 'carga'>;
     version: Generated<number>;
     creado_por: string | null;
     creado_en: Generated<Date>;
@@ -169,7 +169,7 @@ export type Tabla = {
     usuario_id: string | null;
     tipo: 'planificar' | 'subir' | 'bajar' | 'primero' | 'despues' | 'mover' | 'quitar' | 'ordenar' | 'insertar' | 'salida';
     factura_id: string | null;
-    modo: 'sugerida' | 'manual';
+    modo: 'sugerida' | 'manual' | 'carga';
     version: number;
     orden: string[];
     creado_en: Generated<Date>;

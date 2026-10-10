@@ -43,7 +43,7 @@ export type OperacionObs = {
   readonly camionId: string;
   readonly fecha: string;
   readonly tipo: string;
-  readonly modo: 'sugerida' | 'manual';
+  readonly modo: 'sugerida' | 'manual' | 'carga';
   readonly orden: readonly string[];
   readonly creadoEn: Date;
 };
@@ -268,7 +268,8 @@ export const calidadDeJornada = (j: JornadaObs, eventos: readonly EventoObs[], o
   const ops = operaciones.filter((o) => o.camionId === j.camionId && o.fecha === j.fecha).sort((a, b) => ms(a.creadoEn) - ms(b.creadoEn));
   const calculos = ops.filter((o) => (o.tipo === 'planificar' || o.tipo === 'ordenar' || (o.tipo === 'primero' && o.modo === 'sugerida')) && ms(o.creadoEn) <= salida);
   const sugerida = calculos[calculos.length - 1] ?? ops[0];
-  if (!sugerida) return undefined;
+  // Un día en que el chofer cargó en el orden en que iba a entregar no tiene una ruta sugerida contra la cual medirse.
+  if (!sugerida || sugerida.modo === 'carga') return undefined;
 
   const coord = new Map<string, Coordenada>();
   for (const [facturaId, localId] of localDe) {

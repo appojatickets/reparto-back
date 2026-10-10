@@ -491,3 +491,83 @@ describe('lo que se hace manda: avisar una parada que no era la siguiente', () =
     expect(s.rutas.repo.guardar.mock.calls.length).toBe(llamadas);
   });
 });
+
+describe('«las agrego en orden»: la ruta es el orden en que el chofer cargó las facturas', () => {
+  // Cargadas D, A, C, B: un orden que el sistema no elegiría por cercanía.
+  const cargadas = () => [paradaDe('B', { cargadaEn: 4000 }), paradaDe('D', { cargadaEn: 1000 }), paradaDe('C', { cargadaEn: 3000 }), paradaDe('A', { cargadaEn: 2000 })];
+  const enOrden = async () => {
+    const s = montar({ pendientes: cargadas() });
+    const p = await s.planificar(despachador, { ...entrada, orden: 'carga' });
+    if (!p.ok) throw new Error('no se planificó');
+    return { s, version: p.value.version ?? 0, vista: p.value };
+  };
+
+  it('planificar con orden «carga» respeta el orden de carga, lo guarda en modo «carga» y lo anota para aprender', async () => {
+    const registro = fakeRegistro();
+    const s = montar({ pendientes: cargadas(), registro });
+    const r = await s.planificar(despachador, { ...entrada, orden: 'carga' });
+    expect(r.ok && ids(r.value)).toEqual(['f-D', 'f-A', 'f-C', 'f-B']);
+    expect(r.ok && r.value).toMatchObject({ planificada: true, modo: 'carga', version: 1 });
+    expect(s.rutas.repo.guardar.mock.calls[0]?.[1]).toMatchObject({ modo: 'carga', orden: ['f-D', 'f-A', 'f-C', 'f-B'], fijas: [] });
+    expect(registro.registrarOperacion).toHaveBeenCalledWith('empresa-1', expect.objectContaining({ tipo: 'planificar', modo: 'carga' }));
+    // las horas de llegada siguen siendo reales y crecientes
+    const llegadas = r.ok ? r.value.paradas.map((p) => p.llegada) : [];
+    expect(llegadas).toEqual([...llegadas].sort((a, b) => a - b));
+  });
+
+  it('sin indicar el orden se calcula como siempre', async () => {
+    const s = montar({ pendientes: cargadas() });
+    const r = await s.planificar(despachador, { ...entrada, orden: 'calcular' });
+    expect(r.ok && r.value.modo).toBe('sugerida');
+  });
+
+  it('lo que el chofer mueve a mano queda donde lo dejó: nada se reordena solo y sigue en modo «carga»', async () => {
+    const { s, version } = await enOrden();
+    const a = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'mover', facturaId: 'f-B', posicion: 1 } });
+    expect(a.ok && ids(a.value)).toEqual(['f-D', 'f-B', 'f-A', 'f-C']);
+    expect(a.ok && a.value.modo).toBe('carga');
+    const b = await s.operar(despachador, { ...entrada, version: version + 1, operacion: { tipo: 'subir', facturaId: 'f-C' } });
+    expect(b.ok && ids(b.value)).toEqual(['f-D', 'f-B', 'f-C', 'f-A']);
+    const c = await s.operar(despachador, { ...entrada, version: version + 2, operacion: { tipo: 'primero', facturaId: 'f-A' } });
+    expect(c.ok && ids(c.value)).toEqual(['f-A', 'f-D', 'f-B', 'f-C']);
+    const d = await s.operar(despachador, { ...entrada, version: version + 3, operacion: { tipo: 'despues', facturaId: 'f-A' } });
+    expect(d.ok && ids(d.value)).toEqual(['f-D', 'f-B', 'f-C', 'f-A']);
+    expect(d.ok && d.value.modo).toBe('carga');
+  });
+
+  it('las facturas que se agregan después entran al final, en su orden de carga', async () => {
+    const { s, version } = await enOrden();
+    s.rutas.estado.pendientes = [...cargadas(), paradaDe('F', { cargadaEn: 6000 }), paradaDe('E', { cargadaEn: 5000 })];
+    const r = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'insertar' } });
+    expect(r.ok && ids(r.value)).toEqual(['f-D', 'f-A', 'f-C', 'f-B', 'f-E', 'f-F']);
+    expect(r.ok && r.value.modo).toBe('carga');
+  });
+
+  it('quitar una parada no reordena las demás', async () => {
+    const { s, version } = await enOrden();
+    const r = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'quitar', facturaId: 'f-A' } });
+    expect(r.ok && ids(r.value)).toEqual(['f-D', 'f-C', 'f-B']);
+    expect(r.ok && r.value.modo).toBe('carga');
+  });
+
+  it('CALCULAR MI RUTA («ordenar») saca la ruta del orden de carga: la ordena el sistema', async () => {
+    const { s, version } = await enOrden();
+    const r = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'ordenar' } });
+    expect(r.ok && r.value.modo).toBe('sugerida');
+    expect(r.ok && [...ids(r.value)].sort()).toEqual(['f-A', 'f-B', 'f-C', 'f-D']);
+  });
+
+  it('avisar una parada fuera de orden no reordena lo que queda', async () => {
+    const { s } = await enOrden();
+    const antes = s.rutas.guardadaActual()?.orden;
+    const reordenada = await s.reordenarTrasVisita(despachador, CAMION_ID, FECHA, 'f-C');
+    expect(reordenada).toBe(false);
+    expect(s.rutas.guardadaActual()?.orden).toEqual(antes);
+  });
+
+  it('volver a planificar sin indicar el orden reemplaza la ruta por una calculada', async () => {
+    const { s } = await enOrden();
+    const r = await s.planificar(despachador, entrada);
+    expect(r.ok && r.value.modo).toBe('sugerida');
+  });
+});

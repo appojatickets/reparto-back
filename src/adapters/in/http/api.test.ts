@@ -408,6 +408,16 @@ describe('rutas del día', () => {
     expect(planificarRuta).toHaveBeenCalledWith(USUARIOS['t-desp'], { camionId: UUID, fecha: '2026-10-05', salidaMin: 450 });
   });
 
+  it('planificar acepta el orden «carga» («las agrego en orden») y rechaza cualquier otro', async () => {
+    const planificarRuta = vi.fn(() => Promise.resolve(ok(vista)));
+    const app = await construir({ planificarRuta });
+    const enviar = (orden: string) => app.inject({ method: 'POST', url: '/v1/rutas/planificar', headers: auth('chofer'), payload: { camionId: UUID, fecha: '2026-10-05', orden } });
+    expect((await enviar('carga')).statusCode).toBe(200);
+    expect(planificarRuta).toHaveBeenCalledWith(USUARIOS['t-chofer'], { camionId: UUID, fecha: '2026-10-05', orden: 'carga' });
+    expect((await enviar('calcular')).statusCode).toBe(200);
+    expect((await enviar('al azar')).statusCode).toBe(400);
+  });
+
   it('operaciones: valida el cuerpo; versión vieja responde 409', async () => {
     const operarRuta = vi.fn().mockResolvedValueOnce(ok(vista)).mockResolvedValueOnce(err(errorApp('CONFLICTO', 'Otra persona cambió esta ruta.', { codigo: 'RUTA_DESACTUALIZADA' })));
     const app = await construir({ operarRuta });

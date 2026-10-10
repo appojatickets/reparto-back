@@ -114,6 +114,11 @@ describe('calidad de la ruta: lo sugerido frente a lo manejado', () => {
   const sugerida: OperacionObs = { camionId: 'cam-1', fecha: '2026-10-05', tipo: 'planificar', modo: 'sugerida', orden: ['f1', 'f2', 'f3', 'f4'], creadoEn: en(-20) };
   const visitas = (orden: string[]): EventoObs[] => orden.flatMap((id, i) => [ev(id, 'llegada', i * 20), ev(id, 'entregado', i * 20 + 5)]);
 
+  it('un día en que el chofer cargó «en orden» no tiene una ruta sugerida contra la cual medirse', () => {
+    const enOrden: OperacionObs = { ...sugerida, modo: 'carga' };
+    expect(calidadDeJornada(jornada, visitas(['f1', 'f2', 'f3', 'f4']), [enOrden], locales, DEPOSITO)).toBeUndefined();
+  });
+
   it('si se maneja en el orden sugerido no hay diferencias', () => {
     const q = calidadDeJornada(jornada, visitas(['f1', 'f2', 'f3', 'f4']), [sugerida], locales, DEPOSITO);
     expect(q).toMatchObject({ jornadaId: 'j-1', comparadas: 4, inversiones: 0 });

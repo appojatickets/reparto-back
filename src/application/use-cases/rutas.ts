@@ -5,7 +5,7 @@ import type { Coordenada } from '../../domain/valor/coordenada.js';
 import { err, ok, type Result } from '../../domain/shared/result.js';
 import { armarProblema, type EntradaParada } from '../../domain/ruteo/armar-problema.js';
 import { ubicarPorOrdenDeCarga, type AnclaDeCarga } from '../../domain/ruteo/ubicacion-por-carga.js';
-import { insertarNuevas, moverAlFrente, moverAPosicion, moverParada, ordenarDebajoDe, ordenarPendientes, posponer, type EstadoRuta, type ResultadoOperacion } from '../../domain/ruteo/operaciones.js';
+import { insertarNuevas, moverAlFrente, moverAPosicion, moverParada, ordenarDebajoDe, ordenarPendientes, ordenarPorCarga, posponer, type EstadoRuta, type ResultadoOperacion } from '../../domain/ruteo/operaciones.js';
 import { evaluarOrden, optimizar } from '../../domain/ruteo/optimizador.js';
 import type { Motivo, ProblemaRuta, Solucion, Sugerencia } from '../../domain/ruteo/tipos.js';
 import { errorApp, type ErrorApp } from '../errores.js';
@@ -337,13 +337,20 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
     return ok(vistaDe(ctx.value, entrada.camionId, entrada.fecha, salida, sinPin, { solucion, problema, modo: guardada.modo, version: guardada.version }));
   };
 
-  /** Calcula la ruta sugerida desde cero (reemplaza la anterior, incluso si estaba acomodada a mano). */
-  const planificar = async (actor: Usuario, entrada: { camionId: string; fecha: string; salidaMin?: number | undefined }): Promise<Result<VistaRuta, ErrorApp>> => {
+  /**
+   * Arma la ruta desde cero (reemplaza la anterior, incluso si estaba acomodada a mano). Con `orden: 'carga'` («las agrego en orden») la ruta
+   * es el orden en que el chofer cargó las facturas y no se optimiza; si no, el sistema la calcula.
+   */
+  const planificar = async (actor: Usuario, entrada: { camionId: string; fecha: string; salidaMin?: number | undefined; orden?: 'calcular' | 'carga' | undefined }): Promise<Result<VistaRuta, ErrorApp>> => {
     const ctx = await cargar(actor, entrada.camionId, entrada.fecha);
     if (!ctx.ok) return ctx;
     const salida = entrada.salidaMin ?? ctx.value.guardada?.salidaMin ?? ctx.value.config.salidaPorDefectoMin;
     if (!Number.isInteger(salida) || salida < 0 || salida > 1439) return err(errorApp('VALIDACION', 'La hora de salida no es válida.'));
     const { problema, sinPin } = problemaDe(ctx.value, entrada.fecha, salida, []);
+    if (entrada.orden === 'carga') {
+      const r = ordenarPorCarga({ problema, orden: [] }, ctx.value.ordenCarga);
+      return guardarYVer(actor, ctx.value, entrada.camionId, entrada.fecha, salida, { problema: r.problema, solucion: r.solucion, modo: 'carga' }, sinPin, { tipo: 'planificar' });
+    }
     const solucion = optimizar(problema, { presupuesto: presupuesto() });
     return guardarYVer(actor, ctx.value, entrada.camionId, entrada.fecha, salida, { problema, solucion, modo: 'sugerida' }, sinPin, { tipo: 'planificar' });
   };
@@ -389,7 +396,31 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
       return debajo.ok ? ok({ ...debajo.value, modo: 'manual' }) : err(errorApp('NO_ENCONTRADO', debajo.error.mensaje));
     };
 
+    /** «Las agrego en orden»: lo que la persona deja es lo que manda; nada se reordena solo y lo nuevo entra al final. */
+    const aplicarEnOrden = (): Result<ResultadoOperacion & { modo: ModoRuta }, ErrorApp> => {
+      const enOrden = (r: Result<ResultadoOperacion, { mensaje: string }>): Result<ResultadoOperacion & { modo: ModoRuta }, ErrorApp> =>
+        r.ok ? ok({ ...r.value, modo: 'carga' }) : err(errorApp('NO_ENCONTRADO', r.error.mensaje));
+      switch (op.tipo) {
+        case 'subir':
+        case 'bajar':
+          return enOrden(moverParada(estado, op.facturaId, op.tipo === 'subir' ? -1 : 1));
+        case 'mover':
+          return enOrden(moverAPosicion(estado, op.facturaId, op.posicion));
+        case 'primero':
+          return enOrden(moverAPosicion(estado, op.facturaId, 0));
+        case 'despues':
+          return enOrden(moverAPosicion(estado, op.facturaId, orden.length));
+        case 'quitar':
+        case 'ordenar':
+        case 'insertar':
+        case 'salida':
+          return ok({ ...ordenarPorCarga(estado, ctx2.ordenCarga), modo: 'carga' });
+      }
+    };
+
     const aplicar = (): Result<ResultadoOperacion & { modo: ModoRuta }, ErrorApp> => {
+      // CALCULAR MI RUTA ('ordenar') saca a la ruta del orden de carga: la ordena el sistema.
+      if (guardada.modo === 'carga' && op.tipo !== 'ordenar') return aplicarEnOrden();
       switch (op.tipo) {
         case 'subir':
         case 'bajar':
@@ -431,6 +462,8 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
     if (!ctx.ok) return false;
     const { guardada, items } = ctx.value;
     if (!guardada) return false;
+    // «Las agrego en orden»: si el chofer se salta una parada, la lista no se reordena sola.
+    if (guardada.modo === 'carga') return false;
     const lugar = guardada.orden.indexOf(facturaId);
     if (lugar < 0) return false;
     const pendientes = new Set(items.map((f) => f.facturaId));

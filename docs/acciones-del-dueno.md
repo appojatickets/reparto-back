@@ -216,6 +216,12 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] Entra como chofer (o ayudante) de esa planilla: debe abrir la app **ya con su camión del día** y ver sus vendedores y comunas.
 - [ ] En **VENDEDORES** carga el celular de cada uno; en un local cerrado, el WhatsApp debe ofrecer solo a los vendedores de ese camión.
 
+### A26. Elegir cómo se arma la ruta: «calcular mi ruta» o «las agrego en orden» (ADR 0037 del back)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. La migración ya está aplicada en Supabase.
+- [ ] Como chofer, carga varias facturas **en el orden en que las vas a entregar** y elige **LAS AGREGO EN ORDEN**: la ruta debe quedar exactamente en ese orden.
+- [ ] Agrega una factura más: debe quedar **al final**. Mueve una parada con ↕ MOVER: debe quedarse donde la soltaste y las demás no se mueven solas.
+- [ ] Toca **CALCULAR MI RUTA**: ahí sí la ordena el sistema.
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos
