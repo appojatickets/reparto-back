@@ -18,4 +18,5 @@ Cada mañana la oficina recibe una planilla de Excel con una fila por camión: *
 
 ## Límites
 - Cuando el nombre de la planilla no coincide con ningún usuario, la persona queda anotada pero sin camión elegido: hay que crearle el usuario (USUARIOS) o corregir el nombre y pegar de nuevo.
-- Una columna de vehículo que no es patente (p. ej. «CABINET») se informa como fila inválida; falta que el dueño diga qué es.
+- **CABINET** es quien entrega las máquinas (freezers), no los helados: la app lo omite antes de enviar (ADR 0024 del front). Cualquier otra
+  cosa que no sea patente se informa como fila inválida y no frena a las demás.
