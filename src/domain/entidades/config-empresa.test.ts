@@ -33,4 +33,14 @@ describe('configuración de la empresa', () => {
     const c = validarConfig({ salidaPorDefectoMin: 480, horaLimiteRegresoMin: 3.5 });
     expect(!c.ok && c.error.map((e) => e.codigo)).toEqual(['LIMITE_INVALIDO']);
   });
+
+  it('el orden de inicio (partir por lo más lejano o por lo más cercano al depósito) es opcional y solo acepta sus tres valores', () => {
+    for (const orden of ['automatico', 'lejano', 'cercano'] as const) {
+      const r = validarConfig({ ...base, ordenInicio: orden });
+      expect(r.ok && r.value.ordenInicio).toBe(orden);
+    }
+    expect(validarConfig(base).ok && 'ordenInicio' in (validarConfig(base) as { value: object }).value).toBe(false);
+    const mal = validarConfig({ ...base, ordenInicio: 'al azar' as never });
+    expect(!mal.ok && mal.error.map((e) => e.codigo)).toEqual(['ORDEN_INICIO_INVALIDO']);
+  });
 });

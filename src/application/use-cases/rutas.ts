@@ -240,6 +240,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
       ...(ctx.origen ? { origen: ctx.origen } : {}),
       salida: ctx.ahoraMin !== undefined ? Math.max(salida, ctx.ahoraMin) : salida,
       horaLimiteRegresoMin: ctx.config.horaLimiteRegresoMin,
+      ...(ctx.config.ordenInicio ? { ordenInicio: ctx.config.ordenInicio } : {}),
       entradas: ctx.items.map((f) => entradaDe(f, ctx.aprendido.servicioMin(f.localId), ctx.estimadas.get(f.facturaId), ctx.ordenCarga.get(f.facturaId))),
       // Con tiempos por calles el ritmo aprendido (medido contra la línea recta) ya no aplica.
       ritmo: ctx.viajes.conCalles ? 1 : ctx.aprendido.ritmo,

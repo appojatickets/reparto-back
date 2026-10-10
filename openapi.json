@@ -13458,7 +13458,7 @@
     },
     "/v1/empresa/config": {
       "get": {
-        "summary": "Depósito, hora de salida y hora límite de regreso",
+        "summary": "Depósito, hora de salida, hora límite de regreso y por dónde parte la ruta",
         "tags": [
           "empresa"
         ],
@@ -13504,6 +13504,14 @@
                       "type": "integer",
                       "minimum": 0,
                       "maximum": 1439
+                    },
+                    "ordenInicio": {
+                      "type": "string",
+                      "enum": [
+                        "automatico",
+                        "lejano",
+                        "cercano"
+                      ]
                     }
                   },
                   "required": [
@@ -13749,6 +13757,14 @@
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 1439
+                  },
+                  "ordenInicio": {
+                    "type": "string",
+                    "enum": [
+                      "automatico",
+                      "lejano",
+                      "cercano"
+                    ]
                   }
                 },
                 "required": [
@@ -13801,6 +13817,14 @@
                       "type": "integer",
                       "minimum": 0,
                       "maximum": 1439
+                    },
+                    "ordenInicio": {
+                      "type": "string",
+                      "enum": [
+                        "automatico",
+                        "lejano",
+                        "cercano"
+                      ]
                     }
                   },
                   "required": [

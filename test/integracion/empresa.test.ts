@@ -24,6 +24,16 @@ describe('configuración de la empresa', () => {
     expect((await empresas.obtenerConfig(e))?.deposito).toBeUndefined();
   });
 
+  it('guarda y lee el orden de inicio, lo cambia y lo quita sin tocar el resto', async () => {
+    const e = await crearEmpresa(db);
+    await empresas.guardarConfig(e, { deposito: { lat: -33.45, lng: -70.66 }, salidaPorDefectoMin: 450, horaLimiteRegresoMin: 1230, ordenInicio: 'lejano' });
+    expect((await empresas.obtenerConfig(e))?.ordenInicio).toBe('lejano');
+    await empresas.guardarConfig(e, { deposito: { lat: -33.45, lng: -70.66 }, salidaPorDefectoMin: 450, horaLimiteRegresoMin: 1230, ordenInicio: 'cercano' });
+    expect((await empresas.obtenerConfig(e))?.ordenInicio).toBe('cercano');
+    await empresas.guardarConfig(e, { deposito: { lat: -33.45, lng: -70.66 }, salidaPorDefectoMin: 450, horaLimiteRegresoMin: 1230 });
+    expect(await empresas.obtenerConfig(e)).toEqual({ deposito: { lat: -33.45, lng: -70.66 }, salidaPorDefectoMin: 450, horaLimiteRegresoMin: 1230 });
+  });
+
   it('una empresa inexistente devuelve undefined', async () => {
     expect(await empresas.obtenerConfig('00000000-0000-4000-8000-000000000000')).toBeUndefined();
   });
@@ -31,5 +41,6 @@ describe('configuración de la empresa', () => {
   it('leerConfig tolera datos rotos', () => {
     expect(leerConfig(null)).toEqual({ salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260 });
     expect(leerConfig({ deposito: { lat: 'x' }, salidaPorDefectoMin: '8' })).toEqual({ salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260 });
+    expect(leerConfig({ ordenInicio: 'al azar' })).toEqual({ salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260 });
   });
 });

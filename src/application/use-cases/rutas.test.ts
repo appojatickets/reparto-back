@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { err } from '../../domain/shared/result.js';
 import { crearReloj, usuarioDe } from './fakes.test-util.js';
 import { fakeJornadas, fakeRegistro, resolverDePrueba } from './fakes-facturas.test-util.js';
-import { CAMION_ID, FECHA, fakeCamionesRuta, fakeEmpresas, fakeEntregasRuta, fakeFacturasRuta, fakeRutas, paradaDe } from './fakes-rutas.test-util.js';
+import { CAMION_ID, CONFIG, FECHA, fakeCamionesRuta, fakeEmpresas, fakeEntregasRuta, fakeFacturasRuta, fakeRutas, paradaDe } from './fakes-rutas.test-util.js';
 import { crearServiciosDeRuta } from './rutas.js';
 
 const despachador = usuarioDe({ id: 'u-d', rol: 'despachador' });
@@ -489,6 +489,29 @@ describe('lo que se hace manda: avisar una parada que no era la siguiente', () =
     const llamadas = s.rutas.repo.guardar.mock.calls.length;
     expect(await s.reordenarTrasVisita(despachador, CAMION_ID, FECHA, 'f-A')).toBe(false);
     expect(s.rutas.repo.guardar.mock.calls.length).toBe(llamadas);
+  });
+});
+
+describe('por dónde parte la ruta (configuración de la empresa)', () => {
+  // Tres locales hacia el este del depósito (-33.5, -70.7): el 1.º a ~2 km, el 2.º a ~7 km y el 3.º a ~15 km.
+  const locales = () => [paradaDe('B', { lat: -33.5, lng: -70.62 }), paradaDe('C', { lat: -33.5, lng: -70.54 }), paradaDe('A', { lat: -33.5, lng: -70.68 })];
+  const conOrden = (ordenInicio?: 'automatico' | 'lejano' | 'cercano') => montar({ pendientes: locales(), config: { ...CONFIG, ...(ordenInicio ? { ordenInicio } : {}) } });
+
+  it('«más lejano» parte por lo más lejano del depósito', async () => {
+    const r = await conOrden('lejano').planificar(despachador, entrada);
+    expect(r.ok && ids(r.value)).toEqual(['f-C', 'f-B', 'f-A']);
+  });
+
+  it('«más cercano» parte por lo más cercano al depósito', async () => {
+    const r = await conOrden('cercano').planificar(despachador, entrada);
+    expect(r.ok && ids(r.value)).toEqual(['f-A', 'f-B', 'f-C']);
+  });
+
+  it('sin elegir, el sistema decide como siempre (hacia lo cercano)', async () => {
+    const sinElegir = await conOrden().planificar(despachador, entrada);
+    const automatico = await conOrden('automatico').planificar(despachador, entrada);
+    expect(sinElegir.ok && ids(sinElegir.value)).toEqual(['f-A', 'f-B', 'f-C']);
+    expect(automatico.ok && ids(automatico.value)).toEqual(sinElegir.ok ? ids(sinElegir.value) : []);
   });
 });
 

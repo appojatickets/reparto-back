@@ -222,6 +222,11 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] Agrega una factura más: debe quedar **al final**. Mueve una parada con ↕ MOVER: debe quedarse donde la soltaste y las demás no se mueven solas.
 - [ ] Toca **CALCULAR MI RUTA**: ahí sí la ordena el sistema.
 
+### A27. Elegir por dónde parte la ruta (ADR 0038 del back, ADR 0025 del front)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces.
+- [ ] Como admin, **CONFIGURACIÓN** → «Por dónde parte la ruta»: elige **MÁS LEJANO DEL DEPÓSITO** y guarda. Calcula una ruta de un camión con varias comunas: debe partir por lo más lejano y volver acercándose. Prueba también **MÁS CERCANO** y **AUTOMÁTICO** (como antes).
+- [ ] Un local que cierra temprano debe atenderse antes aunque esté cerca: el horario manda sobre esta preferencia.
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos

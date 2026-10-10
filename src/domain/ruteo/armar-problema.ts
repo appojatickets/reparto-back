@@ -1,8 +1,9 @@
 import { resolverHorario, ventanasParaRuta, type HorarioLocal } from '../entidades/horario.js';
 import type { Fecha } from '../shared/fechas.js';
 import { diaDeSemana } from '../shared/fechas.js';
-import type { Coordenada } from '../valor/coordenada.js';
-import { EPS_LLEGADA_CALIBRADO, PARAMETROS_POR_DEFECTO, PESO_ORDEN_CARGA_CALIBRADO, SERVICIO_POR_DEFECTO_MIN } from './parametros.js';
+import type { OrdenInicio } from '../entidades/config-empresa.js';
+import { distanciaKm, type Coordenada } from '../valor/coordenada.js';
+import { EPS_LLEGADA_CALIBRADO, PARAMETROS_POR_DEFECTO, PESO_ORDEN_CARGA_CALIBRADO, PESO_ORDEN_INICIO, SERVICIO_POR_DEFECTO_MIN } from './parametros.js';
 import { crearFactorHorario, crearTiemposConViajes, crearTiemposHaversine, DEPOSITO, ORIGEN } from './tiempos.js';
 import type { ParadaRuta, ProblemaRuta } from './tipos.js';
 
@@ -28,6 +29,8 @@ export type DatosProblema = {
   readonly origen?: Coordenada;
   readonly salida: number;
   readonly horaLimiteRegresoMin: number;
+  /** Por dónde parte la ruta (config de la empresa); sin indicar, el sistema decide. */
+  readonly ordenInicio?: OrdenInicio;
   readonly entradas: readonly EntradaParada[];
   readonly fijas?: readonly string[];
   /** Cuánto demora este camión frente a lo calculado (lo aprendido de sus rutas reales); 1 si no se sabe. */
@@ -61,6 +64,7 @@ export const armarProblema = (d: DatosProblema): { readonly problema: ProblemaRu
       servicioMin: e.servicioMin ?? SERVICIO_POR_DEFECTO_MIN,
       prioridad: e.urgente,
       ...(e.ordenCarga !== undefined ? { ordenCarga: e.ordenCarga } : {}),
+      distanciaDepositoKm: distanciaKm(d.deposito, e.coordenada),
     });
   }
 
@@ -73,7 +77,14 @@ export const armarProblema = (d: DatosProblema): { readonly problema: ProblemaRu
       fijas: (d.fijas ?? []).filter((id) => ids.has(id)),
       tiempos: d.viajeMin ? crearTiemposConViajes(crearTiemposHaversine(coordenadas), d.viajeMin, crearFactorHorario()) : crearTiemposHaversine(coordenadas),
       ritmo: d.ritmo ?? 1,
-      parametros: { ...PARAMETROS_POR_DEFECTO, epsLlegada: EPS_LLEGADA_CALIBRADO, pesoOrdenCarga: PESO_ORDEN_CARGA_CALIBRADO, horaLimiteRegresoMin: d.horaLimiteRegresoMin },
+      parametros: {
+        ...PARAMETROS_POR_DEFECTO,
+        epsLlegada: EPS_LLEGADA_CALIBRADO,
+        pesoOrdenCarga: PESO_ORDEN_CARGA_CALIBRADO,
+        ...(d.ordenInicio !== undefined && d.ordenInicio !== 'automatico' ? { ordenInicio: d.ordenInicio, pesoOrdenInicio: PESO_ORDEN_INICIO } : {}),
+        ...(d.ordenInicio === 'lejano' ? { epsLlegada: 0 } : {}),
+        horaLimiteRegresoMin: d.horaLimiteRegresoMin,
+      },
     },
   };
 };

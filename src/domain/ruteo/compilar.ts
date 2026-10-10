@@ -17,6 +17,8 @@ export type Compilado = {
   readonly prioridad: Uint8Array;
   /** Lugar de cada parada en el orden de carga entre las de este problema (0..n-1), o -1 si no se sabe. */
   readonly rangoCarga: Int32Array;
+  /** Lugar que le toca a cada parada según su distancia al depósito (0 = la primera); -1 si no se prefiere ningún orden. */
+  readonly rangoInicio: Int32Array;
   readonly origen: number;
   readonly deposito: number;
   readonly salida: number;
@@ -55,6 +57,16 @@ export const compilar = (problema: ProblemaRuta): Compilado => {
   const conCarga = problema.paradas.flatMap((p, i) => (p.ordenCarga !== undefined ? [{ i, orden: p.ordenCarga }] : [])).sort((a, b) => a.orden - b.orden || a.i - b.i);
   conCarga.forEach((x, rango) => { rangoCarga[x.i] = rango; });
 
+  const rangoInicio = new Int32Array(n).fill(-1);
+  const { ordenInicio, pesoOrdenInicio } = problema.parametros;
+  if (ordenInicio !== 'automatico' && pesoOrdenInicio > 0) {
+    const signo = ordenInicio === 'lejano' ? -1 : 1;
+    problema.paradas
+      .flatMap((p, i) => (p.distanciaDepositoKm !== undefined ? [{ i, d: signo * p.distanciaDepositoKm }] : []))
+      .sort((a, b) => a.d - b.d || a.i - b.i)
+      .forEach((x, rango) => { rangoInicio[x.i] = rango; });
+  }
+
   return {
     problema,
     n,
@@ -63,6 +75,7 @@ export const compilar = (problema: ProblemaRuta): Compilado => {
     servicio: Float64Array.from(problema.paradas, (p) => p.servicioMin),
     prioridad: Uint8Array.from(problema.paradas, (p) => (p.prioridad ? 1 : 0)),
     rangoCarga,
+    rangoInicio,
     origen: n,
     deposito: n + 1,
     salida: problema.salida,

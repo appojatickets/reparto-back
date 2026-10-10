@@ -12,6 +12,8 @@ export type ParadaRuta = {
   readonly prioridad: boolean;
   /** En qué orden cargó el chofer esta factura (0 = la primera). Suele parecerse al orden en que entrega. */
   readonly ordenCarga?: number;
+  /** Distancia en línea recta al depósito (km): sirve para partir por lo más lejano o por lo más cercano. */
+  readonly distanciaDepositoKm?: number;
 };
 
 /**

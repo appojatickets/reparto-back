@@ -1,3 +1,5 @@
+import type { OrdenInicio } from '../entidades/config-empresa.js';
+
 /**
  * Parámetros del motor. Los valores por defecto son un punto de partida razonable, NO calibrado:
  * se ajustan con datos propios durante el piloto (viven en `empresa.config.ruteo`).
@@ -31,6 +33,10 @@ export type ParametrosRuteo = {
    * parece al de entrega (correlación 0,8–0,9 en las rutas reales), así que es una pista de lo que el chofer piensa hacer.
    */
   readonly pesoOrdenCarga: number;
+  /** Por dónde parte la ruta: `lejano` / `cercano` prefieren las paradas ordenadas por su distancia al depósito (ver `pesoOrdenInicio`). */
+  readonly ordenInicio: OrdenInicio;
+  /** Costo por cada lugar que una parada se aleja del que le tocaría según su distancia al depósito (0 = no se considera). */
+  readonly pesoOrdenInicio: number;
   /** Hora de regreso al depósito desde la cual se avisa (minutos del día). 21:00 por defecto. */
   readonly horaLimiteRegresoMin: number;
   /** Perturbaciones de la búsqueda local iterada. */
@@ -48,6 +54,8 @@ export const PARAMETROS_POR_DEFECTO: ParametrosRuteo = Object.freeze({
   epsPrioridad: 0.1,
   epsLlegada: 0,
   pesoOrdenCarga: 0,
+  ordenInicio: 'automatico',
+  pesoOrdenInicio: 0,
   horaLimiteRegresoMin: 21 * 60,
   reinicios: 6,
   semilla: 20261004,
@@ -70,3 +78,11 @@ export const EPS_LLEGADA_CALIBRADO = 0.5;
  * 64 % (y está entre las 3 primeras el 86 % en vez del 77 %), con un recorrido que sigue siendo más corto que el manejado.
  */
 export const PESO_ORDEN_CARGA_CALIBRADO = 1;
+
+/**
+ * Peso del orden de inicio que usa la aplicación cuando el dueño elige partir por lo más lejano o más cercano (minutos por lugar de diferencia).
+ * Es una decisión del dueño, no un ajuste fino: pesa cinco veces el orden de carga, así que gana a las pistas suaves y a un desvío pequeño,
+ * pero no a un horario duro. No está calibrado con datos. Con «más lejano» se apaga la inclinación por lo cercano (`epsLlegada`), que
+ * empuja justo al revés.
+ */
+export const PESO_ORDEN_INICIO = 5;

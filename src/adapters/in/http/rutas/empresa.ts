@@ -8,6 +8,8 @@ const configSchema = z.object({
   deposito: z.object({ lat: z.number(), lng: z.number(), nombre: z.string().max(80).optional() }).optional(),
   salidaPorDefectoMin: minuto,
   horaLimiteRegresoMin: minuto,
+  /** Por dónde parte la ruta: lo decide el sistema, o se prefiere partir por lo más lejano o por lo más cercano al depósito. */
+  ordenInicio: z.enum(['automatico', 'lejano', 'cercano']).optional(),
 });
 
 export const rutasEmpresa = ({ app, casos, guard }: ContextoRutas): void => {
@@ -17,7 +19,7 @@ export const rutasEmpresa = ({ app, casos, guard }: ContextoRutas): void => {
     '/v1/empresa/config',
     {
       preHandler: guard('rutas:leer'),
-      schema: { tags: ['empresa'], summary: 'Depósito, hora de salida y hora límite de regreso', security: SEGURIDAD, response: { 200: configSchema, ...RESPUESTAS_ERROR } },
+      schema: { tags: ['empresa'], summary: 'Depósito, hora de salida, hora límite de regreso y por dónde parte la ruta', security: SEGURIDAD, response: { 200: configSchema, ...RESPUESTAS_ERROR } },
     },
     async (req, reply) => {
       const r = await casos.obtenerConfigEmpresa(actor(req));

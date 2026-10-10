@@ -30,4 +30,17 @@ describe('configuración de la empresa', () => {
     expect(!mala.ok && mala.error.codigo).toBe('VALIDACION');
     expect(empresas.guardarConfig).toHaveBeenCalledTimes(1);
   });
+
+  it('guarda el orden de inicio; si el cliente no lo manda (pantalla vieja) conserva el que había', async () => {
+    const empresas = fake();
+    empresas.obtenerConfig.mockResolvedValue({ salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260, ordenInicio: 'lejano' });
+    const guardar = crearGuardarConfigEmpresa({ empresas });
+    const conservado = await guardar(admin, { salidaPorDefectoMin: 450, horaLimiteRegresoMin: 1230 });
+    expect(conservado.ok && conservado.value.ordenInicio).toBe('lejano');
+    const cambiado = await guardar(admin, { salidaPorDefectoMin: 450, horaLimiteRegresoMin: 1230, ordenInicio: 'cercano' });
+    expect(cambiado.ok && cambiado.value.ordenInicio).toBe('cercano');
+    expect(empresas.guardarConfig).toHaveBeenLastCalledWith('empresa-1', { salidaPorDefectoMin: 450, horaLimiteRegresoMin: 1230, ordenInicio: 'cercano' });
+    const malo = await guardar(admin, { salidaPorDefectoMin: 450, horaLimiteRegresoMin: 1230, ordenInicio: 'al azar' as never });
+    expect(!malo.ok && malo.error.codigo).toBe('VALIDACION');
+  });
 });

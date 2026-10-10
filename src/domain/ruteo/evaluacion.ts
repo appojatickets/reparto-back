@@ -5,7 +5,7 @@ import type { Compilado } from './compilar.js';
  * Todos los términos son ≥ 0, así que se puede cortar en cuanto se supera `corte` (poda para la búsqueda local).
  */
 export const evaluar = (c: Compilado, orden: ArrayLike<number>, largo: number, corte = Infinity): number => {
-  const { mu, omega, penalizacionRiesgo, epsPrioridad, epsLlegada, pesoOrdenCarga } = c.problema.parametros;
+  const { mu, omega, penalizacionRiesgo, epsPrioridad, epsLlegada, pesoOrdenCarga, pesoOrdenInicio } = c.problema.parametros;
   let t = c.salida;
   let previo = c.origen;
   let costo = 0;
@@ -39,6 +39,10 @@ export const evaluar = (c: Compilado, orden: ArrayLike<number>, largo: number, c
     if (pesoOrdenCarga > 0) {
       const r = c.rangoCarga[j] ?? -1;
       if (r >= 0) costo += pesoOrdenCarga * Math.abs(k - r);
+    }
+    if (pesoOrdenInicio > 0) {
+      const r = c.rangoInicio[j] ?? -1;
+      if (r >= 0) costo += pesoOrdenInicio * Math.abs(k - r);
     }
     if (costo >= corte) return Infinity;
 

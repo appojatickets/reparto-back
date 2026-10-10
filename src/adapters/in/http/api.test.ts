@@ -441,6 +441,17 @@ describe('rutas del día', () => {
     const p = await app.inject({ method: 'PUT', url: '/v1/empresa/config', headers: auth('despachador'), payload: { salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260 } });
     expect(p.statusCode).toBe(403);
   });
+
+  it('configuración: el orden de inicio viaja en la lectura y el guardado, y solo acepta sus valores', async () => {
+    const guardarConfigEmpresa = vi.fn((_actor: unknown, c: object) => Promise.resolve(ok(c)));
+    const obtenerConfigEmpresa = vi.fn(() => Promise.resolve(ok({ salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260, ordenInicio: 'lejano' as const })));
+    const app = await construir({ guardarConfigEmpresa: guardarConfigEmpresa as never, obtenerConfigEmpresa });
+    expect((await app.inject({ method: 'GET', url: '/v1/empresa/config', headers: auth('admin') })).json()).toMatchObject({ ordenInicio: 'lejano' });
+    const enviar = (ordenInicio: string) => app.inject({ method: 'PUT', url: '/v1/empresa/config', headers: auth('admin'), payload: { salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260, ordenInicio } });
+    expect((await enviar('cercano')).statusCode).toBe(200);
+    expect(guardarConfigEmpresa).toHaveBeenCalledWith(USUARIOS['t-admin'], { salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260, ordenInicio: 'cercano' });
+    expect((await enviar('al azar')).statusCode).toBe(400);
+  });
 });
 
 describe('horario del local', () => {
