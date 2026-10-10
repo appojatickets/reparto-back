@@ -1,5 +1,6 @@
 import type { HealthReport } from '../../../application/use-cases/check-health.js';
 import type { crearActualizarLocal } from '../../../application/use-cases/actualizar-local.js';
+import type { crearObtenerUrlFotoUsuario, crearQuitarFotoPerfil, crearRegistrarFotoPerfil, crearSolicitarUrlSubidaPerfil } from '../../../application/use-cases/foto-perfil.js';
 import type { crearObtenerUrlFoto, crearQuitarFotoLocal, crearRegistrarFotoLocal, crearSolicitarUrlSubida } from '../../../application/use-cases/archivos.js';
 import type { crearActualizarCamion, crearCrearCamion, crearListarCamiones } from '../../../application/use-cases/camiones.js';
 import type { crearExportarLocales } from '../../../application/use-cases/exportar-locales.js';
@@ -44,6 +45,10 @@ export type CasosDeUso = {
   readonly resetearPin: ReturnType<typeof crearResetearPin>;
   readonly cambiarEstadoUsuario: ReturnType<typeof crearCambiarEstadoUsuario>;
   readonly cambiarEditorUsuario: ReturnType<typeof crearCambiarEditorUsuario>;
+  readonly solicitarUrlSubidaPerfil: ReturnType<typeof crearSolicitarUrlSubidaPerfil>;
+  readonly registrarFotoPerfil: ReturnType<typeof crearRegistrarFotoPerfil>;
+  readonly quitarFotoPerfil: ReturnType<typeof crearQuitarFotoPerfil>;
+  readonly obtenerUrlFotoUsuario: ReturnType<typeof crearObtenerUrlFotoUsuario>;
   readonly buscarClientes: ReturnType<typeof crearBuscarClientes>;
   readonly crearClienteNuevo: ReturnType<typeof crearCrearClienteNuevo>;
   readonly importarClientes: ReturnType<typeof crearImportarClientes>;

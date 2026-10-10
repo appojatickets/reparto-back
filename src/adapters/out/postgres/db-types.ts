@@ -6,7 +6,7 @@ type Fecha = ColumnType<Date, Date | string | undefined, Date | string>;
 
 export type Tabla = {
   empresa: { id: Generated<string>; nombre: string; config: ColumnType<unknown, string | undefined, string>; config_version: Generated<number>; creado_en: Generated<Date> };
-  usuario: { id: string; empresa_id: string; rol: 'admin' | 'despachador' | 'chofer' | 'ayudante'; username: string; nombre: string; activo: Generated<boolean>; editor: Generated<boolean>; creado_en: Generated<Date> };
+  usuario: { id: string; empresa_id: string; rol: 'admin' | 'despachador' | 'chofer' | 'ayudante'; username: string; nombre: string; activo: Generated<boolean>; editor: Generated<boolean>; foto_path: string | null; foto_en: Date | null; creado_en: Generated<Date> };
   cliente: {
     id: Generated<string>;
     empresa_id: string;

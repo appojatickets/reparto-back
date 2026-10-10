@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { actor } from '../auth.js';
 import { enviarError, RESPUESTAS_ERROR } from '../errores.js';
-import { SEGURIDAD, sesionSchema, tipada, usuarioPublico, type ContextoRutas } from './comunes.js';
+import { aUsuarioPublico, SEGURIDAD, sesionSchema, tipada, usuarioPublico, type ContextoRutas } from './comunes.js';
 
 export const rutasSesion = ({ app, casos, guard }: ContextoRutas): void => {
   const a = tipada(app);
@@ -22,7 +22,7 @@ export const rutasSesion = ({ app, casos, guard }: ContextoRutas): void => {
       const r = await casos.iniciarSesion(req.body);
       if (!r.ok) return enviarError(reply, r.error);
       const { sesion, usuario } = r.value;
-      return reply.send({ ...sesion, usuario: { id: usuario.id, username: usuario.username, nombre: usuario.nombre, rol: usuario.rol, activo: usuario.activo, editor: usuario.editor } });
+      return reply.send({ ...sesion, usuario: aUsuarioPublico(usuario) });
     },
   );
 
@@ -56,7 +56,7 @@ export const rutasSesion = ({ app, casos, guard }: ContextoRutas): void => {
     },
     async (req, reply) => {
       const u = actor(req);
-      return reply.send({ id: u.id, username: u.username, nombre: u.nombre, rol: u.rol, activo: u.activo, editor: u.editor, empresaId: u.empresaId });
+      return reply.send({ ...aUsuarioPublico(u), empresaId: u.empresaId });
     },
   );
 };

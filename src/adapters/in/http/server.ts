@@ -8,6 +8,7 @@ import { crearGuard } from './auth.js';
 import type { CasosDeUso } from './casos-de-uso.js';
 import { rutasClientes } from './rutas/clientes.js';
 import { rutasPinesYArchivos } from './rutas/pines-y-archivos.js';
+import { rutasFotoPerfil } from './rutas/foto-perfil.js';
 import { rutasSesion } from './rutas/sesion.js';
 import { rutasPlanilla } from './rutas/planilla.js';
 import { rutasVendedores } from './rutas/vendedores.js';
@@ -79,6 +80,7 @@ export const buildServer = async (deps: HttpDeps): Promise<FastifyInstance> => {
   const contexto = { app, casos: deps.casos, guard: crearGuard(deps.casos) };
   rutasSesion(contexto);
   rutasUsuarios(contexto);
+  rutasFotoPerfil(contexto);
   rutasClientes(contexto);
   rutasPinesYArchivos(contexto);
   rutasCamionesYFacturas(contexto);

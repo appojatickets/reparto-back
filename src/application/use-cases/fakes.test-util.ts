@@ -47,6 +47,13 @@ export const fakeUsuarios = (semilla: Usuario[] = []) => {
       filas.set(id, { ...u, editor });
       return Promise.resolve(true);
     },
+    cambiarFoto: (empresaId, id, foto) => {
+      const u = filas.get(id);
+      if (u?.empresaId !== empresaId) return Promise.resolve(false);
+      const sin: Usuario = { id: u.id, empresaId: u.empresaId, rol: u.rol, username: u.username, nombre: u.nombre, activo: u.activo, editor: u.editor };
+      filas.set(id, foto ? { ...sin, fotoPath: foto.path, fotoEn: foto.en } : sin);
+      return Promise.resolve(true);
+    },
   };
   return { repo, filas };
 };

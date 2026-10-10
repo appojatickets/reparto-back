@@ -3,10 +3,10 @@ import type { Usuario } from '../../../domain/entidades/usuario.js';
 import type { IntentosLoginRepository, UsuarioRepository, EstadoIntentos } from '../../../application/ports/out/usuarios.js';
 import type { Db } from './client.js';
 
-type Fila = { id: string; empresa_id: string; rol: Usuario['rol']; username: string; nombre: string; activo: boolean; editor: boolean };
+type Fila = { id: string; empresa_id: string; rol: Usuario['rol']; username: string; nombre: string; activo: boolean; editor: boolean; foto_path: string | null; foto_en: Date | null };
 
-const aUsuario = (f: Fila): Usuario => ({ id: f.id, empresaId: f.empresa_id, rol: f.rol, username: f.username, nombre: f.nombre, activo: f.activo, editor: f.editor });
-const COLUMNAS = ['id', 'empresa_id', 'rol', 'username', 'nombre', 'activo', 'editor'] as const;
+const aUsuario = (f: Fila): Usuario => ({ id: f.id, empresaId: f.empresa_id, rol: f.rol, username: f.username, nombre: f.nombre, activo: f.activo, editor: f.editor, ...(f.foto_path !== null ? { fotoPath: f.foto_path } : {}), ...(f.foto_en !== null ? { fotoEn: f.foto_en } : {}) });
+const COLUMNAS = ['id', 'empresa_id', 'rol', 'username', 'nombre', 'activo', 'editor', 'foto_path', 'foto_en'] as const;
 
 export class PostgresUsuarioRepository implements UsuarioRepository {
   constructor(private readonly db: Db) {}
@@ -42,6 +42,11 @@ export class PostgresUsuarioRepository implements UsuarioRepository {
 
   async cambiarEditor(empresaId: string, id: string, editor: boolean): Promise<boolean> {
     const r = await this.db.updateTable('usuario').set({ editor }).where('id', '=', id).where('empresa_id', '=', empresaId).executeTakeFirst();
+    return r.numUpdatedRows > 0n;
+  }
+
+  async cambiarFoto(empresaId: string, id: string, foto: { readonly path: string; readonly en: Date } | undefined): Promise<boolean> {
+    const r = await this.db.updateTable('usuario').set({ foto_path: foto?.path ?? null, foto_en: foto?.en ?? null }).where('id', '=', id).where('empresa_id', '=', empresaId).executeTakeFirst();
     return r.numUpdatedRows > 0n;
   }
 }

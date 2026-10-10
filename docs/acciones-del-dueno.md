@@ -229,6 +229,14 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] Como admin, **CONFIGURACIÓN** → «Por dónde parte la ruta»: elige **MÁS LEJANO DEL DEPÓSITO** y guarda. Calcula una ruta de un camión con varias comunas: debe partir por lo más lejano y volver acercándose. Prueba también **MÁS CERCANO** y **AUTOMÁTICO** (como antes).
 - [ ] Un local que cierra temprano debe atenderse antes aunque esté cerca: el horario manda sobre esta preferencia.
 
+### A28. Foto de perfil (ADR 0039 del back, ADR 0026 del front)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. La migración ya está aplicada en Supabase.
+- [ ] Al entrar a la app, bajo el saludo aparece un círculo con tus iniciales y **PONER MI FOTO**. También lo ves chico junto a tu nombre en la cabecera (tócalo para ir a tu perfil).
+- [ ] **Mi perfil:** toca **SUBIR MI FOTO**, elige una foto (galería o cámara). Se recorta en cuadrado y aparece al tiro en el perfil, la cabecera y el saludo. Pruébalo en el celular.
+- [ ] **CAMBIAR MI FOTO** la reemplaza; **QUITAR MI FOTO** pide confirmar y vuelven las iniciales.
+- [ ] **ADMIN → USUARIOS:** cada persona muestra su foto chica (o sus iniciales).
+- [ ] Dime si el tamaño del círculo en la cabecera y en el saludo te parece bien o lo ajusto.
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos

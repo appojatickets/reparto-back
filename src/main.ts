@@ -1,5 +1,6 @@
 import { checkHealth } from './application/use-cases/check-health.js';
 import { crearActualizarLocal } from './application/use-cases/actualizar-local.js';
+import { crearObtenerUrlFotoUsuario, crearQuitarFotoPerfil, crearRegistrarFotoPerfil, crearSolicitarUrlSubidaPerfil } from './application/use-cases/foto-perfil.js';
 import { crearObtenerUrlFoto, crearQuitarFotoLocal, crearRegistrarFotoLocal, crearSolicitarUrlSubida } from './application/use-cases/archivos.js';
 import { crearActualizarCamion, crearCrearCamion, crearListarCamiones } from './application/use-cases/camiones.js';
 import { crearActualizarFactura, crearListarFacturas, crearRegistrarFactura } from './application/use-cases/facturas.js';
@@ -137,6 +138,10 @@ const casos: CasosDeUso = {
   resetearPin: crearResetearPin({ identidad, usuarios, intentos }),
   cambiarEstadoUsuario: crearCambiarEstadoUsuario({ usuarios }),
   cambiarEditorUsuario: crearCambiarEditorUsuario({ usuarios }),
+  solicitarUrlSubidaPerfil: crearSolicitarUrlSubidaPerfil({ almacen, ids: generadorDeIds }),
+  registrarFotoPerfil: crearRegistrarFotoPerfil({ usuarios, almacen, clock }),
+  quitarFotoPerfil: crearQuitarFotoPerfil({ usuarios, almacen }),
+  obtenerUrlFotoUsuario: crearObtenerUrlFotoUsuario({ usuarios, almacen }),
   buscarClientes: crearBuscarClientes({ clientes }),
   crearClienteNuevo: crearCrearClienteNuevo({ clientes }),
   importarClientes: crearImportarClientes({ clientes }),

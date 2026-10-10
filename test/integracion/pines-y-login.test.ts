@@ -125,4 +125,22 @@ describe('permiso de editor en Postgres', () => {
     expect(await repo.cambiarEditor(e, id, false)).toBe(true);
     expect((await repo.porId(id))?.editor).toBe(false);
   });
+
+  it('la foto de perfil se pone, se cambia y se quita, y solo vale dentro de la empresa', async () => {
+    const e = await crearEmpresa(db);
+    const otra = await crearEmpresa(db);
+    const id = await crearUsuario(db, e, 'chofer', `f${Math.random().toString(36).slice(2, 8)}`);
+    const repo = new PostgresUsuarioRepository(db);
+    expect((await repo.porId(id))?.fotoPath).toBeUndefined();
+    const en = new Date('2026-10-10T12:00:00.000Z');
+    expect(await repo.cambiarFoto(e, id, { path: `${e}/perfil/${id}/a.webp`, en })).toBe(true);
+    expect(await repo.porId(id)).toMatchObject({ fotoPath: `${e}/perfil/${id}/a.webp`, fotoEn: en });
+    expect((await repo.listar(e)).find((u) => u.id === id)?.fotoEn).toEqual(en);
+    expect(await repo.cambiarFoto(otra, id, undefined)).toBe(false); // otra empresa: no la toca
+    expect((await repo.porId(id))?.fotoPath).toBeDefined();
+    expect(await repo.cambiarFoto(e, id, undefined)).toBe(true);
+    const sin = await repo.porId(id);
+    expect(sin?.fotoPath).toBeUndefined();
+    expect(sin?.fotoEn).toBeUndefined();
+  });
 });
