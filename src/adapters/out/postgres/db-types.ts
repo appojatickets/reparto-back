@@ -167,7 +167,7 @@ export type Tabla = {
     camion_id: string;
     fecha_reparto: string;
     usuario_id: string | null;
-    tipo: 'planificar' | 'subir' | 'bajar' | 'primero' | 'despues' | 'mover' | 'quitar' | 'ordenar' | 'insertar' | 'salida';
+    tipo: 'planificar' | 'subir' | 'bajar' | 'primero' | 'despues' | 'mover' | 'quitar' | 'ordenar' | 'insertar' | 'fijar' | 'salida';
     factura_id: string | null;
     modo: 'sugerida' | 'manual' | 'carga';
     version: number;
@@ -201,6 +201,8 @@ export type Tabla = {
     dist_sugerida_m: number | null;
     dist_real_m: number | null;
     inversiones: number | null;
+    origen_orden: 'sistema' | 'chofer' | null;
+    cambios_manuales: number | null;
     analizado_en: Date | null;
     creado_en: Generated<Date>;
   };

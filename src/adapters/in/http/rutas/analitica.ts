@@ -34,7 +34,7 @@ export const rutasAnalitica = ({ app, casos, guard }: ContextoRutas): void => {
             }),
             pines: z.object({ verificados: z.number(), porVerificar: z.number(), sinPin: z.number() }),
             porDia: z.array(z.object({ fecha: z.string(), jornadas: z.number(), atendidas: z.number(), sinHacer: z.number() })),
-            calidad: z.array(z.object({ fecha: z.string(), camionId: z.string(), camion: z.string().optional(), distSugeridaM: z.number(), distRealM: z.number(), inversiones: z.number() })),
+            calidad: z.array(z.object({ fecha: z.string(), camionId: z.string(), camion: z.string().optional(), distSugeridaM: z.number(), distRealM: z.number(), inversiones: z.number(), origen: z.enum(['sistema', 'chofer']), cambios: z.number() })),
             aprendido: z.object({
               ritmo: z.array(parametro), capacidad: z.array(parametro), servicioGeneral: parametro.optional(),
               localesLentos: z.array(parametro.extend({ etiqueta: etiqueta.optional() })),

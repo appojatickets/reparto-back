@@ -54,7 +54,7 @@ export class PostgresAprendizajeRepository implements AprendizajeRepository {
     for (const q of calidad) {
       await this.db
         .updateTable('jornada_resumen')
-        .set({ dist_sugerida_m: q.distSugeridaM, dist_real_m: q.distRealM, inversiones: q.inversiones, analizado_en: ahora })
+        .set({ dist_sugerida_m: q.distSugeridaM, dist_real_m: q.distRealM, inversiones: q.inversiones, origen_orden: q.origen, cambios_manuales: q.cambios, analizado_en: ahora })
         .where('empresa_id', '=', empresaId)
         .where('jornada_id', '=', q.jornadaId)
         .execute();

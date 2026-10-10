@@ -38,7 +38,8 @@ export const crearRegistrarEvento = ({ facturas, entregas, clientes, rutas, reso
   async (actor: Usuario, facturaId: string, entrada: EventoCrudo): Promise<Result<ResultadoEvento, ErrorApp>> => {
     const v = validarEvento(entrada);
     if (!v.ok) return err(errorApp('VALIDACION', v.error.map((e) => e.mensaje).join(' '), { errores: v.error }));
-    const evento = v.value;
+    // «Sin pin»: la validación ya descartó la posición; la entrega y el reordenamiento siguen igual, pero el pin del local no se toca.
+    const { sinPin, ...evento } = v.value;
 
     const f = await facturas.obtener(actor.empresaId, facturaId);
     if (!f) return err(errorApp('NO_ENCONTRADO', 'La entrega no existe.'));
@@ -67,7 +68,7 @@ export const crearRegistrarEvento = ({ facturas, entregas, clientes, rutas, reso
     });
 
     let pinFijado = false;
-    if (evento.tipo === 'entregado' && evento.lat !== undefined && evento.lng !== undefined && posicionSirveParaPin({ lat: evento.lat, lng: evento.lng, ...(evento.precisionM !== undefined ? { precisionM: evento.precisionM } : {}) })) {
+    if (sinPin !== true && evento.tipo === 'entregado' && evento.lat !== undefined && evento.lng !== undefined && posicionSirveParaPin({ lat: evento.lat, lng: evento.lng, ...(evento.precisionM !== undefined ? { precisionM: evento.precisionM } : {}) })) {
       const entrega = { lat: evento.lat, lng: evento.lng, ...(evento.precisionM !== undefined ? { precisionM: evento.precisionM } : {}) };
       // Un pin ya verificado (por una persona o por las entregas) no se toca. Si no, si esta entrega lo confirma, queda verificado tal cual;
       // y si no, donde de verdad se entrega manda sobre el pin que hay (ya queda registrada esta entrega).

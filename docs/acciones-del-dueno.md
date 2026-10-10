@@ -237,6 +237,15 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] **ADMIN → USUARIOS:** cada persona muestra su foto chica (o sus iniciales).
 - [ ] Dime si el tamaño del círculo en la cabecera y en el saludo te parece bien o lo ajusto.
 
+### A29. Orden manual con un toque, aprendizaje del chofer y «entregado sin pin» (ADR 0040 del back, ADR 0027 del front)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. Las migraciones ya están aplicadas en Supabase.
+- [ ] **Interruptor ORDEN DE LA RUTA** (en RUTAS y MI RUTA, bajo el resumen): **AUTOMÁTICO** (el sistema ordena lo que queda) y **MANUAL** (nada se mueve solo). Toca **MANUAL** con una ruta ya calculada: queda *igual* que la ves y desde ahí solo se mueve lo que tú muevas (la etiqueta pasa a **ORDEN MANUAL**).
+- [ ] En manual: arrastra una parada con **↕ MOVER** y comprueba que nada más se reordena; carga otra factura y entra al final; en un local cerrado, **VOLVER MÁS TARDE** lo baja de lugar.
+- [ ] Toca **AUTOMÁTICO**: pide confirmar y el sistema ordena lo que queda. **VOLVER AL ORDEN EN QUE CARGUÉ** (solo en manual) rehace la ruta en el orden de carga.
+- [ ] Al armar la ruta por primera vez, **LAS AGREGO EN ORDEN** = ruta manual (el orden en que cargas las facturas es el orden de la ruta).
+- [ ] **ENTREGADO, SIN FIJAR EL PIN** (al abrir una parada): queda entregada en su lugar y en «Hechas hoy», pero no se guarda tu posición ni se mueve el pin. Úsalo cuando ya te alejaste de la puerta.
+- [ ] **ANALÍTICA → «Días en orden manual: la experiencia del chofer»**: aparece el día que un chofer ordenó solo, con los km que manejó frente a los que habría sugerido el sistema y cuántas paradas movió a mano. Se llena después del próximo análisis (ANALIZAR AHORA).
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos

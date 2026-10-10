@@ -5,6 +5,17 @@ const pos = { lat: -33.45, lng: -70.66, precisionM: 12 };
 const codigos = (e: Parameters<typeof validarEvento>[0]) => { const r = validarEvento(e); return r.ok ? [] : r.error.map((x) => x.codigo); };
 
 describe('validarEvento', () => {
+  it('«sin pin»: se entrega sin usar la posición (aunque venga una) y queda anotado', () => {
+    expect(validarEvento({ tipo: 'entregado', sinPin: true, ...pos })).toEqual({ ok: true, value: { tipo: 'entregado', sinPin: true } });
+    expect(validarEvento({ tipo: 'entregado', sinPin: true })).toEqual({ ok: true, value: { tipo: 'entregado', sinPin: true } });
+    expect(validarEvento({ tipo: 'entregado', sinPin: false, ...pos })).toEqual({ ok: true, value: { tipo: 'entregado', lat: -33.45, lng: -70.66, precisionM: 12 } });
+  });
+
+  it('«sin pin» solo se indica al entregar', () => {
+    expect(codigos({ tipo: 'cerrado', sinPin: true })).toEqual(['SIN_PIN_NO_APLICA']);
+    expect(codigos({ tipo: 'llegada', sinPin: true })).toEqual(['SIN_PIN_NO_APLICA']);
+  });
+
   it('acepta llegada, entregado y cerrado con o sin posición', () => {
     expect(validarEvento({ tipo: 'llegada', ...pos })).toEqual({ ok: true, value: { tipo: 'llegada', lat: -33.45, lng: -70.66, precisionM: 12 } });
     expect(validarEvento({ tipo: 'entregado' })).toEqual({ ok: true, value: { tipo: 'entregado' } });

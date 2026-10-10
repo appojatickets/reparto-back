@@ -20,6 +20,10 @@ export type CalidadDeRuta = {
   readonly distSugeridaM: number;
   readonly distRealM: number;
   readonly inversiones: number;
+  /** `chofer`: el día se armó en orden manual y `distSugeridaM` es lo que habría sugerido el sistema; `sistema`: el orden lo calculó el sistema. */
+  readonly origen: 'sistema' | 'chofer';
+  /** Cuántas veces se movió una parada a mano ese día. */
+  readonly cambios: number;
 };
 
 export type EtiquetaLocal = { readonly razonSocial: string; readonly direccion: string; readonly comuna: string };

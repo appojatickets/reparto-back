@@ -16718,7 +16718,8 @@
                             "type": "string",
                             "enum": [
                               "ordenar",
-                              "insertar"
+                              "insertar",
+                              "fijar"
                             ]
                           }
                         },
@@ -19815,6 +19816,16 @@
                           },
                           "inversiones": {
                             "type": "number"
+                          },
+                          "origen": {
+                            "type": "string",
+                            "enum": [
+                              "sistema",
+                              "chofer"
+                            ]
+                          },
+                          "cambios": {
+                            "type": "number"
                           }
                         },
                         "required": [
@@ -19822,7 +19833,9 @@
                           "camionId",
                           "distSugeridaM",
                           "distRealM",
-                          "inversiones"
+                          "inversiones",
+                          "origen",
+                          "cambios"
                         ],
                         "additionalProperties": false
                       }
@@ -20747,7 +20760,7 @@
     },
     "/v1/entregas/{id}/eventos": {
       "post": {
-        "summary": "Avisar desde la parada: llegué, entregué, está cerrado, espero, no se entregó o vuelvo más tarde (con la posición si hay)",
+        "summary": "Avisar desde la parada: llegué, entregué, está cerrado, espero, no se entregó o vuelvo más tarde (con la posición si hay). Con `sinPin` la entrega queda hecha sin usar la posición ni tocar el pin",
         "tags": [
           "entregas"
         ],
@@ -20797,6 +20810,9 @@
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 240
+                  },
+                  "sinPin": {
+                    "type": "boolean"
                   }
                 },
                 "required": [

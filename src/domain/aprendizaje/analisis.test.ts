@@ -114,9 +114,39 @@ describe('calidad de la ruta: lo sugerido frente a lo manejado', () => {
   const sugerida: OperacionObs = { camionId: 'cam-1', fecha: '2026-10-05', tipo: 'planificar', modo: 'sugerida', orden: ['f1', 'f2', 'f3', 'f4'], creadoEn: en(-20) };
   const visitas = (orden: string[]): EventoObs[] => orden.flatMap((id, i) => [ev(id, 'llegada', i * 20), ev(id, 'entregado', i * 20 + 5)]);
 
-  it('un día en que el chofer cargó «en orden» no tiene una ruta sugerida contra la cual medirse', () => {
-    const enOrden: OperacionObs = { ...sugerida, modo: 'carga' };
-    expect(calidadDeJornada(jornada, visitas(['f1', 'f2', 'f3', 'f4']), [enOrden], locales, DEPOSITO)).toBeUndefined();
+  it('un día de orden sugerido se anota como «sistema» y sin cambios manuales', () => {
+    expect(calidadDeJornada(jornada, visitas(['f1', 'f2', 'f3', 'f4']), [sugerida], locales, DEPOSITO)).toMatchObject({ origen: 'sistema', cambios: 0 });
+  });
+
+  describe('un día en orden manual (el chofer cargó «en orden»): su experiencia se mide contra lo que habría sugerido el sistema', () => {
+    const enOrden: OperacionObs = { ...sugerida, modo: 'carga', orden: ['f2', 'f1', 'f3', 'f4'] };
+
+    it('se anota como del chofer, sin cambios, y el sistema habría ordenado distinto', () => {
+      const q = calidadDeJornada(jornada, visitas(['f2', 'f1', 'f3', 'f4']), [enOrden], locales, DEPOSITO);
+      expect(q).toMatchObject({ jornadaId: 'j-1', origen: 'chofer', cambios: 0, comparadas: 4, inversiones: 1 });
+      expect(q?.distRealM).toBeGreaterThan(q?.distSugeridaM ?? Infinity);
+    });
+
+    it('si el chofer hizo un recorrido tan bueno como el del sistema, no hay diferencias', () => {
+      const q = calidadDeJornada(jornada, visitas(['f1', 'f2', 'f3', 'f4']), [{ ...enOrden, orden: ['f1', 'f2', 'f3', 'f4'] }], locales, DEPOSITO);
+      expect(q).toMatchObject({ origen: 'chofer', inversiones: 0 });
+      expect(q?.distRealM).toBe(q?.distSugeridaM);
+    });
+
+    it('cuenta lo que movió a mano (subir, bajar, arrastrar, ir primero), no las paradas que dejó para después', () => {
+      const ops: OperacionObs[] = [
+        enOrden,
+        { ...enOrden, tipo: 'mover', creadoEn: en(-10) },
+        { ...enOrden, tipo: 'subir', creadoEn: en(-9) },
+        { ...enOrden, tipo: 'primero', creadoEn: en(-8) },
+        { ...enOrden, tipo: 'despues', creadoEn: en(60) },
+      ];
+      expect(calidadDeJornada(jornada, visitas(['f2', 'f1', 'f3', 'f4']), ops, locales, DEPOSITO)?.cambios).toBe(3);
+    });
+
+    it('con menos de 3 paradas con pin no compara', () => {
+      expect(calidadDeJornada(jornada, visitas(['f1', 'f2']), [enOrden], locales, DEPOSITO)).toBeUndefined();
+    });
   });
 
   it('si se maneja en el orden sugerido no hay diferencias', () => {

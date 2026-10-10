@@ -101,6 +101,28 @@ describe('registrar evento de entrega', () => {
     expect(sinPin.clientes.fijarPinSiFalta).toHaveBeenCalledWith('empresa-1', 'l-1', -33.45, -70.66);
   });
 
+  it('ENTREGADO SIN PIN: la entrega queda hecha y la ruta se reordena, pero no se guarda la posición ni se toca el pin', async () => {
+    const t = montar(facturaDe({ camion: { id: 'cam-1', patente: 'ABCD12' } })); // el local ya tiene pin sin verificar
+    t.entregas.posicionesDeEntrega.mockResolvedValue([{ lat: -33.45, lng: -70.66, precisionM: 10 }]);
+    const r = await t.registrar(chofer, 'f-1', { tipo: 'entregado', sinPin: true, ...pos });
+    expect(r).toEqual({ ok: true, value: { estado: 'entregada', pinFijado: false } });
+    const guardado = t.entregas.registrar.mock.calls[0]?.[1];
+    expect(guardado).toMatchObject({ tipo: 'entregado', facturaId: 'f-1', nuevoEstado: 'entregada' });
+    expect(guardado).not.toHaveProperty('lat');
+    expect(guardado).not.toHaveProperty('sinPin');
+    expect(t.clientes.ajustarPinPorEntrega).not.toHaveBeenCalled();
+    expect(t.clientes.verificarPinPorEntregas).not.toHaveBeenCalled();
+    expect(t.clientes.fijarPinSiFalta).not.toHaveBeenCalled();
+    expect(t.reordenarTrasVisita).toHaveBeenCalledWith(chofer, 'cam-1', expect.any(String), 'f-1');
+  });
+
+  it('ENTREGADO SIN PIN en un local sin pin no lo crea con la posición del chofer', async () => {
+    const t = montar();
+    const r = await t.registrar(chofer, 'f-1', { tipo: 'entregado', sinPin: true, ...pos });
+    expect(r.ok && r.value.pinFijado).toBe(false);
+    expect(t.clientes.fijarPinSiFalta).not.toHaveBeenCalled();
+  });
+
   it('una posición imprecisa no fija el pin, pero el aviso se guarda', async () => {
     const t = montar();
     const r = await t.registrar(chofer, 'f-1', { tipo: 'llegada', lat: -33.45, lng: -70.66, precisionM: 400 });

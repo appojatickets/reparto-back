@@ -13,7 +13,7 @@ describe('panel de analítica', () => {
     const analitica = {
       cobertura: vi.fn<AnaliticaRepository['cobertura']>(() => Promise.resolve(COBERTURA)),
       porDia: vi.fn<AnaliticaRepository['porDia']>(() => Promise.resolve([{ fecha: '2026-10-05', jornadas: 2, atendidas: 60, sinHacer: 3 }])),
-      calidad: vi.fn<AnaliticaRepository['calidad']>(() => Promise.resolve([{ fecha: '2026-10-05', camionId: 'cam-1', distSugeridaM: 40_000, distRealM: 44_000, inversiones: 3 }])),
+      calidad: vi.fn<AnaliticaRepository['calidad']>(() => Promise.resolve([{ fecha: '2026-10-05', camionId: 'cam-1', distSugeridaM: 40_000, distRealM: 44_000, inversiones: 3, origen: 'chofer' as const, cambios: 0 }])),
       etiquetasDeLocales: vi.fn<AnaliticaRepository['etiquetasDeLocales']>(() => Promise.resolve(new Map([['l-1', { razonSocial: 'Kiosko Ana', direccion: 'Calle 1', comuna: 'Buin' }]]))),
     } satisfies AnaliticaRepository;
     const aprendizaje = {
@@ -37,7 +37,7 @@ describe('panel de analítica', () => {
     expect(p.aprendido.servicioGeneral?.valor).toBe(9);
     expect(p.aprendido.localesLentos[0]).toMatchObject({ ambito: 'local:l-1', etiqueta: { razonSocial: 'Kiosko Ana' } });
     expect(p.aprendido.capacidad).toHaveLength(1);
-    expect(p.calidad[0]).toMatchObject({ camion: 'ABCD12', inversiones: 3 });
+    expect(p.calidad[0]).toMatchObject({ camion: 'ABCD12', inversiones: 3, origen: 'chofer', cambios: 0 });
     expect(p.pinesDudosos).toEqual([{ localId: 'l-1', distanciaM: 1800, visitas: 2, fuente: 'geocodificador', etiqueta: { razonSocial: 'Kiosko Ana', direccion: 'Calle 1', comuna: 'Buin' } }]);
     expect(p.ultimaEjecucion?.resumen.llegadasDeducidas).toBe(12);
   });

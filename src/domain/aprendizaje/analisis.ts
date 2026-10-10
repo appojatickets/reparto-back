@@ -1,6 +1,8 @@
 import { fechaEnChile, minutosEnChile } from '../shared/fechas.js';
 import { distanciaKm, type Coordenada } from '../valor/coordenada.js';
 import { SERVICIO_POR_DEFECTO_MIN } from '../ruteo/parametros.js';
+import { armarProblema } from '../ruteo/armar-problema.js';
+import { optimizar } from '../ruteo/optimizador.js';
 import { crearTiemposHaversine } from '../ruteo/tiempos.js';
 import { N_CONFIABLE, ritmoChofer, ritmoObservado, servicioNuevo, confianzaHorario, type TramoObservado } from './ritmo.js';
 
@@ -239,6 +241,28 @@ export type CalidadJornada = {
   readonly distRealM: number;
   /** Pares de paradas que se hicieron en distinto orden que el sugerido. */
   readonly inversiones: number;
+  /**
+   * `sistema`: el orden lo calculó el sistema y se compara con lo que se manejó. `chofer`: el día se armó en orden manual («las agrego en orden»),
+   * así que el orden es la experiencia del chofer y se compara con lo que el sistema habría sugerido con las mismas paradas.
+   */
+  readonly origen: 'sistema' | 'chofer';
+  /** Cuántas veces una persona movió paradas a mano ese día (subir, bajar, arrastrar, ir primero). 0 = nadie corrigió nada. */
+  readonly cambios: number;
+};
+
+const MOVIMIENTOS_A_MANO = new Set(['subir', 'bajar', 'mover', 'primero']);
+const LIMITE_REGRESO_ESTIMADO_MIN = 23 * 60 + 59;
+
+/** Lo que el sistema habría sugerido con estas paradas (solo por distancia: sin horarios ni facturas urgentes, que aquí no se conocen). */
+const ordenQueSugeriaElSistema = (ids: readonly string[], coord: ReadonlyMap<string, Coordenada>, fecha: string, deposito: Coordenada, salidaMs: number): readonly string[] => {
+  const { problema } = armarProblema({
+    fecha,
+    deposito,
+    salida: minutosEnChile(new Date(salidaMs)),
+    horaLimiteRegresoMin: LIMITE_REGRESO_ESTIMADO_MIN,
+    entradas: ids.map((id) => ({ id, nombre: id, ...(coord.get(id) ? { coordenada: coord.get(id) as Coordenada } : {}), horarios: [], urgente: false })),
+  });
+  return optimizar(problema).orden;
 };
 
 const largoM = (orden: readonly string[], coord: ReadonlyMap<string, Coordenada>, deposito: Coordenada): number => {
@@ -268,8 +292,8 @@ export const calidadDeJornada = (j: JornadaObs, eventos: readonly EventoObs[], o
   const ops = operaciones.filter((o) => o.camionId === j.camionId && o.fecha === j.fecha).sort((a, b) => ms(a.creadoEn) - ms(b.creadoEn));
   const calculos = ops.filter((o) => (o.tipo === 'planificar' || o.tipo === 'ordenar' || (o.tipo === 'primero' && o.modo === 'sugerida')) && ms(o.creadoEn) <= salida);
   const sugerida = calculos[calculos.length - 1] ?? ops[0];
-  // Un día en que el chofer cargó en el orden en que iba a entregar no tiene una ruta sugerida contra la cual medirse.
-  if (!sugerida || sugerida.modo === 'carga') return undefined;
+  if (!sugerida) return undefined;
+  const cambios = ops.filter((o) => MOVIMIENTOS_A_MANO.has(o.tipo)).length;
 
   const coord = new Map<string, Coordenada>();
   for (const [facturaId, localId] of localDe) {
@@ -279,7 +303,10 @@ export const calidadDeJornada = (j: JornadaObs, eventos: readonly EventoObs[], o
   const manejado = [...primeros.entries()].sort((a, b) => a[1] - b[1]).map(([id]) => id).filter((id) => coord.has(id));
   const comunes = new Set(manejado.filter((id) => sugerida.orden.includes(id)));
   if (comunes.size < 3) return undefined;
-  const ordenS = sugerida.orden.filter((id) => comunes.has(id));
+  // Un día en orden manual no tiene ruta sugerida contra la cual medirse: la experiencia del chofer se mide con lo que el sistema habría hecho.
+  const delChofer = sugerida.modo === 'carga';
+  const base = delChofer ? ordenQueSugeriaElSistema(sugerida.orden.filter((id) => coord.has(id)), coord, j.fecha, deposito, salida) : sugerida.orden;
+  const ordenS = base.filter((id) => comunes.has(id));
   const ordenD = manejado.filter((id) => comunes.has(id));
   const rangoD = new Map(ordenD.map((id, i) => [id, i]));
   let inversiones = 0;
@@ -288,7 +315,7 @@ export const calidadDeJornada = (j: JornadaObs, eventos: readonly EventoObs[], o
       if ((rangoD.get(ordenS[a] ?? '') ?? 0) > (rangoD.get(ordenS[b] ?? '') ?? 0)) inversiones += 1;
     }
   }
-  return { jornadaId: j.id, comparadas: comunes.size, distSugeridaM: largoM(ordenS, coord, deposito), distRealM: largoM(ordenD, coord, deposito), inversiones };
+  return { jornadaId: j.id, comparadas: comunes.size, distSugeridaM: largoM(ordenS, coord, deposito), distRealM: largoM(ordenD, coord, deposito), inversiones, origen: delChofer ? 'chofer' : 'sistema', cambios };
 };
 
 // ---------------------------------------------------------------- pines corregidos por las visitas

@@ -92,6 +92,8 @@ export type Operacion =
   /** Arrastrar y soltar: la parada queda en la posición `posicion` (0 = la primera) de la lista de paradas en orden. */
   | { readonly tipo: 'mover'; readonly facturaId: string; readonly posicion: number }
   | { readonly tipo: 'ordenar' | 'insertar' }
+  /** PASAR A MANUAL: se congela el orden que se ve y desde ahí nada se reordena solo (modo «carga»). */
+  | { readonly tipo: 'fijar' }
   | { readonly tipo: 'salida'; readonly salidaMin: number };
 
 type Dependencias = {
@@ -414,6 +416,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
         case 'quitar':
         case 'ordenar':
         case 'insertar':
+        case 'fijar':
         case 'salida':
           return ok({ ...ordenarPorCarga(estado, ctx2.ordenCarga), modo: 'carga' });
       }
@@ -441,6 +444,9 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
           return ok({ problema, solucion: manualSinFijas ? evaluarOrden(problema, orden) : optimizar(problema, { ...opciones, ordenInicial: orden }), modo: guardada.modo });
         case 'ordenar':
           return ok({ ...ordenarPendientes(estado, opciones), modo: 'sugerida' });
+        case 'fijar':
+          // Lo que se ve queda tal cual (nada se reordena) y la ruta pasa a manual: las facturas nuevas entrarán al final.
+          return ok({ ...ordenarPorCarga(estado, ctx2.ordenCarga), modo: 'carga' });
         case 'insertar':
           // Las nuevas entran debajo de lo que la persona fijó y lo de abajo se ordena con ellas.
           return ok({ ...(problema.fijas.length === 0 ? insertarNuevas(estado) : ordenarPendientes(estado, opciones)), modo: guardada.modo });

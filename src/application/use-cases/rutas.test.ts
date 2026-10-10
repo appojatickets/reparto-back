@@ -588,6 +588,39 @@ describe('«las agrego en orden»: la ruta es el orden en que el chofer cargó l
     expect(s.rutas.guardadaActual()?.orden).toEqual(antes);
   });
 
+  it('PASAR A MANUAL («fijar») congela el orden que se ve: desde ahí nada se reordena solo, aunque la ruta fuera calculada o acomodada a mano', async () => {
+    const calculada = montar({ pendientes: cargadas() });
+    const p = await calculada.planificar(despachador, entrada);
+    if (!p.ok) throw new Error('no se planificó');
+    const antes = ids(p.value);
+    const f = await calculada.operar(despachador, { ...entrada, version: p.value.version ?? 0, operacion: { tipo: 'fijar' } });
+    expect(f.ok && ids(f.value)).toEqual(antes);
+    expect(f.ok && f.value.modo).toBe('carga');
+    // ya en manual: lo que se mueve queda donde se deja
+    const m = await calculada.operar(despachador, { ...entrada, version: f.ok ? (f.value.version ?? 0) : 0, operacion: { tipo: 'primero', facturaId: antes[3] ?? '' } });
+    expect(m.ok && ids(m.value)).toEqual([antes[3], antes[0], antes[1], antes[2]]);
+    expect(m.ok && m.value.modo).toBe('carga');
+  });
+
+  it('PASAR A MANUAL desde una ruta acomodada a mano conserva lo acomodado y se anota para aprender', async () => {
+    const registro = fakeRegistro();
+    const s = montar({ pendientes: cargadas(), registro });
+    const p = await s.planificar(despachador, entrada);
+    if (!p.ok) throw new Error('no se planificó');
+    const m = await s.operar(despachador, { ...entrada, version: p.value.version ?? 0, operacion: { tipo: 'mover', facturaId: 'f-B', posicion: 0 } });
+    if (!m.ok) throw new Error('no se movió');
+    const acomodado = ids(m.value);
+    const f = await s.operar(despachador, { ...entrada, version: m.value.version ?? 0, operacion: { tipo: 'fijar' } });
+    expect(f.ok && ids(f.value)).toEqual(acomodado);
+    expect(registro.registrarOperacion).toHaveBeenLastCalledWith('empresa-1', expect.objectContaining({ tipo: 'fijar', modo: 'carga', orden: acomodado }));
+  });
+
+  it('VOLVER A AUTOMÁTICO desde manual: el sistema ordena lo que queda («ordenar»)', async () => {
+    const { s, version } = await enOrden();
+    const f = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'ordenar' } });
+    expect(f.ok && f.value.modo).toBe('sugerida');
+  });
+
   it('volver a planificar sin indicar el orden reemplaza la ruta por una calculada', async () => {
     const { s } = await enOrden();
     const r = await s.planificar(despachador, entrada);

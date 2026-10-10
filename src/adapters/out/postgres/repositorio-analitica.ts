@@ -43,14 +43,14 @@ export class PostgresAnaliticaRepository implements AnaliticaRepository {
   async calidad(empresaId: string, desde: Date, limite: number): Promise<readonly CalidadDeRuta[]> {
     const filas = await this.db
       .selectFrom('jornada_resumen')
-      .select([sql<string>`to_char(fecha_reparto, 'YYYY-MM-DD')`.as('fecha'), 'camion_id', 'dist_sugerida_m', 'dist_real_m', 'inversiones'])
+      .select([sql<string>`to_char(fecha_reparto, 'YYYY-MM-DD')`.as('fecha'), 'camion_id', 'dist_sugerida_m', 'dist_real_m', 'inversiones', 'origen_orden', 'cambios_manuales'])
       .where('empresa_id', '=', empresaId)
       .where('creado_en', '>=', desde)
       .where('dist_sugerida_m', 'is not', null)
       .orderBy('fecha_reparto', 'desc')
       .limit(limite)
       .execute();
-    return filas.flatMap((f) => (f.dist_sugerida_m !== null && f.dist_real_m !== null && f.inversiones !== null ? [{ fecha: f.fecha, camionId: f.camion_id, distSugeridaM: f.dist_sugerida_m, distRealM: f.dist_real_m, inversiones: f.inversiones }] : []));
+    return filas.flatMap((f) => (f.dist_sugerida_m !== null && f.dist_real_m !== null && f.inversiones !== null ? [{ fecha: f.fecha, camionId: f.camion_id, distSugeridaM: f.dist_sugerida_m, distRealM: f.dist_real_m, inversiones: f.inversiones, origen: f.origen_orden ?? 'sistema', cambios: f.cambios_manuales ?? 0 }] : []));
   }
 
   async etiquetasDeLocales(empresaId: string, ids: readonly string[]): Promise<ReadonlyMap<string, EtiquetaLocal>> {
