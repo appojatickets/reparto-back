@@ -1,5 +1,6 @@
 import type { HealthReport } from '../../../application/use-cases/check-health.js';
 import type { crearActualizarLocal } from '../../../application/use-cases/actualizar-local.js';
+import type { crearVerContribuyentes } from '../../../application/use-cases/contribuyentes-local.js';
 import type { crearObtenerUrlFotoUsuario, crearQuitarFotoPerfil, crearRegistrarFotoPerfil, crearSolicitarUrlSubidaPerfil } from '../../../application/use-cases/foto-perfil.js';
 import type { crearObtenerUrlFoto, crearQuitarFotoLocal, crearRegistrarFotoLocal, crearSolicitarUrlSubida } from '../../../application/use-cases/archivos.js';
 import type { crearActualizarCamion, crearCrearCamion, crearListarCamiones } from '../../../application/use-cases/camiones.js';
@@ -49,6 +50,7 @@ export type CasosDeUso = {
   readonly registrarFotoPerfil: ReturnType<typeof crearRegistrarFotoPerfil>;
   readonly quitarFotoPerfil: ReturnType<typeof crearQuitarFotoPerfil>;
   readonly obtenerUrlFotoUsuario: ReturnType<typeof crearObtenerUrlFotoUsuario>;
+  readonly verContribuyentes: ReturnType<typeof crearVerContribuyentes>;
   readonly buscarClientes: ReturnType<typeof crearBuscarClientes>;
   readonly crearClienteNuevo: ReturnType<typeof crearCrearClienteNuevo>;
   readonly importarClientes: ReturnType<typeof crearImportarClientes>;

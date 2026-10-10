@@ -44,6 +44,7 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'PUT', url: '/v1/me/foto', body: { path: 'a/perfil/b/c.webp' }, permiso: undefined, caso: 'registrarFotoPerfil' },
   { metodo: 'DELETE', url: '/v1/me/foto', permiso: undefined, caso: 'quitarFotoPerfil' },
   { metodo: 'GET', url: `/v1/usuarios/${UUID}/foto-url`, permiso: undefined, caso: 'obtenerUrlFotoUsuario' },
+  { metodo: 'GET', url: `/v1/locales/${UUID}/contribuyentes`, permiso: 'clientes:leer', caso: 'verContribuyentes' },
   { metodo: 'GET', url: '/v1/clientes/buscar?q=rabe', permiso: 'clientes:leer', caso: 'buscarClientes' },
   { metodo: 'POST', url: '/v1/clientes', body: filaCliente, permiso: 'clientes:crear', caso: 'crearClienteNuevo' },
   { metodo: 'POST', url: '/v1/clientes/importaciones', body: { filas: [filaCliente] }, permiso: 'clientes:importar', caso: 'importarClientes' },

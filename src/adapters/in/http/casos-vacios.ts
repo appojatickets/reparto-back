@@ -24,6 +24,7 @@ export const casosVacios = (): CasosDeUso => {
     registrarFotoPerfil: sinImplementar,
     quitarFotoPerfil: sinImplementar,
     obtenerUrlFotoUsuario: sinImplementar,
+    verContribuyentes: sinImplementar,
     buscarClientes: sinImplementar,
     crearClienteNuevo: sinImplementar,
     importarClientes: sinImplementar,

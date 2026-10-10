@@ -51,4 +51,33 @@ export const rutasFotoPerfil = ({ app, casos, guard }: ContextoRutas): void => {
       return r.ok ? reply.send(r.value) : enviarError(reply, r.error);
     },
   );
+
+  a.get(
+    '/v1/locales/:id/contribuyentes',
+    {
+      preHandler: guard('clientes:leer'),
+      schema: {
+        tags: ['perfil'],
+        summary: 'Quiénes aportaron a un local con foto y pin (más de una entrega, o pin verificado): nombre, foto de perfil y qué aportó cada uno. Vacío si el local aún no cumple',
+        security: SEGURIDAD,
+        params: idParam,
+        response: {
+          200: z.object({
+            contribuyentes: z.array(z.object({
+              usuarioId: z.string(),
+              nombre: z.string(),
+              fotoEn: z.iso.datetime().optional(),
+              aportes: z.array(z.enum(['foto', 'pin', 'entregas'])),
+              entregas: z.number().int(),
+            })),
+          }),
+          ...RESPUESTAS_ERROR,
+        },
+      },
+    },
+    async (req, reply) => {
+      const r = await casos.verContribuyentes(actor(req), req.params.id);
+      return r.ok ? reply.send({ contribuyentes: [...r.value.map((c) => ({ ...c, aportes: [...c.aportes] }))] }) : enviarError(reply, r.error);
+    },
+  );
 };

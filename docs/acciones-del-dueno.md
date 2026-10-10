@@ -246,6 +246,13 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] **ENTREGADO, SIN FIJAR EL PIN** (al abrir una parada): queda entregada en su lugar y en «Hechas hoy», pero no se guarda tu posición ni se mueve el pin. Úsalo cuando ya te alejaste de la puerta.
 - [ ] **ANALÍTICA → «Días en orden manual: la experiencia del chofer»**: aparece el día que un chofer ordenó solo, con los km que manejó frente a los que habría sugerido el sistema y cuántas paradas movió a mano. Se llena después del próximo análisis (ANALIZAR AHORA).
 
+### A30. Quiénes aportaron a un local (ADR 0041 del back, ADR 0028 del front)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. No hay migración.
+- [ ] Abre un local que tenga **foto, pin y más de una entrega (o el pin verificado)**, desde la ficha (BUSCAR CLIENTE) o desde una parada de la ruta. Debajo de las insignias aparece una fila chica: **«Aportaron: Juan Pérez y 2 más»** con sus fotos de perfil.
+- [ ] Tócala: se despliega cada persona con su foto y lo que aportó (**Subió la foto · Verificó el pin · N entregas**). Vuelve a tocarla y se esconde.
+- [ ] Un local sin foto, sin pin o con una sola entrega sin verificar **no** muestra la fila.
+- [ ] Dime si la fila te parece discreta, o si prefieres verla también en LOCALES POR COMUNA.
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos

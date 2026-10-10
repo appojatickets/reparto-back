@@ -1,5 +1,6 @@
 import { checkHealth } from './application/use-cases/check-health.js';
 import { crearActualizarLocal } from './application/use-cases/actualizar-local.js';
+import { crearVerContribuyentes } from './application/use-cases/contribuyentes-local.js';
 import { crearObtenerUrlFotoUsuario, crearQuitarFotoPerfil, crearRegistrarFotoPerfil, crearSolicitarUrlSubidaPerfil } from './application/use-cases/foto-perfil.js';
 import { crearObtenerUrlFoto, crearQuitarFotoLocal, crearRegistrarFotoLocal, crearSolicitarUrlSubida } from './application/use-cases/archivos.js';
 import { crearActualizarCamion, crearCrearCamion, crearListarCamiones } from './application/use-cases/camiones.js';
@@ -10,6 +11,7 @@ import { crearGuardarHorario, crearObtenerHorario } from './application/use-case
 import { crearIniciarJornada, crearMiJornada, crearResolverCamion, crearTerminarJornada } from './application/use-cases/jornada.js';
 import { crearReportarLocal, crearResolverReporteLocal, crearVerReportes } from './application/use-cases/reportes-local.js';
 import { PostgresReporteLocalRepository } from './adapters/out/postgres/repositorio-reportes-local.js';
+import { PostgresContribucionesRepository } from './adapters/out/postgres/repositorio-contribuciones.js';
 import { crearVerificarPin } from './application/use-cases/pin-verificado.js';
 import { crearRevisarPines } from './application/use-cases/revisar-pines.js';
 import { crearVerAnalitica } from './application/use-cases/analitica.js';
@@ -80,6 +82,7 @@ const vendedores = new PostgresVendedorRepository(db);
 const planillas = new PostgresPlanillaRepository(db);
 const reportesFoto = new PostgresFotoReporteRepository(db);
 const reportesLocal = new PostgresReporteLocalRepository(db);
+const contribuciones = new PostgresContribucionesRepository(db);
 const facturas = new PostgresFacturaRepository(db);
 const empresas = new PostgresEmpresaRepository(db);
 const rutas = new PostgresRutaRepository(db);
@@ -142,6 +145,7 @@ const casos: CasosDeUso = {
   registrarFotoPerfil: crearRegistrarFotoPerfil({ usuarios, almacen, clock }),
   quitarFotoPerfil: crearQuitarFotoPerfil({ usuarios, almacen }),
   obtenerUrlFotoUsuario: crearObtenerUrlFotoUsuario({ usuarios, almacen }),
+  verContribuyentes: crearVerContribuyentes({ contribuciones, usuarios }),
   buscarClientes: crearBuscarClientes({ clientes }),
   crearClienteNuevo: crearCrearClienteNuevo({ clientes }),
   importarClientes: crearImportarClientes({ clientes }),
