@@ -3,7 +3,9 @@
 Lista viva de lo que el agente **no puede** hacer (paneles, claves, decisiones de negocio, pruebas con personas).
 Marca cada casilla al terminar. Nunca pegues claves secretas en el chat: cárgalas directo en el panel.
 
-Última actualización: 2026-10-07 (aprendizaje en segundo plano, pines por verificar/verificados, ruta que prefiere lo cercano).
+Última actualización: 2026-10-10 (distancias por calles activas, pines que se verifican solos, planilla del día, «las agrego en orden» y por dónde parte la ruta).
+
+Estado en vivo (2026-10-10): `main` desplegado en Vercel (READY); 817 locales, 116 con pin verificado (114 por las entregas), 532 sin pin; la caché de calles (`viaje_par`) ya tiene 1.055 viajes, o sea que OpenRouteService está consultando.
 
 ---
 
@@ -14,7 +16,7 @@ Lo más importante primero. Marca cada casilla al terminar; el detalle de cada u
 1. [ ] **Cargar los horarios de atención** (hoy hay 0): Importar clientes → **REVISAR LAS NOTAS CON HORARIOS** → **APLICAR**. Es lo más barato y hace que la ruta respete a quién le sirve cada hora.
 2. [ ] **Buscar los pines que faltan:** 588 de 766 locales no tienen pin. Importar clientes → **BUSCAR LOS PINES POR DIRECCIÓN** y deja la pantalla abierta ~15 minutos. Es lo que más mejora la ruta: con los pines la siguiente parada coincide con la del chofer el 72 % de las veces; sin ellos, mucho menos. El buscador gratis encuentra ~1 de cada 3 direcciones; las demás se fijan solas con la primera entrega.
 3. [ ] **Contarme 3 paradas que moviste a mano y por qué** (cierra pronto, sentido de la calle, queda de paso, pedido del cliente…). Con eso afino cómo ordena la ruta.
-4. [ ] **Decidir las distancias por calles** (hoy la ruta mide en línea recta): ver A19-6. Recomendado: OpenRouteService, gratis.
+4. [x] **Distancias por calles:** hecho, OpenRouteService activo (ver A19-6).
 5. [ ] **Pegar el enlace que no funcionó** (`maps.app.goo.gl/tQsDTWhhRh9eyaTC8`) en un local con **PEGAR UBICACIÓN** y contarme el mensaje que sale.
 6. [ ] **Verificar pines** que ya sepas que están bien (ficha del local → **VERIFICAR PIN**): quedan fijos y las entregas dejan de moverlos.
 7. [ ] **Pedir a los choferes** que trabajen con la app abierta y la pantalla encendida: el recorrido y la llegada automática solo funcionan así.
@@ -158,8 +160,8 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 
 ### A19-6. Distancias por calles (decisión tuya)
 La ruta hoy mide en línea recta × 1,35. Es óptima en esa medida, pero no ve sentidos de calle, líneas de tren ni la Panamericana.
-- [ ] **Opción recomendada, gratis: OpenRouteService** (datos de OpenStreetMap). Crea la cuenta en `account.heigit.org`, genera una clave API y cárgala en Render → `reparto-back` → **Environment** como `ORS_API_KEY` (nunca la pegues en el chat). Plan gratis: 500 consultas de matriz al día. **Si te pide tarjeta, detente y avísame.** Ya está implementado (ADR 0026): cuando la cargues, la ruta usa calles sola (no hay que hacer nada más); con caché y vuelve a línea recta si algo falla.
-- [ ] Cuando la hayas cargado, avísame «listo» (sin la clave): compruebo en los registros que ya consulta (la tabla de caché ya está creada en tu base).
+- [x] **Opción elegida, gratis: OpenRouteService** (clave cargada, verificada el 2026-10-10) (datos de OpenStreetMap). Crea la cuenta en `account.heigit.org`, genera una clave API y cárgala en Render → `reparto-back` → **Environment** como `ORS_API_KEY` (nunca la pegues en el chat). Plan gratis: 500 consultas de matriz al día. **Si te pide tarjeta, detente y avísame.** Ya está implementado (ADR 0026): cuando la cargues, la ruta usa calles sola (no hay que hacer nada más); con caché y vuelve a línea recta si algo falla.
+- [x] Verificado el 2026-10-10: la tabla de caché tiene 1.055 viajes guardados, la ruta ya usa calles.
 - [x] **Google Maps: descartado por ti (2026-10-07).** Habría costado con tarjeta (≈ US$95 al mes con 3 camiones de 20 paradas, más con rutas largas) y no permite guardar los tiempos. No se usa.
 - [ ] **Alternativa propia (más adelante):** servidor de rutas propio con datos de OpenStreetMap. Necesita un plan de Render más grande que el Starter (costo extra): no lo haré sin tu autorización.
 
