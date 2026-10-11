@@ -260,6 +260,11 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] Pon un horario normal (abre 9, cierra 18): el local se atiende en su lugar, sin marca.
 - [ ] Si algo de un horario te parece mal medido, cuéntame el local, el horario que pusiste y la hora a la que calculaste la ruta.
 
+### A32. Horas estimadas con botón (ADR 0031 del front)
+Esperar ~2 min a que Vercel termine de desplegar y abrir la app dos veces. Solo cambia el front.
+- [ ] En **MI RUTA** o **RUTAS**, bajo el resumen aparece **VER HORAS ESTIMADAS**. Tócalo: cada parada muestra **«~10:10»** a la derecha y **VOLVER A IBIZA** muestra **«Llegada aproximada 11:40»**. **OCULTAR HORAS ESTIMADAS** las esconde. Queda recordado en tu teléfono.
+- [ ] Haz una ruta real con las horas encendidas y anota, en 3 o 4 paradas, a qué hora llegaste de verdad frente a lo que decía la app. Con eso calibro el cálculo (ver abajo).
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos
