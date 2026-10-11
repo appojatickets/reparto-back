@@ -5,3 +5,40 @@ coverage
 .env.*
 !.env.example
 *.log
+
+# --- Nada sensible al repositorio (este repo es público) ---
+# Claves, certificados y credenciales
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+id_rsa*
+id_ed25519*
+.npmrc
+.netrc
+.vercel
+.render
+supabase/.temp
+supabase/.env*
+.claude/settings.local.json
+# Respaldos y volcados de la base (llevan datos de clientes y choferes)
+*.dump
+*.sql.gz
+*.sql.gpg
+*.gpg
+*.age
+respaldo*/
+backups/
+# Datos reales de clientes o choferes: exportaciones, planillas y listas pegadas
+exportaciones/
+datos/
+*.csv
+*.xlsx
+*.xls
+*.ods
+# Sistema y editores
+.DS_Store
+Thumbs.db
+.idea/

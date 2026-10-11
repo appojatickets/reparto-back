@@ -268,7 +268,10 @@ Esperar ~2 min a que Vercel termine de desplegar y abrir la app dos veces. Solo 
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos
-Supabase Free **no** incluye respaldos automáticos (a verificar en la fecha). Fase 7 los resuelve; mientras tanto no cargues datos que no puedas volver a importar.
+Supabase Free **no** incluye respaldos automáticos. Ya hay un workflow diario cifrado (ADR 0044, `docs/respaldo.md`); falta que tú crees los secretos:
+- [ ] GitHub → `reparto-back` → Settings → Secrets and variables → Actions: crear `BACKUP_DATABASE_URL` (cadena del **Session pooler** de Supabase, con tu clave) y `BACKUP_PASSPHRASE` (frase larga inventada por ti; guárdala fuera de GitHub). No los pegues en el chat.
+- [ ] Actions → **Respaldo diario** → Run workflow, y comprobar que aparece el artefacto `respaldo-AAAA-MM-DD`.
+- [ ] (Una vez) probar la restauración en un proyecto Supabase vacío siguiendo `docs/respaldo.md`.
 
 ### B2. Subir Render a Starter (~US$7/mes) — DESPUÉS de la semana de pruebas
 Con esto el servidor deja de dormirse (ver `docs/adr/0006-render-starter-pagado.md`). Decisión tuya: se activa cuando el sistema esté terminado y lleve ~1 semana de uso de prueba en plan gratis. Mientras tanto, el primer toque tras 15 min de inactividad espera hasta 1 minuto (con aviso en pantalla). Es la única excepción a «todo gratis».
@@ -307,7 +310,7 @@ La ley rige desde el 1-dic-2026 (hay un proyecto para aplazarla, aún en trámit
 
 ## C2. Pospuesto por decisión del dueño (2026-10-11)
 
-- **Respaldo diario con GitHub Actions: no, por ahora.** La cuota de Actions se agota rápido en otros proyectos de la cuenta. Nota (11-oct): estos dos repos son **públicos**, y en repos públicos Actions es gratis e ilimitado; la cuota la gastan los proyectos **privados** de la misma cuenta. Se puede retomar cuando lo decidas. Mientras tanto, los respaldos son manuales (Supabase → Database → Backups no está en el plan gratis; exportar los datos importantes desde EXPORTAR DATOS o con una exportación de Supabase cuando quieras).
+- ~~Respaldo diario con GitHub Actions: no, por ahora.~~ **Retomado el 11-oct (ADR 0044)**, ver B1. Antecedente: la cuota de Actions se agota rápido en otros proyectos de la cuenta. Nota (11-oct): estos dos repos son **públicos**, y en repos públicos Actions es gratis e ilimitado; la cuota la gastan los proyectos **privados** de la misma cuenta. Se puede retomar cuando lo decidas. Mientras tanto, los respaldos son manuales (Supabase → Database → Backups no está en el plan gratis; exportar los datos importantes desde EXPORTAR DATOS o con una exportación de Supabase cuando quieras).
 - **Monitoreo y errores (Sentry/UptimeRobot) y observabilidad de producto: más adelante.**
 - Sigue pendiente de la revisión de arquitectura (para cuando se decida): trabajos pendientes que sobrevivan reinicios, migraciones automáticas en el despliegue, pruebas de carga, escaneo de seguridad y un runbook de operación.
 
