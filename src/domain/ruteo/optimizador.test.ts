@@ -70,13 +70,18 @@ describe('optimizar · ventanas duras infactibles', () => {
     expect(r?.sugerencias.find((x) => x.tipo === 'SALIR_ANTES')?.minutos).toBe(5);
   });
 
-  it('una ventana ya vencida va a «no atendidas», con su conflicto, y el resto se ordena igual', () => {
+  it('una ventana ya vencida no saca la parada de la ruta: va al final, marcada en riesgo con su conflicto, y el resto se ordena igual', () => {
     const s = optimizar(problemaPlano([parada('D', { ventanas: [v(480, 490)] }), parada('B')], { salida: 600 }));
-    expect(s.orden).toEqual(['B']);
-    expect(s.noAtendidas).toHaveLength(1);
-    expect(s.noAtendidas[0]).toMatchObject({ paradaId: 'D', motivo: 'VENTANA_VENCIDA' });
-    expect(s.noAtendidas[0]?.conflictos[0]).toContain('08:10');
-    expect(s.costo).toBeGreaterThanOrEqual(1000); // w_j de la no atendida
+    expect(s.orden).toEqual(['B', 'D']);
+    expect(s.noAtendidas).toEqual([]);
+    expect(s.enRiesgo.map((r) => r.paradaId)).toEqual(['D']);
+    expect(s.enRiesgo[0]?.conflictos[0]).toBe('Según su horario cerró a las 08:10 y ya no se alcanza a llegar a tiempo.');
+  });
+
+  it('evaluar un orden dado lo respeta tal cual, también con una parada que ya cerró en el medio', () => {
+    const p = problemaPlano([parada('D', { ventanas: [v(480, 490)] }), parada('B'), parada('C')], { salida: 600 });
+    expect(evaluarOrden(p, ['D', 'B', 'C']).orden).toEqual(['D', 'B', 'C']);
+    expect(evaluarOrden(p, ['B', 'C']).orden).toEqual(['B', 'C', 'D']);
   });
 
   it('sugiere hacer primero la parada cuando eso resuelve el riesgo', () => {
@@ -136,10 +141,15 @@ describe('optimizar · contra fuerza bruta (≤ 7 paradas)', () => {
     const p = problemaAleatorio(semilla, n, { fraccionConVentana: 0.7 });
     const s = optimizar(p);
     const c = compilar(p);
-    const atendidas = s.orden.map((id) => c.indice.get(id) ?? 0);
-    const optimo = Math.min(...permutaciones(atendidas).map((perm) => evaluar(c, perm, perm.length)));
-    const castigo = s.costo - evaluar(c, atendidas, atendidas.length);
-    expect(s.costo - castigo).toBeCloseTo(optimo, 6);
+    const todas = s.orden.map((id) => c.indice.get(id) ?? 0);
+    // Las que según su horario ya cerraron van al final y no entran a la búsqueda; el resto debe quedar en el mejor orden posible.
+    const cerradas = new Set(s.enRiesgo.filter((r) => r.conflictos[0]?.startsWith('Según su horario')).map((r) => c.indice.get(r.paradaId) ?? 0));
+    const alFinal = todas.filter((i) => cerradas.has(i));
+    const buscadas = todas.filter((i) => !cerradas.has(i));
+    const optimo = Math.min(...permutaciones(buscadas).map((perm) => evaluar(c, perm, perm.length)));
+    expect(evaluar(c, buscadas, buscadas.length)).toBeCloseTo(optimo, 6);
+    // el costo total suma, además, el tramo de las que van al final
+    expect(s.costo).toBeCloseTo(evaluar(c, [...buscadas, ...alFinal], todas.length), 6);
   });
 });
 

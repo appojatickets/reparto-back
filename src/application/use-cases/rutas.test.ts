@@ -99,12 +99,13 @@ describe('planificar', () => {
     expect(r.ok && r.value.sinPin.map((x) => x.facturaId)).toEqual(['f-Z']);
   });
 
-  it('un local cerrado ese día queda «no atendido» con su explicación y el «antes de» muestra riesgo', async () => {
+  it('un local que según su horario no atiende ese día NO se saca de la ruta: va al final, marcado en riesgo con su explicación', async () => {
     const cerrado = paradaDe('X', { horarios: [{ dias: [1], tramos: [], fuente: 'confirmado', confianza: 1 }] }); // cerrado los lunes (la fecha es lunes)
     const s = montar({ pendientes: [paradaDe('A'), cerrado] });
     const r = await s.planificar(despachador, entrada);
-    expect(r.ok && r.value.noAtendidas.map((n) => n.facturaId)).toEqual(['f-X']);
-    expect(r.ok && ids(r.value)).toEqual(['f-A']);
+    expect(r.ok && r.value.noAtendidas).toEqual([]);
+    expect(r.ok && ids(r.value)).toEqual(['f-A', 'f-X']);
+    expect(r.ok && r.value.enRiesgo.find((x) => x.facturaId === 'f-X')?.conflictos).toEqual(['Según su horario hoy no atiende.']);
   });
 
   it('la hora de salida pedida se guarda y rechaza valores imposibles', async () => {

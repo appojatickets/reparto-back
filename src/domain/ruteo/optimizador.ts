@@ -15,7 +15,7 @@ const indicesDe = (c: Compilado, ids: readonly string[]): number[] =>
 
 /**
  * Paradas cuya última ventana cierra antes de la hora más temprana a la que se podría llegar (yendo directo).
- * No se descartan en silencio: salen en `noAtendidas` con su conflicto. Las fijadas por el chofer nunca se excluyen.
+ * No se sacan de la ruta: el optimizador las deja fuera de la búsqueda (para que no la distorsionen) y van al final, marcadas en riesgo. Las fijadas por el chofer nunca se tratan así.
  */
 const detectarVencidas = (c: Compilado, fijas: readonly number[]): number[] => {
   const protegidas = new Set(fijas);
@@ -59,9 +59,10 @@ export const optimizar = (problema: ProblemaRuta, opciones: OpcionesOptimizacion
 export const evaluarOrden = (problema: ProblemaRuta, ordenIds: readonly string[]): Solucion => {
   const c = compilar(problema);
   const fijas = indicesDe(c, problema.fijas);
-  const vencidas = detectarVencidas(c, fijas);
-  const orden = indicesDe(c, ordenIds).filter((i) => !vencidas.includes(i));
-  return armarSolucion(c, orden, vencidas, fijas.length);
+  // El orden dado manda tal cual (incluidas las paradas que según su horario ya cerraron); las que cerraron y no están en él van al final.
+  const orden = indicesDe(c, ordenIds);
+  const alFinal = detectarVencidas(c, fijas).filter((i) => !orden.includes(i));
+  return armarSolucion(c, orden, alFinal, fijas.length);
 };
 
 /**

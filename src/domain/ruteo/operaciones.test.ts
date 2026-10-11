@@ -26,12 +26,12 @@ describe('agregarParada (+ AGREGAR PARADA)', () => {
     expect(r.ok && r.value.posicion).toBe(0);
   });
 
-  it('una parada ya vencida no tiene posición y queda en no atendidas', () => {
+  it('una parada que según su horario ya cerró no se saca de la ruta: queda al final, marcada en riesgo', () => {
     const e = { ...estadoInicial(), problema: { ...estadoInicial().problema, salida: 700 } };
     const r = agregarParada(e, parada('N', { ventanas: [v(480, 500)] }), tiemposFijos(10));
-    expect(r.ok && r.value.posicion).toBeNull();
-    expect(r.ok && r.value.eta).toBeNull();
-    expect(r.ok && r.value.solucion.noAtendidas.map((x) => x.paradaId)).toEqual(['N']);
+    expect(r.ok && r.value.posicion).toBe(4);
+    expect(r.ok && r.value.solucion.noAtendidas).toEqual([]);
+    expect(r.ok && r.value.solucion.enRiesgo.map((x) => x.paradaId)).toEqual(['N']);
   });
 
   it('rechaza una parada repetida', () => {

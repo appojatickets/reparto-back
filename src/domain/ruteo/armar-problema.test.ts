@@ -24,11 +24,13 @@ describe('armarProblema', () => {
     expect(r.problema.paradas[1]?.ventanas).toEqual([]);
   });
 
-  it('un local que no abre ese día queda como ventana vencida (el motor lo informa como no atendida)', () => {
+  it('un local que no abre ese día queda como ventana vencida: el motor lo deja al final de la ruta, marcado en riesgo', () => {
     const cerradoSabado: HorarioLocal = { dias: [6], tramos: [], fuente: 'confirmado', confianza: 1 };
     const r = armarProblema({ ...base, fecha: '2026-10-10', entradas: [e('A', { horarios: [abierto(540, 1080), cerradoSabado] })] });
     const s = optimizar(r.problema);
-    expect(s.noAtendidas.map((x) => x.paradaId)).toEqual(['A']);
+    expect(s.noAtendidas).toEqual([]);
+    expect(s.orden).toEqual(['A']);
+    expect(s.enRiesgo.map((x) => [x.paradaId, x.conflictos[0]])).toEqual([['A', 'Según su horario hoy no atiende.']]);
   });
 
   it('«antes de» recorta la ventana y urgente marca prioridad', () => {

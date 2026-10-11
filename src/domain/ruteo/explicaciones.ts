@@ -2,7 +2,7 @@ import { formatearMinutos } from '../valor/minutos-del-dia.js';
 import type { Compilado } from './compilar.js';
 import { conSalida } from './compilar.js';
 import { detallar, type Itinerario } from './evaluacion.js';
-import type { DetalleParada, EnRiesgo, Motivo, NoAtendida, Solucion, Sugerencia } from './tipos.js';
+import type { DetalleParada, EnRiesgo, Motivo, Solucion, Sugerencia } from './tipos.js';
 
 const EPS = 1e-9;
 const HOLGURA_DURA_MIN = 90;
@@ -55,14 +55,21 @@ const sugerenciasPara = (c: Compilado, orden: readonly number[], q: number, f: n
   return sugerencias;
 };
 
-/** Convierte un orden numérico en la solución completa: horarios, motivos, riesgos y no atendidas. */
-export const armarSolucion = (c: Compilado, orden: readonly number[], vencidas: readonly number[], f: number): Solucion => {
-  const it = detallar(c, orden);
-  const { pesoNoAtendida, pesoNoAtendidaPrioridad, horaLimiteRegresoMin } = c.problema.parametros;
+/**
+ * Convierte un orden numérico en la solución completa: horarios, motivos y riesgos.
+ *
+ * `alFinal` son las paradas que según su horario ya cerraron (o no atienden hoy): NO se sacan de la ruta —el horario es una estimación y quien está
+ * en terreno manda— sino que van al final, marcadas en riesgo con el motivo, para que se puedan entregar igual si resulta que están abiertas.
+ */
+export const armarSolucion = (c: Compilado, orden: readonly number[], alFinal: readonly number[], f: number): Solucion => {
+  const completa = [...orden, ...alFinal];
+  const cerradas = new Set(alFinal);
+  const it = detallar(c, completa);
+  const { horaLimiteRegresoMin } = c.problema.parametros;
 
   const detalle: DetalleParada[] = [];
   const enRiesgo: EnRiesgo[] = [];
-  orden.forEach((j, k) => {
+  completa.forEach((j, k) => {
     const parada = c.paradas[j];
     if (!parada) return;
     detalle.push({
@@ -74,48 +81,29 @@ export const armarSolucion = (c: Compilado, orden: readonly number[], vencidas: 
       salida: it.salida[k] ?? 0,
       espera: it.espera[k] ?? 0,
       atraso: it.atraso[k] ?? 0,
-      motivos: motivosDe(c, j, k > 0 ? orden[k - 1] : undefined, it, k, f),
+      motivos: motivosDe(c, j, k > 0 ? completa[k - 1] : undefined, it, k, f),
     });
     const atraso = it.atraso[k] ?? 0;
     if (atraso > EPS) {
       const cierre = cierreFinal(c, j) ?? 0;
-      enRiesgo.push({
-        paradaId: parada.id,
-        nombre: parada.nombre,
-        cierre,
-        conflictos: [
-          `Llegaría a las ${formatearMinutos(it.llegada[k] ?? 0)} y cierra a las ${formatearMinutos(cierre)} (${Math.round(atraso)} min tarde).`,
-        ],
-        sugerencias: sugerenciasPara(c, orden, k, f, it),
-      });
+      const conflicto = cerradas.has(j)
+        ? cierre === 0
+          ? 'Según su horario hoy no atiende.'
+          : `Según su horario cerró a las ${formatearMinutos(cierre)} y ya no se alcanza a llegar a tiempo.`
+        : `Llegaría a las ${formatearMinutos(it.llegada[k] ?? 0)} y cierra a las ${formatearMinutos(cierre)} (${Math.round(atraso)} min tarde).`;
+      enRiesgo.push({ paradaId: parada.id, nombre: parada.nombre, cierre, conflictos: [conflicto], sugerencias: sugerenciasPara(c, completa, k, f, it) });
     }
   });
-
-  const noAtendidas: NoAtendida[] = vencidas.flatMap((j) => {
-    const parada = c.paradas[j];
-    if (!parada) return [];
-    return [
-      {
-        paradaId: parada.id,
-        nombre: parada.nombre,
-        motivo: 'VENTANA_VENCIDA' as const,
-        conflictos: [`Cerró a las ${formatearMinutos(cierreFinal(c, j) ?? 0)} y ya no se alcanza a llegar a tiempo.`],
-      },
-    ];
-  });
-  const castigo = vencidas.reduce(
-    (suma, j) => suma + (c.prioridad[j] === 1 ? pesoNoAtendidaPrioridad : pesoNoAtendida),
-    0,
-  );
 
   return {
     orden: detalle.map((d) => d.id),
     detalle,
     enRiesgo,
-    noAtendidas,
+    // Ya nada se saca de la ruta por su horario: lo que cerró va al final, marcado en `enRiesgo`.
+    noAtendidas: [],
     regreso: it.regreso,
     regresoTardio: it.regreso > horaLimiteRegresoMin,
-    costo: it.costo + castigo,
+    costo: it.costo,
   };
 };
 
@@ -128,7 +116,6 @@ export const explicarCambio = (antes: Solucion | undefined, despues: Solucion): 
   for (const r of despues.enRiesgo.filter((x) => !yaEnRiesgo.has(x.paradaId)).slice(0, 2)) {
     partes.push(`${r.nombre} queda en riesgo: cierra ${formatearMinutos(r.cierre)}.`);
   }
-  for (const n of despues.noAtendidas.slice(0, 2)) partes.push(`${n.nombre} ya cerró.`);
   if (despues.regresoTardio) partes.push(`Regresarías al depósito a las ${formatearMinutos(despues.regreso)}.`);
   return partes.join(' ');
 };

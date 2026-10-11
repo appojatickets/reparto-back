@@ -73,7 +73,7 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar.
 - [ ] Probar SUBIR / BAJAR, «MÁS» → IR PRIMERO / DEJAR PARA DESPUÉS / QUITAR DEL CAMIÓN, y agregar una factura nueva al camión y usar **INSERTAR NUEVAS**.
 - [ ] Anotar qué ruta te parece mala (qué camión, qué día y por qué): con eso calibro el motor (las velocidades hoy son estimadas, spike S1).
 - [ ] Abrir un cliente (BUSCAR CLIENTE → tocar el cliente): ahí está **Ubicación del local (pin)** (pegar las coordenadas de Google Maps) y **Horario de atención**.
-- [ ] Probar el horario con botones: elegir días (LUN A VIE), «Abre a las 10:00», «Cierra a las 18:00», colación 13 a 14, domingo CERRADO, o OTRO HORARIO; luego GUARDAR HORARIO. Después calcular la ruta de un camión con ese cliente: un local cerrado ese día sale en «No se pueden atender».
+- [ ] Probar el horario con botones: elegir días (LUN A VIE), «Abre a las 10:00», «Cierra a las 18:00», colación 13 a 14, domingo CERRADO, o OTRO HORARIO; luego GUARDAR HORARIO. Después calcular la ruta de un camión con ese cliente: un local cerrado ese día va al final de la ruta, marcado «POSIBLEMENTE CERRADO» (ya no sale de la ruta, ADR 0042).
 - [ ] Un día sin dato no tiene restricción (el sistema no inventa cierres); «cerrado» solo existe si tú lo marcas.
 
 ### A8. Probar la app del chofer (Fase 4a) — en un celular
@@ -252,6 +252,13 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] Tócala: se despliega cada persona con su foto y lo que aportó (**Subió la foto · Verificó el pin · N entregas**). Vuelve a tocarla y se esconde.
 - [ ] Un local sin foto, sin pin o con una sola entrega sin verificar **no** muestra la fila.
 - [ ] Dime si la fila te parece discreta, o si prefieres verla también en LOCALES POR COMUNA.
+
+### A31. El horario ya no saca paradas de la ruta (ADR 0042 del back)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. No hay migración.
+- [ ] Carga un horario en un local con factura (ficha del local → Horario). Marca un día **CERRADO** que sea el de hoy y calcula la ruta: el local **sigue en la ruta, al final**, con la marca **POSIBLEMENTE CERRADO**; al abrirlo dice «Según su horario hoy no atiende. Sigue en tu ruta, al final: si está abierto, entrégalo igual.»
+- [ ] Pon un horario que cierre antes de la hora actual: pasa lo mismo («Según su horario cerró a las HH:MM…»).
+- [ ] Pon un horario normal (abre 9, cierra 18): el local se atiende en su lugar, sin marca.
+- [ ] Si algo de un horario te parece mal medido, cuéntame el local, el horario que pusiste y la hora a la que calculaste la ruta.
 
 ## B. Antes de usar el sistema con choferes reales
 
