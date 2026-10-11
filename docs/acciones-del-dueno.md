@@ -305,6 +305,12 @@ La ley rige desde el 1-dic-2026 (hay un proyecto para aplazarla, aún en trámit
 
 ---
 
+## C2. Pospuesto por decisión del dueño (2026-10-11)
+
+- **Respaldo diario con GitHub Actions: no.** La cuota gratis de Actions se agota rápido; no se agregan más trabajos programados. Mientras tanto, los respaldos son manuales (Supabase → Database → Backups no está en el plan gratis; exportar los datos importantes desde EXPORTAR DATOS o con una exportación de Supabase cuando quieras).
+- **Monitoreo y errores (Sentry/UptimeRobot) y observabilidad de producto: más adelante.**
+- Sigue pendiente de la revisión de arquitectura (para cuando se decida): trabajos pendientes que sobrevivan reinicios, migraciones automáticas en el despliegue, pruebas de carga, escaneo de seguridad y un runbook de operación.
+
 ## D. Hecho por el agente (para que sepas qué no necesitas tocar)
 
 - Migraciones de la Fase 2 aplicadas en Supabase (7 tablas con RLS activado y sin políticas, bucket privado `fotos`); extensiones `pg_trgm`, `unaccent`, `postgis` habilitadas.
