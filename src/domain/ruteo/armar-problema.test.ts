@@ -45,7 +45,7 @@ describe('armarProblema', () => {
 
   it('usa el servicio propio o el por defecto, la hora límite de la empresa y descarta fijas que ya no existen', () => {
     const r = armarProblema({ ...base, horaLimiteRegresoMin: 1200, fijas: ['B', 'Z'], entradas: [e('A', { servicioMin: 12 }), e('B')] });
-    expect(r.problema.paradas.map((p) => p.servicioMin)).toEqual([12, 8]);
+    expect(r.problema.paradas.map((p) => p.servicioMin)).toEqual([12, 10]);
     expect(r.problema.parametros.horaLimiteRegresoMin).toBe(1200);
     expect(r.problema.fijas).toEqual(['B']);
   });

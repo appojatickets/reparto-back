@@ -31,7 +31,7 @@ describe('tiempo de atención por local', () => {
     const p = servicioAprendido([obs('x', 20, 0), obs('y', 20, 0), obs('y', 20, 1)]);
     expect(p.find((q) => q.ambito === 'local:x')).toBeUndefined();
     const y = p.find((q) => q.ambito === 'local:y');
-    expect(y?.valor).toBeCloseTo(14.12, 2); // 8 → 11,6 → 14,12 (alfa 0,3)
+    expect(y?.valor).toBeCloseTo(15.1, 2); // 10 → 13 → 15,1 (alfa 0,3)
     expect(y).toMatchObject({ clave: 'servicio_min', muestras: 2 });
     expect(y?.confianza).toBeCloseTo(2 / 6, 2);
   });

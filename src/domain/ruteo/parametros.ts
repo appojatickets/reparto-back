@@ -62,8 +62,8 @@ export const PARAMETROS_POR_DEFECTO: ParametrosRuteo = Object.freeze({
   maxPasadas: 50,
 });
 
-/** Servicio por defecto en minutos si el local no tiene uno aprendido (inicial por giro: 8 min). */
-export const SERVICIO_POR_DEFECTO_MIN = 8;
+/** Estándar de atención por local, en minutos, mientras no haya datos suficientes para ajustarlo (incluye estacionar, caminar y entregar). */
+export const SERVICIO_POR_DEFECTO_MIN = 10;
 
 /**
  * Estilo de ruta que usa la aplicación: prefiere visitar antes lo que queda cerca (terminar un sector antes de saltar a otro), como hacen los

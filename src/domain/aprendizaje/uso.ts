@@ -5,12 +5,18 @@ export const CONFIANZA_MINIMA = 0.25;
 const RITMO_ACOTADO = { min: 0.6, max: 2 } as const;
 const SERVICIO_ACOTADO_MIN = { min: 2, max: 40 } as const;
 
+/**
+ * Con menos visitas medidas que esto, el tiempo de atención de un local no reemplaza al estándar (10 minutos). El tiempo general que se mide
+ * (llegada → entrega) deja afuera estacionar y caminar, y quedaba muy por debajo de lo real: se vuelve a usar cuando haya más datos y mejor medida.
+ */
+export const MINIMO_MUESTRAS_SERVICIO_LOCAL = 10;
+
 const acotar = (x: number, r: { readonly min: number; readonly max: number }): number => Math.min(r.max, Math.max(r.min, x));
 
 export type AprendidoParaRuta = {
   /** Multiplica los tiempos de viaje: 1 = lo calculado; 1,2 = este camión demora 20 % más. */
   readonly ritmo: number;
-  /** Minutos que se demora atender ese local, si se sabe con confianza (el del local, o el general). */
+  /** Minutos que se demora atender ese local, si se sabe con suficientes datos; si no, la ruta usa el estándar de 10 minutos. */
   readonly servicioMin: (localId: string) => number | undefined;
 };
 
@@ -19,12 +25,11 @@ export const aprendidoParaRuta = (parametros: readonly ParametroAprendido[], cam
   const buscar = (clave: ParametroAprendido['clave'], ambito: string): ParametroAprendido | undefined =>
     parametros.find((p) => p.clave === clave && p.ambito === ambito && p.confianza >= CONFIANZA_MINIMA);
   const ritmo = buscar('ritmo', `camion:${camionId}`) ?? buscar('ritmo', 'global');
-  const servicioGeneral = buscar('servicio_min', 'global');
-  const porLocal = new Map(parametros.filter((p) => p.clave === 'servicio_min' && p.ambito.startsWith('local:') && p.confianza >= CONFIANZA_MINIMA).map((p) => [p.ambito.slice(6), p.valor]));
+  const porLocal = new Map(parametros.filter((p) => p.clave === 'servicio_min' && p.ambito.startsWith('local:') && p.confianza >= CONFIANZA_MINIMA && p.muestras >= MINIMO_MUESTRAS_SERVICIO_LOCAL).map((p) => [p.ambito.slice(6), p.valor]));
   return {
     ritmo: ritmo ? acotar(ritmo.valor, RITMO_ACOTADO) : 1,
     servicioMin: (localId) => {
-      const v = porLocal.get(localId) ?? servicioGeneral?.valor;
+      const v = porLocal.get(localId);
       return v === undefined ? undefined : acotar(v, SERVICIO_ACOTADO_MIN);
     },
   };
