@@ -150,3 +150,20 @@ export const bancoDePruebasDeFicha = (porLocal: ReadonlyMap<string, readonly Obs
   }
   return { cierre: { evaluadas, cerradas, anticipadas, falsasAlarmas, aciertos }, hora: { evaluadas: horaEvaluadas, dentroDelRango } };
 };
+
+/** Con menos visitas que esto en la franja la ruta no se fía (el análisis sí muestra la franja, como pista). */
+export const MINIMO_VISITAS_CIERRE_RUTA = 3;
+/** Solo se considera «probable» un cierre con al menos esta probabilidad (suavizada). */
+export const UMBRAL_CIERRE_RUTA = 0.6;
+
+/** Una franja del día (minutos) en que ese local suele encontrarse cerrado, con la evidencia que la respalda. */
+export type FranjaCierreProbable = { readonly desdeMin: number; readonly hastaMin: number; readonly p: number; readonly visitas: number; readonly cerrados: number };
+
+/**
+ * Lo que la ruta puede usar de la ficha (ADR 0050): solo las franjas con evidencia suficiente (≥ 3 visitas) y probabilidad alta (≥ 0,6). Sin datos
+ * o con probabilidades bajas devuelve vacío: la ruta se arma como si no supiera nada de ese local.
+ */
+export const cierreProbableDe = (ficha: FichaAprendida): readonly FranjaCierreProbable[] =>
+  ficha.franjas
+    .filter((f) => f.visitas >= MINIMO_VISITAS_CIERRE_RUTA && f.pCerrado >= UMBRAL_CIERRE_RUTA)
+    .map((f) => ({ desdeMin: f.desdeHora * 60, hastaMin: f.hastaHora * 60, p: f.pCerrado, visitas: f.visitas, cerrados: f.cerrados }));

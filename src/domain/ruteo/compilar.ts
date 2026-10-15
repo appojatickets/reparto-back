@@ -1,3 +1,4 @@
+import type { FranjaCierreProbable } from '../aprendizaje/ficha-aprendida.js';
 import type { ParadaRuta, ProblemaRuta } from './tipos.js';
 import { DEPOSITO, ORIGEN, periodoDelMinuto, viajeConCambioDePeriodo } from './tiempos.js';
 
@@ -19,6 +20,8 @@ export type Compilado = {
   readonly rangoCarga: Int32Array;
   /** Lugar que le toca a cada parada según su distancia al depósito (0 = la primera); -1 si no se prefiere ningún orden. */
   readonly rangoInicio: Int32Array;
+  /** Franjas en que cada parada suele estar cerrada (vacío = sin pista); solo se usa si `pesoCierreAprendido` > 0. */
+  readonly franjasCierre: readonly (readonly FranjaCierreProbable[])[];
   readonly origen: number;
   readonly deposito: number;
   readonly salida: number;
@@ -76,6 +79,7 @@ export const compilar = (problema: ProblemaRuta): Compilado => {
     prioridad: Uint8Array.from(problema.paradas, (p) => (p.prioridad ? 1 : 0)),
     rangoCarga,
     rangoInicio,
+    franjasCierre: problema.parametros.pesoCierreAprendido > 0 ? problema.paradas.map((p) => p.cierreProbable ?? []) : problema.paradas.map(() => []),
     origen: n,
     deposito: n + 1,
     salida: problema.salida,

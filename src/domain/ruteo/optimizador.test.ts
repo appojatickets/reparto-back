@@ -166,3 +166,36 @@ describe('optimizar · orden en que el chofer cargó las facturas', () => {
     expect(optimizar(p).orden).toEqual(['B', 'A']);
   });
 });
+
+describe('lo aprendido sobre cierres (pista blanda, ADR 0050)', () => {
+  const conPeso = { ...PARAMETROS_POR_DEFECTO, penalizacionRiesgo: 10_000, pesoCierreAprendido: 30 };
+  /** A suele estar cerrado de 8:00 a 8:40. */
+  const cierraTemprano = { cierreProbable: [{ desdeMin: 480, hastaMin: 520, p: 0.8, visitas: 4, cerrados: 3 }] };
+
+  it('llega a A cuando suele estar abierto: lo deja para después de la franja en que suele estar cerrado', () => {
+    const s = optimizar(problemaPlano([parada('A', cierraTemprano), parada('B'), parada('C')], { parametros: conPeso }));
+    expect(s.orden[2]).toBe('A');
+    expect(s.detalle.find((d) => d.id === 'A')?.motivos).not.toContain('CIERRE_PROBABLE');
+  });
+
+  it('si no se puede evitar (no hay otra cosa que hacer antes), lo visita igual y avisa que puede estar cerrado', () => {
+    const s = optimizar(problemaPlano([parada('A', cierraTemprano)], { parametros: conPeso }));
+    expect(s.orden).toEqual(['A']);
+    expect(s.enRiesgo).toEqual([]);
+    expect(s.noAtendidas).toEqual([]);
+    expect(s.detalle[0]?.motivos).toContain('CIERRE_PROBABLE');
+  });
+
+  it('con peso 0 (lo aprendido apagado) ni cambia el costo ni agrega motivos', () => {
+    const base = optimizar(problemaPlano([parada('A'), parada('B'), parada('C')]));
+    const apagado = optimizar(problemaPlano([parada('A', cierraTemprano), parada('B'), parada('C')]));
+    expect(apagado.costo).toBe(base.costo);
+    expect(apagado.detalle.flatMap((d) => d.motivos)).not.toContain('CIERRE_PROBABLE');
+  });
+
+  it('un horario duro manda sobre lo aprendido: no deja una parada en riesgo para evitar una probable', () => {
+    const s = optimizar(problemaPlano([parada('A', cierraTemprano), parada('B', { ventanas: [v(480, 495)] })], { parametros: conPeso }));
+    expect(s.orden[0]).toBe('B');
+    expect(s.enRiesgo).toEqual([]);
+  });
+});

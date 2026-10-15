@@ -22,6 +22,7 @@ const motivosDe = (c: Compilado, j: number, previo: number | undefined, it: Itin
     const tramo = parada.ventanas.find((w) => (it.llegada[k] ?? 0) <= w.cierre) ?? parada.ventanas[parada.ventanas.length - 1];
     if (tramo && tramo.cierre - (it.llegada[k] ?? 0) <= HOLGURA_DURA_MIN) motivos.push('VENTANA_DURA');
   }
+  if (it.cierre[k]) motivos.push('CIERRE_PROBABLE');
   if (parada.prioridad) motivos.push('PRIORIDAD');
   const comunaPrevia = previo === undefined ? undefined : c.paradas[previo]?.comuna;
   if (parada.comuna !== undefined && parada.comuna === comunaPrevia) motivos.push('CERCANIA_COMUNA');

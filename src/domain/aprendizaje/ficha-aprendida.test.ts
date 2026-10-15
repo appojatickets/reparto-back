@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { aObservaciones, bancoDePruebasDeFicha, fichaAprendida, predecirCierre, type ObservacionLocal } from './ficha-aprendida.js';
+import { aObservaciones, bancoDePruebasDeFicha, cierreProbableDe, fichaAprendida, predecirCierre, type ObservacionLocal } from './ficha-aprendida.js';
 
 /** Un instante en Chile (octubre = UTC-3): `dia` de octubre de 2026 a las `hora`:`min`. Lunes 5, martes 6, miércoles 7… */
 const en = (dia: number, hora: number, min = 0): Date => new Date(Date.UTC(2026, 9, dia, hora + 3, min));
@@ -77,5 +77,18 @@ describe('banco de pruebas de la ficha (hacia adelante: solo mira días anterior
 
   it('sin historia suficiente no evalúa nada', () => {
     expect(bancoDePruebasDeFicha(new Map([['l1', [ent(5, 10)]]]))).toEqual({ cierre: { evaluadas: 0, cerradas: 0, anticipadas: 0, falsasAlarmas: 0, aciertos: 0 }, hora: { evaluadas: 0, dentroDelRango: 0 } });
+  });
+});
+
+describe('lo que la ruta puede usar de la ficha', () => {
+  it('solo franjas con 3 o más visitas y probabilidad de cerrado de 0,6 o más', () => {
+    const f = fichaAprendida([cer(5, 13), cer(6, 13, 10), ent(7, 13, 20), cer(5, 16), ent(6, 16, 10), ent(7, 16, 20), ent(8, 10), ent(9, 10, 20), ent(12, 10, 10)]);
+    // 12–14 h: 3 visitas, 2 cerradas → (2+1)/(3+2) = 0,6. 16–18 h: 3 visitas, 1 cerrada → 0,4 (no alcanza). 10–12 h: 0 cerradas.
+    expect(cierreProbableDe(f)).toEqual([{ desdeMin: 720, hastaMin: 840, p: 0.6, visitas: 3, cerrados: 2 }]);
+  });
+
+  it('con pocas visitas o sin cierres no opina: la ruta se arma como si no supiera nada', () => {
+    expect(cierreProbableDe(fichaAprendida([cer(5, 13), cer(6, 13, 10)]))).toEqual([]);
+    expect(cierreProbableDe(fichaAprendida([ent(5, 10), ent(6, 10), ent(7, 10)]))).toEqual([]);
   });
 });

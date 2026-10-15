@@ -25,7 +25,7 @@ const item = z.object({
   nota: z.string().optional(),
 });
 
-const motivo = z.enum(['VENTANA_DURA', 'PRIORIDAD', 'CERCANIA_COMUNA', 'COLACION', 'FIJADA_POR_CHOFER', 'MENOR_DESVIO']);
+const motivo = z.enum(['VENTANA_DURA', 'PRIORIDAD', 'CERCANIA_COMUNA', 'COLACION', 'FIJADA_POR_CHOFER', 'CIERRE_PROBABLE', 'MENOR_DESVIO']);
 const sugerencia = z.object({ tipo: z.enum(['MOVER_AL_INICIO', 'SALIR_ANTES', 'OTRO_CAMION']), minutos: z.number().optional(), texto: z.string() });
 
 const vistaRuta = z.object({

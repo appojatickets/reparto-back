@@ -37,6 +37,11 @@ export type ParametrosRuteo = {
   readonly ordenInicio: OrdenInicio;
   /** Costo por cada lugar que una parada se aleja del que le tocaría según su distancia al depósito (0 = no se considera). */
   readonly pesoOrdenInicio: number;
+  /**
+   * Costo (en minutos de manejo) de llegar a un local en una franja en que suele estar cerrado, multiplicado por la probabilidad (ADR 0050). Es lo que
+   * se espera perder: ir, encontrarlo cerrado y volver otra vez. 0 = no se usa lo aprendido.
+   */
+  readonly pesoCierreAprendido: number;
   /** Hora de regreso al depósito desde la cual se avisa (minutos del día). 21:00 por defecto. */
   readonly horaLimiteRegresoMin: number;
   /** Perturbaciones de la búsqueda local iterada. */
@@ -56,6 +61,7 @@ export const PARAMETROS_POR_DEFECTO: ParametrosRuteo = Object.freeze({
   pesoOrdenCarga: 0,
   ordenInicio: 'automatico',
   pesoOrdenInicio: 0,
+  pesoCierreAprendido: 0,
   horaLimiteRegresoMin: 21 * 60,
   reinicios: 6,
   semilla: 20261004,
@@ -86,3 +92,10 @@ export const PESO_ORDEN_CARGA_CALIBRADO = 1;
  * empuja justo al revés.
  */
 export const PESO_ORDEN_INICIO = 5;
+
+/**
+ * Peso de lo aprendido sobre cierres que usa la aplicación (minutos de manejo por unidad de probabilidad): ir y volver a un local cerrado cuesta
+ * del orden de media hora. Es una pista blanda: pesa menos que cualquier horario duro y no saca paradas de la ruta. No está calibrado con datos:
+ * el banco de pruebas de la analítica sigue midiendo si lo aprendido acierta.
+ */
+export const PESO_CIERRE_APRENDIDO = 30;

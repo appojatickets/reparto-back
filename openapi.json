@@ -15796,6 +15796,7 @@
                                 "CERCANIA_COMUNA",
                                 "COLACION",
                                 "FIJADA_POR_CHOFER",
+                                "CIERRE_PROBABLE",
                                 "MENOR_DESVIO"
                               ]
                             }
@@ -16865,6 +16866,7 @@
                                 "CERCANIA_COMUNA",
                                 "COLACION",
                                 "FIJADA_POR_CHOFER",
+                                "CIERRE_PROBABLE",
                                 "MENOR_DESVIO"
                               ]
                             }
@@ -17772,6 +17774,7 @@
                                 "CERCANIA_COMUNA",
                                 "COLACION",
                                 "FIJADA_POR_CHOFER",
+                                "CIERRE_PROBABLE",
                                 "MENOR_DESVIO"
                               ]
                             }
