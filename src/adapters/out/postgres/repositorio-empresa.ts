@@ -20,9 +20,11 @@ export const leerConfig = (json: unknown): ConfigEmpresa => {
   const c = esObjeto(json) ? json : {};
   const deposito = leerDeposito(c['deposito']);
   const ordenInicio = leerOrdenInicio(c['ordenInicio']);
+  const usarCierres = c['usarCierresAprendidos'];
   return {
     ...(deposito ? { deposito } : {}),
     ...(ordenInicio ? { ordenInicio } : {}),
+    ...(typeof usarCierres === 'boolean' ? { usarCierresAprendidos: usarCierres } : {}),
     salidaPorDefectoMin: numero(c['salidaPorDefectoMin']) ?? CONFIG_POR_DEFECTO.salidaPorDefectoMin,
     horaLimiteRegresoMin: numero(c['horaLimiteRegresoMin']) ?? CONFIG_POR_DEFECTO.horaLimiteRegresoMin,
   };
@@ -40,8 +42,8 @@ export class PostgresEmpresaRepository implements EmpresaRepository {
     // Se mezcla con lo que ya hubiera (p. ej. los parámetros del motor, que viven en la misma columna).
     const actual = await this.db.selectFrom('empresa').select('config').where('id', '=', empresaId).executeTakeFirst();
     const previo = actual && esObjeto(actual.config) ? actual.config : {};
-    const resto = Object.fromEntries(Object.entries(previo).filter(([k]) => k !== 'deposito' && k !== 'ordenInicio'));
-    const nuevo = { ...resto, ...(config.deposito ? { deposito: config.deposito } : {}), ...(config.ordenInicio ? { ordenInicio: config.ordenInicio } : {}), salidaPorDefectoMin: config.salidaPorDefectoMin, horaLimiteRegresoMin: config.horaLimiteRegresoMin };
+    const resto = Object.fromEntries(Object.entries(previo).filter(([k]) => k !== 'deposito' && k !== 'ordenInicio' && k !== 'usarCierresAprendidos'));
+    const nuevo = { ...resto, ...(config.deposito ? { deposito: config.deposito } : {}), ...(config.ordenInicio ? { ordenInicio: config.ordenInicio } : {}), ...(config.usarCierresAprendidos !== undefined ? { usarCierresAprendidos: config.usarCierresAprendidos } : {}), salidaPorDefectoMin: config.salidaPorDefectoMin, horaLimiteRegresoMin: config.horaLimiteRegresoMin };
     await this.db
       .updateTable('empresa')
       .set((eb) => ({ config: JSON.stringify(nuevo), config_version: eb('config_version', '+', 1) }))

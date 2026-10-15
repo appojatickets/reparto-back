@@ -17,6 +17,8 @@ export type ConfigEmpresa = {
   readonly horaLimiteRegresoMin: number;
   /** Sin indicar, el sistema decide (`automatico`). */
   readonly ordenInicio?: OrdenInicio;
+  /** Si la ruta usa lo aprendido sobre cuándo suele estar cerrado cada local (ADR 0050). Sin indicar, se usa; `false` la arma como si no supiera nada. */
+  readonly usarCierresAprendidos?: boolean;
 };
 
 export const CONFIG_POR_DEFECTO: ConfigEmpresa = Object.freeze({ salidaPorDefectoMin: 8 * 60, horaLimiteRegresoMin: 21 * 60 });
@@ -26,6 +28,7 @@ export type ConfigCruda = {
   readonly salidaPorDefectoMin: number;
   readonly horaLimiteRegresoMin: number;
   readonly ordenInicio?: OrdenInicio | undefined;
+  readonly usarCierresAprendidos?: boolean | undefined;
 };
 
 const minutoValido = (m: number): boolean => Number.isInteger(m) && m >= 0 && m <= 1439;
@@ -49,5 +52,5 @@ export const validarConfig = (c: ConfigCruda): Result<ConfigEmpresa, readonly Er
   }
   if (c.ordenInicio !== undefined && !ORDENES_DE_INICIO.includes(c.ordenInicio)) errores.push(errorDominio('ORDEN_INICIO_INVALIDO', 'El orden de inicio no es válido (automático, más lejano o más cercano).'));
   if (errores.length > 0) return err(errores);
-  return ok({ ...(deposito ? { deposito } : {}), salidaPorDefectoMin: c.salidaPorDefectoMin, horaLimiteRegresoMin: c.horaLimiteRegresoMin, ...(c.ordenInicio !== undefined ? { ordenInicio: c.ordenInicio } : {}) });
+  return ok({ ...(deposito ? { deposito } : {}), salidaPorDefectoMin: c.salidaPorDefectoMin, horaLimiteRegresoMin: c.horaLimiteRegresoMin, ...(c.ordenInicio !== undefined ? { ordenInicio: c.ordenInicio } : {}), ...(c.usarCierresAprendidos !== undefined ? { usarCierresAprendidos: c.usarCierresAprendidos } : {}) });
 };

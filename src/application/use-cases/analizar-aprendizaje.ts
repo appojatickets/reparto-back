@@ -1,7 +1,7 @@
 import {
-  atenciones, calidadDeJornada, jornadasDelEquipo, capacidadAprendida, cierresFrecuentes, completarConVisitas, pinesDudosos, pinesSugeridos, resumenesDelDia, ritmoAprendido, seguimientoDeLaRuta, servicioAprendido, tramosDeViaje, visitasDeducidas, type LocalObs, type ParametroAprendido,
+  atenciones, calidadDeJornada, jornadasDelEquipo, capacidadAprendida, cierresFrecuentes, completarConVisitas, pinesDudosos, pinesSugeridos, resumenesDelDia, ritmoAprendido, seguimientoDeLaRuta, servicioAprendido, tramosDeViaje, visitasDeducidas, type EventoObs, type LocalObs, type ParametroAprendido,
 } from '../../domain/aprendizaje/analisis.js';
-import { aObservaciones, bancoDePruebasDeFicha } from '../../domain/aprendizaje/ficha-aprendida.js';
+import { aObservaciones, bancoDePruebasDeFicha, cierreProbableDe, fichaAprendida } from '../../domain/aprendizaje/ficha-aprendida.js';
 import { validarCierresPorGps } from '../../domain/aprendizaje/cierres-gps.js';
 import { distanciaMetros } from '../../domain/importacion/propuesta-pin.js';
 import type { AprendizajeRepository, ResumenAnalisis } from '../ports/out/aprendizaje.js';
@@ -13,6 +13,17 @@ const porClaveLocal = <T extends { readonly localId: string }>(items: readonly T
   const m = new Map<string, T[]>();
   for (const it of items) m.set(it.localId, [...(m.get(it.localId) ?? []), it]);
   return m;
+};
+
+/** Cuántos locales ya tienen hora habitual de entrega y cuántos tienen alguna franja de cierre probable (la que usa la ruta). */
+const resumenDeFichas = (porLocal: ReadonlyMap<string, readonly EventoObs[]>): { readonly locales: number; readonly conHoraHabitual: number; readonly conCierreProbable: number } => {
+  let conHoraHabitual = 0, conCierreProbable = 0;
+  for (const evs of porLocal.values()) {
+    const ficha = fichaAprendida(aObservaciones(evs));
+    if (ficha.horaHabitual) conHoraHabitual += 1;
+    if (cierreProbableDe(ficha).length > 0) conCierreProbable += 1;
+  }
+  return { locales: porLocal.size, conHoraHabitual, conCierreProbable };
 };
 
 /** Se mira lo de los últimos 90 días: lo viejo ya no representa cómo se reparte hoy. */
@@ -64,6 +75,7 @@ export const crearAnalizarAprendizaje = ({ aprendizaje, empresas, pines, clock }
       pinesSugeridos: sugeridos.length, pinesProponidos, seguimientoRuta: seguimientoDeLaRuta(datos.eventos, datos.operaciones), llegadasDeducidas: visitas.llegadasDeducidas,
       pinesDudosos: pinesDudosos(datos.eventos, locales).slice(0, 20), cierresFrecuentes: cierresFrecuentes(datos.eventos).slice(0, 20),
       cierresGps: validarCierresPorGps(datos.eventos, locales, datos.posiciones),
+      fichas: resumenDeFichas(porClaveLocal(datos.eventos)),
       bancoFicha: bancoDePruebasDeFicha(new Map([...porClaveLocal(datos.eventos)].map(([id, evs]) => [id, aObservaciones(evs)] as const))),
     };
     await aprendizaje.registrarEjecucion(empresaId, { iniciadoEn, terminadoEn: clock.now(), resumen });

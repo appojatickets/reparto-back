@@ -16,15 +16,17 @@ const bancoFicha = z.object({
   cierre: z.object({ evaluadas: z.number(), cerradas: z.number(), anticipadas: z.number(), falsasAlarmas: z.number(), aciertos: z.number() }),
   hora: z.object({ evaluadas: z.number(), dentroDelRango: z.number() }),
 });
+const fichas = z.object({ locales: z.number(), conHoraHabitual: z.number(), conCierreProbable: z.number() });
 const resumenAnalisis = z.object({
   eventos: z.number(), jornadas: z.number(), parametros: z.number(), jornadasComparadas: z.number(), pinesSugeridos: z.number(), pinesProponidos: z.number(), llegadasDeducidas: z.number(),
   seguimientoRuta: z.object({ entregas: z.number(), primeraDeLaLista: z.number(), conRutaDelSistema: z.number(), primeraDeLaRutaDelSistema: z.number() }),
   cierresFrecuentes: z.array(z.object({ localId: z.string(), cerrados: z.number(), intentos: z.number(), confianzaAbierto: z.number(), horasCerrado: z.array(z.number()) })),
   cierresGps: cierresGps.optional(),
   bancoFicha: bancoFicha.optional(),
+  fichas: fichas.optional(),
 });
 
-const resumenAJson = (r: ResumenAnalisis) => ({ eventos: r.eventos, jornadas: r.jornadas, parametros: r.parametros, jornadasComparadas: r.jornadasComparadas, pinesSugeridos: r.pinesSugeridos, pinesProponidos: r.pinesProponidos, llegadasDeducidas: r.llegadasDeducidas, seguimientoRuta: r.seguimientoRuta, cierresFrecuentes: r.cierresFrecuentes.map((c) => ({ ...c, horasCerrado: [...c.horasCerrado] })), ...(r.cierresGps ? { cierresGps: { ...r.cierresGps, casos: [...r.cierresGps.casos] } } : {}), ...(r.bancoFicha ? { bancoFicha: r.bancoFicha } : {}) });
+const resumenAJson = (r: ResumenAnalisis) => ({ eventos: r.eventos, jornadas: r.jornadas, parametros: r.parametros, jornadasComparadas: r.jornadasComparadas, pinesSugeridos: r.pinesSugeridos, pinesProponidos: r.pinesProponidos, llegadasDeducidas: r.llegadasDeducidas, seguimientoRuta: r.seguimientoRuta, cierresFrecuentes: r.cierresFrecuentes.map((c) => ({ ...c, horasCerrado: [...c.horasCerrado] })), ...(r.cierresGps ? { cierresGps: { ...r.cierresGps, casos: [...r.cierresGps.casos] } } : {}), ...(r.bancoFicha ? { bancoFicha: r.bancoFicha } : {}), ...(r.fichas ? { fichas: r.fichas } : {}) });
 
 export const rutasAnalitica = ({ app, casos, guard }: ContextoRutas): void => {
   const a = tipada(app);
@@ -55,6 +57,7 @@ export const rutasAnalitica = ({ app, casos, guard }: ContextoRutas): void => {
             pinesDudosos: z.array(z.object({ localId: z.string(), distanciaM: z.number(), visitas: z.number(), fuente: z.string().optional(), etiqueta: etiqueta.optional() })),
             cierresGps: cierresGps.optional(),
             bancoFicha: bancoFicha.optional(),
+            fichas: fichas.optional(),
             ultimaEjecucion: z.object({ iniciadoEn: z.string(), terminadoEn: z.string(), resumen: resumenAnalisis }).optional(),
           }),
           ...RESPUESTAS_ERROR,
@@ -81,6 +84,7 @@ export const rutasAnalitica = ({ app, casos, guard }: ContextoRutas): void => {
         pinesDudosos: [...p.pinesDudosos],
         ...(p.cierresGps ? { cierresGps: { ...p.cierresGps, casos: [...p.cierresGps.casos] } } : {}),
         ...(p.bancoFicha ? { bancoFicha: p.bancoFicha } : {}),
+        ...(p.fichas ? { fichas: p.fichas } : {}),
         ...(e ? { ultimaEjecucion: { iniciadoEn: e.iniciadoEn.toISOString(), terminadoEn: e.terminadoEn.toISOString(), resumen: resumenAJson(e.resumen) } } : {}),
       });
     },

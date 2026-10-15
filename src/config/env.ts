@@ -16,6 +16,8 @@ const schema = z.object({
   /** Identifica a la aplicación ante el servicio gratuito de mapas (Nominatim lo exige). Conviene incluir un correo o la URL del sitio. */
   /** Clave de OpenRouteService (plan gratuito): con ella la ruta usa tiempos de manejar por calles. Si falta, la ruta mide en línea recta. */
   ORS_API_KEY: z.string().min(10).optional(),
+  /** Lo pone Render solo: el commit que está corriendo. Se muestra en el estado del sistema. */
+  RENDER_GIT_COMMIT: z.string().optional(),
   GEOCODER_USER_AGENT: z.string().min(8).default('reparto-api/1.0 (+https://reparto-front.vercel.app)'),
 });
 

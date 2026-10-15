@@ -10,6 +10,8 @@ const configSchema = z.object({
   horaLimiteRegresoMin: minuto,
   /** Por dónde parte la ruta: lo decide el sistema, o se prefiere partir por lo más lejano o por lo más cercano al depósito. */
   ordenInicio: z.enum(['automatico', 'lejano', 'cercano']).optional(),
+  /** Si la ruta usa lo aprendido sobre cuándo suele estar cerrado cada local; sin indicar, se usa. */
+  usarCierresAprendidos: z.boolean().optional(),
 });
 
 export const rutasEmpresa = ({ app, casos, guard }: ContextoRutas): void => {

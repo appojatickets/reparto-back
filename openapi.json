@@ -45,6 +45,9 @@
                       "type": "string",
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    "version": {
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -82,6 +85,9 @@
                       "type": "string",
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    "version": {
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -15100,6 +15106,9 @@
                         "lejano",
                         "cercano"
                       ]
+                    },
+                    "usarCierresAprendidos": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -15353,6 +15362,9 @@
                       "lejano",
                       "cercano"
                     ]
+                  },
+                  "usarCierresAprendidos": {
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -15413,6 +15425,9 @@
                         "lejano",
                         "cercano"
                       ]
+                    },
+                    "usarCierresAprendidos": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -21180,6 +21195,26 @@
                       ],
                       "additionalProperties": false
                     },
+                    "fichas": {
+                      "type": "object",
+                      "properties": {
+                        "locales": {
+                          "type": "number"
+                        },
+                        "conHoraHabitual": {
+                          "type": "number"
+                        },
+                        "conCierreProbable": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "locales",
+                        "conHoraHabitual",
+                        "conCierreProbable"
+                      ],
+                      "additionalProperties": false
+                    },
                     "ultimaEjecucion": {
                       "type": "object",
                       "properties": {
@@ -21447,6 +21482,26 @@
                               "required": [
                                 "cierre",
                                 "hora"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "fichas": {
+                              "type": "object",
+                              "properties": {
+                                "locales": {
+                                  "type": "number"
+                                },
+                                "conHoraHabitual": {
+                                  "type": "number"
+                                },
+                                "conCierreProbable": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "locales",
+                                "conHoraHabitual",
+                                "conCierreProbable"
                               ],
                               "additionalProperties": false
                             }
@@ -21957,6 +22012,26 @@
                       "required": [
                         "cierre",
                         "hora"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "fichas": {
+                      "type": "object",
+                      "properties": {
+                        "locales": {
+                          "type": "number"
+                        },
+                        "conHoraHabitual": {
+                          "type": "number"
+                        },
+                        "conCierreProbable": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "locales",
+                        "conHoraHabitual",
+                        "conCierreProbable"
                       ],
                       "additionalProperties": false
                     }

@@ -76,6 +76,14 @@ describe('la ruta usa lo aprendido sobre cierres (ADR 0050)', () => {
     expect(r.ok && r.value.paradas.map((p) => p.facturaId)).toEqual(['f-A']);
   });
 
+  it('si el admin apaga lo aprendido en CONFIGURACIÓN, ni siquiera se leen los avisos y la ruta no marca cierres probables', async () => {
+    const s = montar({ pendientes: [paradaDe('A')], config: { salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260, deposito: { lat: -33.45, lng: -70.65 }, usarCierresAprendidos: false } });
+    s.entregas.eventosDeLocales.mockResolvedValue(cierres(['cerrado', 'cerrado', 'cerrado']));
+    const r = await s.planificar(despachador, entrada);
+    expect(r.ok && r.value.paradas[0]?.motivos).not.toContain('CIERRE_PROBABLE');
+    expect(s.entregas.eventosDeLocales).not.toHaveBeenCalled();
+  });
+
   it('con pocas visitas, o si casi siempre estaba abierto, no se considera', async () => {
     const poco = montar({ pendientes: [paradaDe('A')] });
     poco.entregas.eventosDeLocales.mockResolvedValue(cierres(['cerrado', 'cerrado']));

@@ -36,7 +36,7 @@ const estadoDe = (error: unknown): number => {
   return typeof s === 'number' && s >= 400 && s < 600 ? s : 500;
 };
 
-const healthSchema = z.object({ status: z.enum(['ok', 'degraded']), database: z.enum(['ok', 'error']), timestamp: z.iso.datetime() });
+const healthSchema = z.object({ status: z.enum(['ok', 'degraded']), database: z.enum(['ok', 'error']), timestamp: z.iso.datetime(), version: z.string().optional() });
 
 export const buildServer = async (deps: HttpDeps): Promise<FastifyInstance> => {
   // trustProxy: detrás de Render, sin esto todas las peticiones parecen venir de la misma IP y el límite de tasa

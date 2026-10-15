@@ -143,7 +143,7 @@ const analizarPronto = (): void => {
 };
 const terminarJornada = crearTerminarJornada({ jornadas, facturas, rutas, registro, clock });
 const casos: CasosDeUso = {
-  checkHealth: () => checkHealth({ db: dbHealth, clock }),
+  checkHealth: () => checkHealth({ db: dbHealth, clock, ...(env.RENDER_GIT_COMMIT ? { version: env.RENDER_GIT_COMMIT.slice(0, 7) } : {}) }),
   autenticar: crearAutenticarUsuario({ identidad, usuarios, clock }),
   iniciarSesion: crearIniciarSesion({ identidad, usuarios, intentos, clock, dominioCorreo: env.AUTH_EMAIL_DOMAIN }),
   refrescarSesion: crearRefrescarSesion({ identidad }),

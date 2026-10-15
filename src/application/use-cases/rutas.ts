@@ -230,7 +230,8 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
       rutas.hechasConUbicacion(actor.empresaId, camionId, fecha).catch((): readonly HechaConUbicacion[] => []),
     ]);
     // Lo aprendido de cuándo suele estar cerrado cada local: nunca bloquea la ruta; si no se puede leer, se arma como si no se supiera nada.
-    const cierres = await cierresAprendidos(entregas, actor.empresaId, [...new Set(items.map((f) => f.localId))], clock.now());
+    // El admin puede apagarlo (CONFIGURACIÓN): entonces la ruta se arma como si no supiera nada de los cierres.
+    const cierres = config.usarCierresAprendidos === false ? new Map<string, readonly FranjaCierreProbable[]>() : await cierresAprendidos(entregas, actor.empresaId, [...new Set(items.map((f) => f.localId))], clock.now());
     const sinPinIds = [...new Set(items.filter((f) => f.lat === undefined).map((f) => f.localId))];
     if (sinPinIds.length > 0) programarPines?.(actor.empresaId, sinPinIds);
     const hechas = todas.flatMap((f) =>

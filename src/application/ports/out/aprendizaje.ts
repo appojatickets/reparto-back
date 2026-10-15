@@ -31,6 +31,8 @@ export type ResumenAnalisis = {
   readonly cierresGps?: ValidacionCierres;
   /** ¿La ficha aprendida de cada local acierta? Se prueba con lo ya ocurrido, mirando solo días anteriores (ADR 0049). */
   readonly bancoFicha?: BancoDePruebasFicha;
+  /** Cuántos locales tienen ya lo aprendido necesario para que la ruta lo use (ADR 0051). */
+  readonly fichas?: { readonly locales: number; readonly conHoraHabitual: number; readonly conCierreProbable: number };
 };
 
 export type EjecucionAnalisis = { readonly iniciadoEn: Date; readonly terminadoEn: Date; readonly resumen: ResumenAnalisis };

@@ -37,6 +37,8 @@ export type PanelAnalitica = {
   readonly cierresGps?: CierresGpsConEtiquetas;
   /** Si la ficha aprendida de los locales acierta (cierres anticipados y hora habitual), probada solo con días anteriores. */
   readonly bancoFicha?: BancoDePruebasFicha;
+  /** Cuántos locales ya tienen hora habitual y cuántos tienen franjas de cierre probable (lo que la ruta puede usar). */
+  readonly fichas?: { readonly locales: number; readonly conHoraHabitual: number; readonly conCierreProbable: number };
   readonly ultimaEjecucion?: EjecucionAnalisis;
 };
 
@@ -74,6 +76,7 @@ export const crearVerAnalitica = ({ analitica, aprendizaje, camiones, clientes, 
       pinesDudosos: dudosos.map((d) => { const e = etiquetas.get(d.localId); return { ...d, ...(e ? { etiqueta: e } : {}) }; }),
       ...(ultima?.resumen.cierresGps ? { cierresGps: { ...ultima.resumen.cierresGps, casos: ultima.resumen.cierresGps.casos.map((c) => { const e = etiquetas.get(c.localId); const camion = nombreCamion.get(c.camionId); return { ...c, ...(camion !== undefined ? { camion } : {}), ...(e ? { etiqueta: e } : {}) }; }) } } : {}),
       ...(ultima?.resumen.bancoFicha ? { bancoFicha: ultima.resumen.bancoFicha } : {}),
+      ...(ultima?.resumen.fichas ? { fichas: ultima.resumen.fichas } : {}),
       ...(ultima ? { ultimaEjecucion: ultima } : {}),
     };
   };
