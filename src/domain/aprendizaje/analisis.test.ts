@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { atenciones, calidadDeJornada, capacidadAprendida, cierresFrecuentes, completarConVisitas, mediana, resumenesDelDia, seguimientoDeLaRuta, pinesDudosos, pinesSugeridos, ritmoAprendido, servicioAprendido, tramosDeViaje, visitasDeducidas, type EventoObs, type LocalObs, type OperacionObs, type PosicionObs } from './analisis.js';
+import { atenciones, calidadDeJornada, jornadasDelEquipo, capacidadAprendida, cierresFrecuentes, completarConVisitas, mediana, resumenesDelDia, seguimientoDeLaRuta, pinesDudosos, pinesSugeridos, ritmoAprendido, servicioAprendido, tramosDeViaje, visitasDeducidas, type EventoObs, type LocalObs, type OperacionObs, type PosicionObs } from './analisis.js';
 
 const T0 = Date.parse('2026-10-05T13:00:00Z'); // 10:00 en Chile (verano)
 const en = (min: number): Date => new Date(T0 + min * 60_000);
@@ -116,6 +116,25 @@ describe('calidad de la ruta: lo sugerido frente a lo manejado', () => {
 
   it('un día de orden sugerido se anota como «sistema» y sin cambios manuales', () => {
     expect(calidadDeJornada(jornada, visitas(['f1', 'f2', 'f3', 'f4']), [sugerida], locales, DEPOSITO)).toMatchObject({ origen: 'sistema', cambios: 0 });
+  });
+
+  describe('las tres rutas del día: la sugerida, la que quedó al salir y la que se entregó', () => {
+    it('anota el orden sugerido, el que había al salir (con lo acomodado a mano) y el entregado, y cuenta lo entregado fuera de orden', () => {
+      const aMano: OperacionObs = { ...sugerida, tipo: 'mover', modo: 'manual', orden: ['f2', 'f1', 'f3', 'f4'], creadoEn: en(-10) };
+      const q = calidadDeJornada(jornada, visitas(['f2', 'f3', 'f1', 'f4']), [sugerida, aMano], locales, DEPOSITO);
+      expect(q?.ordenSugerido).toEqual(['f1', 'f2', 'f3', 'f4']);
+      expect(q?.ordenSalida).toEqual(['f2', 'f1', 'f3', 'f4']);
+      expect(q?.ordenEntregado).toEqual(['f2', 'f3', 'f1', 'f4']);
+      // al salir iban f2, f1, f3, f4 y se entregó f2, f3, f1, f4: solo el par (f1, f3) quedó invertido
+      expect(q?.inversionesSalida).toBe(1);
+    });
+
+    it('una parada que se dejó cerrada no cuenta como entregada y las demás se comparan igual', () => {
+      const eventos = [...visitas(['f1', 'f2', 'f3']), ev('f4', 'cerrado', 90)];
+      const q = calidadDeJornada(jornada, eventos, [sugerida], locales, DEPOSITO);
+      expect(q?.ordenEntregado).toEqual(['f1', 'f2', 'f3']);
+      expect(q?.inversionesSalida).toBe(0);
+    });
   });
 
   describe('un día en orden manual (el chofer cargó «en orden»): su experiencia se mide contra lo que habría sugerido el sistema', () => {
@@ -319,5 +338,24 @@ describe('¿se siguió lo que mostraba la ruta?', () => {
   it('no cuenta lo que no estaba en la ruta que se veía (una entrega agregada después) ni días sin ruta guardada', () => {
     expect(seguimientoDeLaRuta([entrega('z', 10)], [op(0, ['a', 'b'])]).entregas).toBe(0);
     expect(seguimientoDeLaRuta([entrega('a', 10)], [])).toEqual({ entregas: 0, primeraDeLaLista: 0, conRutaDelSistema: 0, primeraDeLaRutaDelSistema: 0 });
+  });
+});
+
+describe('jornadas del equipo en un mismo camión', () => {
+  const h = (n: number) => new Date(Date.UTC(2026, 9, 5, 8 + n));
+  it('el que entró después hereda el inicio del que ya estaba, para contar todo lo hecho en el camión', () => {
+    const r = jornadasDelEquipo([
+      { id: 'a', camionId: 'cam-1', fecha: '2026-10-05', desde: h(0), hasta: h(6) },
+      { id: 'b', camionId: 'cam-1', fecha: '2026-10-05', desde: h(2), hasta: h(7) },
+      { id: 'c', camionId: 'cam-2', fecha: '2026-10-05', desde: h(3) },
+    ]);
+    expect(r.map((j) => j.desde)).toEqual([h(0), h(0), h(3)]);
+  });
+  it('una jornada que no coincidió con otra del mismo camión no se toca', () => {
+    const r = jornadasDelEquipo([
+      { id: 'a', camionId: 'cam-1', fecha: '2026-10-05', desde: h(0), hasta: h(2) },
+      { id: 'b', camionId: 'cam-1', fecha: '2026-10-05', desde: h(4), hasta: h(7) },
+    ]);
+    expect(r[1]?.desde).toEqual(h(4));
   });
 });

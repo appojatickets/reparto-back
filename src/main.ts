@@ -186,6 +186,7 @@ const casos: CasosDeUso = {
   listarFacturas: crearListarFacturas({ facturas, clock, resolverCamion }),
   actualizarFactura: crearActualizarFactura({ facturas, resolverCamion }),
   verRuta: serviciosDeRuta.ver,
+  marcaDeRuta: serviciosDeRuta.marca,
   planificarRuta: serviciosDeRuta.planificar,
   operarRuta: serviciosDeRuta.operar,
   miJornada: crearMiJornada({ jornadas, clock, planillas }),

@@ -47,6 +47,8 @@ export type ResumenJornada = {
   readonly noEntregadas: number;
   /** Las que no se alcanzaron a hacer: se sueltan del camión y quedan «sin camión» en su día (no pasan solas al siguiente). */
   readonly pendientes: number;
+  /** Otra persona sigue en el mismo camión (ADR 0045): la ruta y lo pendiente siguen en pie y el día del camión todavía no se cierra. */
+  readonly sigueElCamion?: true;
 };
 
 /**
@@ -58,20 +60,25 @@ export const crearTerminarJornada = ({ jornadas, facturas, rutas, registro, cloc
   async (actor: Usuario): Promise<ResumenJornada | undefined> => {
     const ahora = clock.now();
     const j = await jornadas.activa(actor.empresaId, actor.id, fechaEnChile(ahora));
+    // El camión es dueño de la ruta y puede tener a más de una persona (chofer y ayudante): lo hecho cuenta desde que empezó el equipo.
+    const ventana = j ? await jornadas.ultimaDelCamion(actor.empresaId, j.camion.id, j.fecha) : undefined;
     await jornadas.terminar(actor.empresaId, actor.id, ahora);
     if (!j) return undefined;
-    // Solo lo hecho desde que empezó esta jornada: lo de una jornada anterior del mismo día ya quedó contado en su resumen.
-    const del = await facturas.listar(actor.empresaId, { fecha: j.fecha, camionId: j.camion.id, incluirHechas: true, hechasDesde: j.desde });
+    const desde = ventana && ventana.desde.getTime() < j.desde.getTime() ? ventana.desde : j.desde;
+    const del = await facturas.listar(actor.empresaId, { fecha: j.fecha, camionId: j.camion.id, incluirHechas: true, hechasDesde: desde });
     const contar = (estado: 'entregada' | 'no_entregada' | 'pendiente'): number => del.filter((f) => f.estado === estado).length;
+    const resumen = { fecha: j.fecha, camionId: j.camion.id, desde, hasta: ahora, entregadas: contar('entregada'), noEntregadas: contar('no_entregada'), pendientes: contar('pendiente') };
+    // Si alguien más sigue en el camión, esta persona se baja y nada más: la ruta y lo pendiente son del camión y siguen para el otro.
+    if ((await jornadas.abiertasEnCamion(actor.empresaId, j.camion.id, j.fecha)) > 0) return { ...resumen, sigueElCamion: true };
     // Antes de soltar lo pendiente se anota qué no se alcanzó: es lo que dice cuántas paradas caben en un día.
     await registro.guardarResumenDeJornada(actor.empresaId, {
-      jornadaId: j.id, camionId: j.camion.id, fecha: j.fecha, paradas: del.length, entregadas: contar('entregada'), noEntregadas: contar('no_entregada'),
-      sinHacer: contar('pendiente'), sinHacerIds: del.filter((f) => f.estado === 'pendiente').map((f) => f.id), duracionMin: Math.max(0, Math.round((ahora.getTime() - j.desde.getTime()) / 60_000)),
+      jornadaId: j.id, camionId: j.camion.id, fecha: j.fecha, paradas: del.length, entregadas: resumen.entregadas, noEntregadas: resumen.noEntregadas,
+      sinHacer: resumen.pendientes, sinHacerIds: del.filter((f) => f.estado === 'pendiente').map((f) => f.id), duracionMin: Math.max(0, Math.round((ahora.getTime() - desde.getTime()) / 60_000)),
     });
     await facturas.soltarPendientesDelCamion(actor.empresaId, j.camion.id, j.fecha);
     await rutas.borrar(actor.empresaId, j.camion.id, j.fecha);
     await rutas.borrarAnteriores(actor.empresaId, fechaEnChile(ahora));
-    return { fecha: j.fecha, camionId: j.camion.id, desde: j.desde, hasta: ahora, entregadas: contar('entregada'), noEntregadas: contar('no_entregada'), pendientes: contar('pendiente') };
+    return resumen;
   };
 
 /**

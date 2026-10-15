@@ -1,5 +1,6 @@
 import { sql } from 'kysely';
 import { err, ok, type Result } from '../../../domain/shared/result.js';
+import { ventanaDelCamion } from '../../../domain/entidades/ventana-del-camion.js';
 import type { Jornada, JornadaRepository } from '../../../application/ports/out/jornadas.js';
 import type { Db } from './client.js';
 
@@ -38,15 +39,13 @@ export class PostgresJornadaRepository implements JornadaRepository {
   }
 
   async ultimaDelCamion(empresaId: string, camionId: string, fecha: string): Promise<{ readonly desde: Date; readonly hasta?: Date } | undefined> {
-    const j = await this.db
-      .selectFrom('jornada')
-      .select(['desde', 'hasta'])
-      .where('empresa_id', '=', empresaId)
-      .where('camion_id', '=', camionId)
-      .where('fecha_reparto', '=', fecha)
-      .orderBy('desde', 'desc')
-      .executeTakeFirst();
-    return j && { desde: j.desde, ...(j.hasta !== null ? { hasta: j.hasta } : {}) };
+    const tramos = await this.db.selectFrom('jornada').select(['desde', 'hasta']).where('empresa_id', '=', empresaId).where('camion_id', '=', camionId).where('fecha_reparto', '=', fecha).execute();
+    return ventanaDelCamion(tramos.map((t) => ({ desde: t.desde, ...(t.hasta !== null ? { hasta: t.hasta } : {}) })));
+  }
+
+  async abiertasEnCamion(empresaId: string, camionId: string, fecha: string): Promise<number> {
+    const r = await this.db.selectFrom('jornada').select((eb) => eb.fn.countAll<string>().as('n')).where('empresa_id', '=', empresaId).where('camion_id', '=', camionId).where('fecha_reparto', '=', fecha).where('hasta', 'is', null).executeTakeFirst();
+    return Number(r?.n ?? 0);
   }
 
   async terminar(empresaId: string, usuarioId: string, ahora: Date): Promise<boolean> {

@@ -482,5 +482,21 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
     return r.ok;
   };
 
-  return { ver, planificar, operar, reordenarTrasVisita };
+  /**
+   * Una «marca» barata del estado de la ruta del camión (sin calcular horas ni pedir tiempos por calles): cambia cuando alguien mueve la ruta,
+   * carga una factura o avisa una entrega. Las personas que comparten el camión la consultan seguido y recargan la ruta solo cuando cambió (ADR 0045).
+   */
+  const marca = async (actor: Usuario, entrada: { camionId: string; fecha: string }): Promise<Result<{ readonly marca: string }, ErrorApp>> => {
+    if (!esFechaValida(entrada.fecha)) return err(errorApp('VALIDACION', 'La fecha no es válida.'));
+    const propio = await resolverCamion(actor, entrada.camionId);
+    if (!propio.ok) return propio;
+    const [guardada, todas] = await Promise.all([
+      rutas.obtener(actor.empresaId, entrada.camionId, entrada.fecha),
+      facturas.listar(actor.empresaId, { fecha: entrada.fecha, camionId: entrada.camionId, incluirHechas: true }),
+    ]);
+    const cuenta = (estado: string): number => todas.filter((f) => f.estado === estado).length;
+    return ok({ marca: `v${guardada?.version ?? 0}.e${cuenta('entregada')}.n${cuenta('no_entregada')}.p${cuenta('pendiente')}.a${cuenta('anulada')}` });
+  };
+
+  return { ver, marca, planificar, operar, reordenarTrasVisita };
 };

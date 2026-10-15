@@ -89,6 +89,24 @@ export const rutasDelDia = ({ app, casos, guard }: ContextoRutas): void => {
     },
   );
 
+  a.get(
+    '/v1/rutas/marca',
+    {
+      preHandler: guard('rutas:leer'),
+      schema: {
+        tags: ['rutas'],
+        summary: 'Marca liviana del estado de la ruta del camión (cambia si alguien la mueve, carga una factura o avisa una entrega): quienes comparten el camión la consultan seguido y recargan la ruta solo si cambió',
+        security: SEGURIDAD,
+        querystring: z.object({ camionId: z.uuid(), fecha }),
+        response: { 200: z.object({ marca: z.string() }), ...RESPUESTAS_ERROR },
+      },
+    },
+    async (req, reply) => {
+      const r = await casos.marcaDeRuta(actor(req), req.query);
+      return r.ok ? reply.send(r.value) : enviarError(reply, r.error);
+    },
+  );
+
   a.post(
     '/v1/rutas/planificar',
     {

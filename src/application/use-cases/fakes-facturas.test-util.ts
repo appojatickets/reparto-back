@@ -45,6 +45,7 @@ export const fakeJornadas = (activa?: Jornada) =>
   ({
     activa: vi.fn<JornadaRepository['activa']>(() => Promise.resolve(activa)),
     iniciar: vi.fn<JornadaRepository['iniciar']>((_e, usuarioId, camionId, fecha, ahora) => Promise.resolve(ok({ ...JORNADA, usuarioId, fecha, desde: ahora, camion: { id: camionId, patente: 'ABCD12' } }))),
+    abiertasEnCamion: vi.fn<JornadaRepository['abiertasEnCamion']>(() => Promise.resolve(0)),
     terminar: vi.fn<JornadaRepository['terminar']>(() => Promise.resolve(true)),
     ultimaDelCamion: vi.fn<JornadaRepository['ultimaDelCamion']>(() => Promise.resolve(activa && { desde: activa.desde })),
   }) satisfies JornadaRepository;

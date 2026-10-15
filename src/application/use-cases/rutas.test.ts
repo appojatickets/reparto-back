@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { err } from '../../domain/shared/result.js';
 import { crearReloj, usuarioDe } from './fakes.test-util.js';
-import { fakeJornadas, fakeRegistro, resolverDePrueba } from './fakes-facturas.test-util.js';
+import { facturaDe, fakeJornadas, fakeRegistro, resolverDePrueba } from './fakes-facturas.test-util.js';
 import { CAMION_ID, CONFIG, FECHA, fakeCamionesRuta, fakeEmpresas, fakeEntregasRuta, fakeFacturasRuta, fakeRutas, paradaDe } from './fakes-rutas.test-util.js';
 import { crearServiciosDeRuta } from './rutas.js';
 
@@ -38,6 +38,27 @@ describe('ver ruta', () => {
     const camion = await montar().ver(despachador, { camionId: 'otro', fecha: FECHA });
     expect(!camion.ok && camion.error.codigo).toBe('NO_ENCONTRADO');
     const fecha = await montar().ver(despachador, { camionId: CAMION_ID, fecha: '2026-13-40' });
+    expect(!fecha.ok && fecha.error.codigo).toBe('VALIDACION');
+  });
+});
+
+describe('marca de la ruta (para que dos personas del mismo camión se vean al instante)', () => {
+  it('cambia cuando la ruta se mueve o cuando se entrega algo, sin calcular horas', async () => {
+    const s = montar();
+    const antes = await s.marca(despachador, entrada);
+    expect(antes.ok && antes.value.marca).toBe('v0.e0.n0.p0.a0');
+    await s.planificar(despachador, entrada);
+    s.facturas.listar.mockClear();
+    s.facturas.listar.mockResolvedValueOnce([
+      facturaDe({ id: 'f-A', estado: 'entregada' }),
+      facturaDe({ id: 'f-B', estado: 'pendiente' }),
+    ]);
+    const despues = await s.marca(despachador, entrada);
+    expect(despues.ok && despues.value.marca).toBe('v1.e1.n0.p1.a0');
+  });
+
+  it('exige una fecha válida y respeta el camión del chofer', async () => {
+    const fecha = await montar().marca(despachador, { camionId: CAMION_ID, fecha: '2026-13-40' });
     expect(!fecha.ok && fecha.error.codigo).toBe('VALIDACION');
   });
 });

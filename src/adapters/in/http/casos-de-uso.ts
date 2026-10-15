@@ -91,6 +91,7 @@ export type CasosDeUso = {
   readonly listarFacturas: ReturnType<typeof crearListarFacturas>;
   readonly actualizarFactura: ReturnType<typeof crearActualizarFactura>;
   readonly verRuta: ReturnType<typeof crearServiciosDeRuta>['ver'];
+  readonly marcaDeRuta: ReturnType<typeof crearServiciosDeRuta>['marca'];
   readonly planificarRuta: ReturnType<typeof crearServiciosDeRuta>['planificar'];
   readonly operarRuta: ReturnType<typeof crearServiciosDeRuta>['operar'];
   readonly miJornada: ReturnType<typeof crearMiJornada>;

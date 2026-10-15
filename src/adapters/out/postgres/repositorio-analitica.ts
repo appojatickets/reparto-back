@@ -43,14 +43,14 @@ export class PostgresAnaliticaRepository implements AnaliticaRepository {
   async calidad(empresaId: string, desde: Date, limite: number): Promise<readonly CalidadDeRuta[]> {
     const filas = await this.db
       .selectFrom('jornada_resumen')
-      .select([sql<string>`to_char(fecha_reparto, 'YYYY-MM-DD')`.as('fecha'), 'camion_id', 'dist_sugerida_m', 'dist_real_m', 'inversiones', 'origen_orden', 'cambios_manuales'])
+      .select([sql<string>`to_char(fecha_reparto, 'YYYY-MM-DD')`.as('fecha'), 'camion_id', 'dist_sugerida_m', 'dist_real_m', 'inversiones', 'origen_orden', 'cambios_manuales', 'orden_sugerido', 'orden_salida', 'orden_entregado', 'inversiones_salida'])
       .where('empresa_id', '=', empresaId)
       .where('creado_en', '>=', desde)
       .where('dist_sugerida_m', 'is not', null)
       .orderBy('fecha_reparto', 'desc')
       .limit(limite)
       .execute();
-    return filas.flatMap((f) => (f.dist_sugerida_m !== null && f.dist_real_m !== null && f.inversiones !== null ? [{ fecha: f.fecha, camionId: f.camion_id, distSugeridaM: f.dist_sugerida_m, distRealM: f.dist_real_m, inversiones: f.inversiones, origen: f.origen_orden ?? 'sistema', cambios: f.cambios_manuales ?? 0 }] : []));
+    return filas.flatMap((f) => (f.dist_sugerida_m !== null && f.dist_real_m !== null && f.inversiones !== null ? [{ fecha: f.fecha, camionId: f.camion_id, distSugeridaM: f.dist_sugerida_m, distRealM: f.dist_real_m, inversiones: f.inversiones, origen: f.origen_orden ?? 'sistema', cambios: f.cambios_manuales ?? 0, ...(f.orden_entregado !== null && f.inversiones_salida !== null ? { entregadas: f.orden_entregado.length, inversionesSalida: f.inversiones_salida } : {}), ...(f.orden_sugerido !== null && f.orden_salida !== null ? { salioComoSugeria: f.orden_salida.length === f.orden_sugerido.length && f.orden_salida.every((id, i) => id === f.orden_sugerido?.[i]) } : {}) }] : []));
   }
 
   async etiquetasDeLocales(empresaId: string, ids: readonly string[]): Promise<ReadonlyMap<string, EtiquetaLocal>> {

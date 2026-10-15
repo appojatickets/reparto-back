@@ -248,7 +248,29 @@ export type CalidadJornada = {
   readonly origen: 'sistema' | 'chofer';
   /** Cuántas veces una persona movió paradas a mano ese día (subir, bajar, arrastrar, ir primero). 0 = nadie corrigió nada. */
   readonly cambios: number;
+  /**
+   * Las tres rutas del día (ADR 0045): la que sugirió el sistema, la que quedó al salir (con lo que la persona acomodó a mano, si lo hizo) y la
+   * que de verdad se entregó, en el orden en que se avisó cada ENTREGADO. Se guardan completas para analizar después cuánto se aparta lo
+   * entregado de lo ordenado, sea automático o manual.
+   */
+  readonly ordenSugerido: readonly string[];
+  readonly ordenSalida: readonly string[];
+  readonly ordenEntregado: readonly string[];
+  /** Pares de paradas que se entregaron en distinto orden que el que había al salir. */
+  readonly inversionesSalida: number;
 };
+
+/**
+ * El camión es dueño de la ruta y varias personas pueden trabajarlo a la vez: la jornada que queda con el resumen es la de quien cerró último, pero lo hecho
+ * en el día es del equipo. A cada jornada se le adelanta el inicio al de los compañeros que coincidieron con ella en el mismo camión y día.
+ */
+export const jornadasDelEquipo = (jornadas: readonly JornadaObs[]): readonly JornadaObs[] =>
+  jornadas.map((j) => {
+    const fin = (x: JornadaObs): number => (x.hasta ? ms(x.hasta) : Infinity);
+    const coinciden = jornadas.filter((o) => o.camionId === j.camionId && o.fecha === j.fecha && ms(o.desde) <= fin(j) && fin(o) >= ms(j.desde));
+    const desde = new Date(Math.min(ms(j.desde), ...coinciden.map((o) => ms(o.desde))));
+    return { ...j, desde };
+  });
 
 const MOVIMIENTOS_A_MANO = new Set(['subir', 'bajar', 'mover', 'primero']);
 const LIMITE_REGRESO_ESTIMADO_MIN = 23 * 60 + 59;
@@ -315,7 +337,24 @@ export const calidadDeJornada = (j: JornadaObs, eventos: readonly EventoObs[], o
       if ((rangoD.get(ordenS[a] ?? '') ?? 0) > (rangoD.get(ordenS[b] ?? '') ?? 0)) inversiones += 1;
     }
   }
-  return { jornadaId: j.id, comparadas: comunes.size, distSugeridaM: largoM(ordenS, coord, deposito), distRealM: largoM(ordenD, coord, deposito), inversiones, origen: delChofer ? 'chofer' : 'sistema', cambios };
+  // Lo entregado de verdad (no cerrado ni «vuelvo más tarde») frente a la lista que había al salir.
+  const entregados = new Map<string, number>();
+  for (const e of evs) if (e.tipo === 'entregado') entregados.set(e.facturaId, Math.min(entregados.get(e.facturaId) ?? Infinity, ms(e.creadoEn)));
+  const ordenEntregado = [...entregados.entries()].sort((a, b) => a[1] - b[1]).map(([id]) => id);
+  const alSalir = [...ops].reverse().find((o) => ms(o.creadoEn) <= salida) ?? sugerida;
+  const ordenSalida = alSalir.orden;
+  const rangoE = new Map(ordenEntregado.map((id, i) => [id, i]));
+  const deLaSalida = ordenSalida.filter((id) => rangoE.has(id));
+  let inversionesSalida = 0;
+  for (let a = 0; a < deLaSalida.length; a += 1) {
+    for (let b = a + 1; b < deLaSalida.length; b += 1) {
+      if ((rangoE.get(deLaSalida[a] ?? '') ?? 0) > (rangoE.get(deLaSalida[b] ?? '') ?? 0)) inversionesSalida += 1;
+    }
+  }
+  return {
+    jornadaId: j.id, comparadas: comunes.size, distSugeridaM: largoM(ordenS, coord, deposito), distRealM: largoM(ordenD, coord, deposito), inversiones, origen: delChofer ? 'chofer' : 'sistema', cambios,
+    ordenSugerido: base, ordenSalida, ordenEntregado, inversionesSalida,
+  };
 };
 
 // ---------------------------------------------------------------- pines corregidos por las visitas

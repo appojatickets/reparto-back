@@ -1,5 +1,5 @@
 import {
-  atenciones, calidadDeJornada, capacidadAprendida, cierresFrecuentes, completarConVisitas, pinesDudosos, pinesSugeridos, resumenesDelDia, ritmoAprendido, seguimientoDeLaRuta, servicioAprendido, tramosDeViaje, visitasDeducidas, type LocalObs, type ParametroAprendido,
+  atenciones, calidadDeJornada, jornadasDelEquipo, capacidadAprendida, cierresFrecuentes, completarConVisitas, pinesDudosos, pinesSugeridos, resumenesDelDia, ritmoAprendido, seguimientoDeLaRuta, servicioAprendido, tramosDeViaje, visitasDeducidas, type LocalObs, type ParametroAprendido,
 } from '../../domain/aprendizaje/analisis.js';
 import { distanciaMetros } from '../../domain/importacion/propuesta-pin.js';
 import type { AprendizajeRepository, ResumenAnalisis } from '../ports/out/aprendizaje.js';
@@ -33,7 +33,7 @@ export const crearAnalizarAprendizaje = ({ aprendizaje, empresas, pines, clock }
 
     const config = await empresas.obtenerConfig(empresaId);
     const deposito = config?.deposito;
-    const calidad = deposito ? datos.jornadas.flatMap((j) => { const q = calidadDeJornada(j, visitas.eventos, datos.operaciones, locales, deposito); return q ? [q] : []; }) : [];
+    const calidad = deposito ? jornadasDelEquipo(datos.jornadas).flatMap((j) => { const q = calidadDeJornada(j, visitas.eventos, datos.operaciones, locales, deposito); return q ? [q] : []; }) : [];
     if (calidad.length > 0) await aprendizaje.guardarCalidad(empresaId, calidad, iniciadoEn);
 
     // Pines que las visitas contradicen: solo se proponen (una persona decide) y sin repetir lo que ya está pendiente.

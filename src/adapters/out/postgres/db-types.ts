@@ -203,6 +203,10 @@ export type Tabla = {
     inversiones: number | null;
     origen_orden: 'sistema' | 'chofer' | null;
     cambios_manuales: number | null;
+    orden_sugerido: string[] | null;
+    orden_salida: string[] | null;
+    orden_entregado: string[] | null;
+    inversiones_salida: number | null;
     analizado_en: Date | null;
     creado_en: Generated<Date>;
   };

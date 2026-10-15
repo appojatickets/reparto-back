@@ -24,6 +24,11 @@ export type CalidadDeRuta = {
   readonly origen: 'sistema' | 'chofer';
   /** Cuántas veces se movió una parada a mano ese día. */
   readonly cambios: number;
+  /** Cuántas paradas se entregaron ese día y cuántos pares quedaron en distinto orden que el que había al salir (con lo acomodado a mano). Null si el día es anterior a este registro. */
+  readonly entregadas?: number;
+  readonly inversionesSalida?: number;
+  /** El orden con que salió el camión es el mismo que sugirió el sistema (nadie lo acomodó). */
+  readonly salioComoSugeria?: boolean;
 };
 
 export type EtiquetaLocal = { readonly razonSocial: string; readonly direccion: string; readonly comuna: string };
