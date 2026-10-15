@@ -1,3 +1,4 @@
+import type { BancoDePruebasFicha } from '../../../domain/aprendizaje/ficha-aprendida.js';
 import type { ValidacionCierres } from '../../../domain/aprendizaje/cierres-gps.js';
 import type { CalidadJornada, CierreFrecuente, EventoObs, JornadaObs, LocalObs, OperacionObs, ParametroAprendido, PinDudoso, PosicionObs, SeguimientoRuta } from '../../../domain/aprendizaje/analisis.js';
 
@@ -28,6 +29,8 @@ export type ResumenAnalisis = {
   readonly cierresFrecuentes: readonly CierreFrecuente[];
   /** El cierre deducido del recorrido frente a los botones (ADR 0046). Ausente en análisis guardados antes de este registro. */
   readonly cierresGps?: ValidacionCierres;
+  /** ¿La ficha aprendida de cada local acierta? Se prueba con lo ya ocurrido, mirando solo días anteriores (ADR 0049). */
+  readonly bancoFicha?: BancoDePruebasFicha;
 };
 
 export type EjecucionAnalisis = { readonly iniciadoEn: Date; readonly terminadoEn: Date; readonly resumen: ResumenAnalisis };

@@ -1,3 +1,4 @@
+import type { BancoDePruebasFicha } from '../../domain/aprendizaje/ficha-aprendida.js';
 import type { CasoCierre, ValidacionCierres } from '../../domain/aprendizaje/cierres-gps.js';
 import type { ParametroAprendido } from '../../domain/aprendizaje/analisis.js';
 import type { AnaliticaRepository, CalidadDeRuta, Cobertura, DiaDeTrabajo, EtiquetaLocal } from '../ports/out/analitica.js';
@@ -34,6 +35,8 @@ export type PanelAnalitica = {
   readonly pinesDudosos: readonly PinDudosoConEtiqueta[];
   /** El cierre que deduce el GPS frente al botón CERRADO: sirve para validar si la hipótesis se sostiene. */
   readonly cierresGps?: CierresGpsConEtiquetas;
+  /** Si la ficha aprendida de los locales acierta (cierres anticipados y hora habitual), probada solo con días anteriores. */
+  readonly bancoFicha?: BancoDePruebasFicha;
   readonly ultimaEjecucion?: EjecucionAnalisis;
 };
 
@@ -70,6 +73,7 @@ export const crearVerAnalitica = ({ analitica, aprendizaje, camiones, clientes, 
       cierres: cierres.map((c) => { const e = etiquetas.get(c.localId); return { localId: c.localId, cerrados: c.cerrados, intentos: c.intentos, horasCerrado: c.horasCerrado, ...(e ? { etiqueta: e } : {}) }; }),
       pinesDudosos: dudosos.map((d) => { const e = etiquetas.get(d.localId); return { ...d, ...(e ? { etiqueta: e } : {}) }; }),
       ...(ultima?.resumen.cierresGps ? { cierresGps: { ...ultima.resumen.cierresGps, casos: ultima.resumen.cierresGps.casos.map((c) => { const e = etiquetas.get(c.localId); const camion = nombreCamion.get(c.camionId); return { ...c, ...(camion !== undefined ? { camion } : {}), ...(e ? { etiqueta: e } : {}) }; }) } } : {}),
+      ...(ultima?.resumen.bancoFicha ? { bancoFicha: ultima.resumen.bancoFicha } : {}),
       ...(ultima ? { ultimaEjecucion: ultima } : {}),
     };
   };

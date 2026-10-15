@@ -27,6 +27,8 @@ export interface EntregaRepository {
   visitasConGps(empresaId: string, localId: string, limite: number): Promise<readonly VisitaConGps[]>;
   /** Lo mismo para varios locales a la vez: hasta `porLocal` entregas por local (las más recientes), en una sola consulta. */
   visitasConGpsDeLocales(empresaId: string, localIds: readonly string[], porLocal: number): Promise<ReadonlyMap<string, readonly VisitaConGps[]>>;
+  /** Los avisos de entrega y de cerrado de ese local (de más antiguo a más reciente): con eso se arma lo que se aprendió de él. */
+  eventosDeLocal(empresaId: string, localId: string, desde: Date): Promise<readonly { readonly tipo: string; readonly motivo?: string; readonly creadoEn: Date }[]>;
   /** De estas facturas, las que ya tienen un aviso de llegada. */
   conLlegada(empresaId: string, facturaIds: readonly string[]): Promise<ReadonlySet<string>>;
 }

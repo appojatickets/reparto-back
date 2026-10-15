@@ -15,6 +15,7 @@ import { PostgresContribucionesRepository } from './adapters/out/postgres/reposi
 import { crearVerificarPin } from './application/use-cases/pin-verificado.js';
 import { crearRevisarPines } from './application/use-cases/revisar-pines.js';
 import { crearVerAnalitica } from './application/use-cases/analitica.js';
+import { crearVerFichaAprendida } from './application/use-cases/ficha-aprendida.js';
 import { crearListarEmergencias, crearRegistrarEmergencia } from './application/use-cases/emergencias.js';
 import { crearVerificarPinesRespaldados } from './application/use-cases/verificar-pines-respaldados.js';
 import { crearAnalizarAprendizaje } from './application/use-cases/analizar-aprendizaje.js';
@@ -209,6 +210,7 @@ const casos: CasosDeUso = {
   verAnalitica: crearVerAnalitica({ analitica, aprendizaje, camiones, clientes, clock }),
   ejecutarAnalisis: analizarAprendizaje,
   registrarPosiciones: crearRegistrarPosiciones({ registro, rutas, entregas, resolverCamion, clock }),
+  verFichaAprendida: crearVerFichaAprendida({ clientes, entregas, clock }),
   registrarEmergencia: crearRegistrarEmergencia({ emergencias, resolverCamion }),
   listarEmergencias: crearListarEmergencias({ emergencias, resolverCamion }),
   registrarEvento: crearRegistrarEvento({ facturas, entregas, clientes, rutas, resolverCamion, reloj: clock, reordenarTrasVisita: serviciosDeRuta.reordenarTrasVisita }),

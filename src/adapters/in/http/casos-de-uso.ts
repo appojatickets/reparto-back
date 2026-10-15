@@ -21,6 +21,7 @@ import type { crearRevisarPines } from '../../../application/use-cases/revisar-p
 import type { RegistrarPosiciones } from '../../../application/use-cases/seguimiento.js';
 import type { crearIniciarJornada, crearMiJornada, crearTerminarJornada } from '../../../application/use-cases/jornada.js';
 import type { crearRegistrarEvento } from '../../../application/use-cases/entregas.js';
+import type { crearVerFichaAprendida } from '../../../application/use-cases/ficha-aprendida.js';
 import type { crearListarEmergencias, crearRegistrarEmergencia } from '../../../application/use-cases/emergencias.js';
 import type { crearAutenticarUsuario } from '../../../application/use-cases/autenticar-usuario.js';
 import type { crearBuscarClientes } from '../../../application/use-cases/buscar-clientes.js';
@@ -99,6 +100,7 @@ export type CasosDeUso = {
   readonly iniciarJornada: ReturnType<typeof crearIniciarJornada>;
   readonly terminarJornada: ReturnType<typeof crearTerminarJornada>;
   readonly registrarEvento: ReturnType<typeof crearRegistrarEvento>;
+  readonly verFichaAprendida: ReturnType<typeof crearVerFichaAprendida>;
   readonly registrarEmergencia: ReturnType<typeof crearRegistrarEmergencia>;
   readonly listarEmergencias: ReturnType<typeof crearListarEmergencias>;
   readonly registrarPosiciones: RegistrarPosiciones;

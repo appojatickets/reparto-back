@@ -147,6 +147,33 @@ export const rutasClientes = ({ app, casos, guard }: ContextoRutas): void => {
     },
   );
 
+  const rangoHabitual = z.object({ desdeMin: z.number(), hastaMin: z.number(), medianaMin: z.number(), entregas: z.number() });
+  a.get(
+    '/v1/locales/:id/ficha-aprendida',
+    {
+      preHandler: guard('clientes:leer'),
+      schema: {
+        tags: ['clientes'],
+        summary: 'Lo que se aprendió del local con sus entregas: a qué hora suele entregarse (rango, también por día de la semana) y con qué probabilidad está cerrado en cada franja de 2 horas',
+        security: SEGURIDAD,
+        params: idParam,
+        response: {
+          200: z.object({
+            visitas: z.number(), entregas: z.number(), cerrados: z.number(), confianza: z.number(),
+            horaHabitual: rangoHabitual.optional(),
+            porDiaSemana: z.array(rangoHabitual.extend({ diaSemana: z.number() })),
+            franjas: z.array(z.object({ desdeHora: z.number(), hastaHora: z.number(), visitas: z.number(), cerrados: z.number(), pCerrado: z.number() })),
+          }),
+          ...RESPUESTAS_ERROR,
+        },
+      },
+    },
+    async (req, reply) => {
+      const r = await casos.verFichaAprendida(actor(req), req.params.id);
+      return r.ok ? reply.send({ ...r.value, porDiaSemana: [...r.value.porDiaSemana], franjas: [...r.value.franjas] }) : enviarError(reply, r.error);
+    },
+  );
+
   a.delete(
     '/v1/locales/:id',
     {

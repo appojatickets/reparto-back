@@ -75,6 +75,19 @@ export class PostgresEntregaRepository implements EntregaRepository {
     return salida;
   }
 
+  async eventosDeLocal(empresaId: string, localId: string, desde: Date): Promise<readonly { readonly tipo: string; readonly motivo?: string; readonly creadoEn: Date }[]> {
+    const filas = await this.db
+      .selectFrom('entrega_evento')
+      .select(['tipo', 'motivo', 'creado_en'])
+      .where('empresa_id', '=', empresaId)
+      .where('local_id', '=', localId)
+      .where('tipo', 'in', ['entregado', 'cerrado', 'no_entregado'])
+      .where('creado_en', '>=', desde)
+      .orderBy('creado_en')
+      .execute();
+    return filas.map((f) => ({ tipo: f.tipo, creadoEn: f.creado_en, ...(f.motivo !== null ? { motivo: f.motivo } : {}) }));
+  }
+
   async visitasConGps(empresaId: string, localId: string, limite: number): Promise<readonly VisitaConGps[]> {
     const filas = await this.db
       .selectFrom('entrega_evento')

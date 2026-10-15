@@ -1,12 +1,19 @@
 import {
   atenciones, calidadDeJornada, jornadasDelEquipo, capacidadAprendida, cierresFrecuentes, completarConVisitas, pinesDudosos, pinesSugeridos, resumenesDelDia, ritmoAprendido, seguimientoDeLaRuta, servicioAprendido, tramosDeViaje, visitasDeducidas, type LocalObs, type ParametroAprendido,
 } from '../../domain/aprendizaje/analisis.js';
+import { aObservaciones, bancoDePruebasDeFicha } from '../../domain/aprendizaje/ficha-aprendida.js';
 import { validarCierresPorGps } from '../../domain/aprendizaje/cierres-gps.js';
 import { distanciaMetros } from '../../domain/importacion/propuesta-pin.js';
 import type { AprendizajeRepository, ResumenAnalisis } from '../ports/out/aprendizaje.js';
 import type { Clock } from '../ports/out/clock.js';
 import type { EmpresaRepository } from '../ports/out/empresa.js';
 import type { NuevaPropuestaPin, PropuestaPinRepository } from '../ports/out/pines.js';
+
+const porClaveLocal = <T extends { readonly localId: string }>(items: readonly T[]): Map<string, T[]> => {
+  const m = new Map<string, T[]>();
+  for (const it of items) m.set(it.localId, [...(m.get(it.localId) ?? []), it]);
+  return m;
+};
 
 /** Se mira lo de los últimos 90 días: lo viejo ya no representa cómo se reparte hoy. */
 export const VENTANA_ANALISIS_DIAS = 90;
@@ -57,6 +64,7 @@ export const crearAnalizarAprendizaje = ({ aprendizaje, empresas, pines, clock }
       pinesSugeridos: sugeridos.length, pinesProponidos, seguimientoRuta: seguimientoDeLaRuta(datos.eventos, datos.operaciones), llegadasDeducidas: visitas.llegadasDeducidas,
       pinesDudosos: pinesDudosos(datos.eventos, locales).slice(0, 20), cierresFrecuentes: cierresFrecuentes(datos.eventos).slice(0, 20),
       cierresGps: validarCierresPorGps(datos.eventos, locales, datos.posiciones),
+      bancoFicha: bancoDePruebasDeFicha(new Map([...porClaveLocal(datos.eventos)].map(([id, evs]) => [id, aObservaciones(evs)] as const))),
     };
     await aprendizaje.registrarEjecucion(empresaId, { iniciadoEn, terminadoEn: clock.now(), resumen });
     return resumen;

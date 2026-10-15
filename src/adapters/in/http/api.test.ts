@@ -85,6 +85,7 @@ const RUTAS: RutaProtegida[] = [
   { metodo: 'POST', url: '/v1/emergencias', body: { tipo: 'vulcanizacion', lat: -33.45, lng: -70.66 }, permiso: 'entregas:registrar', caso: 'registrarEmergencia' },
   { metodo: 'GET', url: '/v1/emergencias?fecha=2026-10-05', permiso: 'rutas:leer', caso: 'listarEmergencias' },
   { metodo: 'GET', url: `/v1/rutas/marca?camionId=${UUID}&fecha=2026-10-05`, permiso: 'rutas:leer', caso: 'marcaDeRuta' },
+  { metodo: 'GET', url: `/v1/locales/${UUID}/ficha-aprendida`, permiso: 'clientes:leer', caso: 'verFichaAprendida' },
   { metodo: 'GET', url: '/v1/analitica', permiso: 'metricas:leer', caso: 'verAnalitica' },
   { metodo: 'POST', url: '/v1/analitica/ejecutar', permiso: 'metricas:leer', caso: 'ejecutarAnalisis' },
   { metodo: 'PUT', url: `/v1/locales/${UUID}/pin/verificacion`, body: { verificado: true }, permiso: 'pines:verificar', caso: 'verificarPin' },

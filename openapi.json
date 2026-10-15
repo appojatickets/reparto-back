@@ -5520,6 +5520,344 @@
         }
       }
     },
+    "/v1/locales/{id}/ficha-aprendida": {
+      "get": {
+        "summary": "Lo que se aprendió del local con sus entregas: a qué hora suele entregarse (rango, también por día de la semana) y con qué probabilidad está cerrado en cada franja de 2 horas",
+        "tags": [
+          "clientes"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "visitas": {
+                      "type": "number"
+                    },
+                    "entregas": {
+                      "type": "number"
+                    },
+                    "cerrados": {
+                      "type": "number"
+                    },
+                    "confianza": {
+                      "type": "number"
+                    },
+                    "horaHabitual": {
+                      "type": "object",
+                      "properties": {
+                        "desdeMin": {
+                          "type": "number"
+                        },
+                        "hastaMin": {
+                          "type": "number"
+                        },
+                        "medianaMin": {
+                          "type": "number"
+                        },
+                        "entregas": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "desdeMin",
+                        "hastaMin",
+                        "medianaMin",
+                        "entregas"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "porDiaSemana": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "desdeMin": {
+                            "type": "number"
+                          },
+                          "hastaMin": {
+                            "type": "number"
+                          },
+                          "medianaMin": {
+                            "type": "number"
+                          },
+                          "entregas": {
+                            "type": "number"
+                          },
+                          "diaSemana": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "desdeMin",
+                          "hastaMin",
+                          "medianaMin",
+                          "entregas",
+                          "diaSemana"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "franjas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "desdeHora": {
+                            "type": "number"
+                          },
+                          "hastaHora": {
+                            "type": "number"
+                          },
+                          "visitas": {
+                            "type": "number"
+                          },
+                          "cerrados": {
+                            "type": "number"
+                          },
+                          "pCerrado": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "desdeHora",
+                          "hastaHora",
+                          "visitas",
+                          "cerrados",
+                          "pCerrado"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "visitas",
+                    "entregas",
+                    "cerrados",
+                    "confianza",
+                    "porDiaSemana",
+                    "franjas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "codigo": {
+                      "type": "string"
+                    },
+                    "mensaje": {
+                      "type": "string"
+                    },
+                    "detalle": {}
+                  },
+                  "required": [
+                    "codigo",
+                    "mensaje"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/locales": {
       "get": {
         "summary": "Locales con los datos de su cliente y cuántas entregas tiene: de una comuna o los que coinciden con un texto (razón social, RUT o dirección); primero los de pin por verificar",
@@ -20785,6 +21123,60 @@
                       ],
                       "additionalProperties": false
                     },
+                    "bancoFicha": {
+                      "type": "object",
+                      "properties": {
+                        "cierre": {
+                          "type": "object",
+                          "properties": {
+                            "evaluadas": {
+                              "type": "number"
+                            },
+                            "cerradas": {
+                              "type": "number"
+                            },
+                            "anticipadas": {
+                              "type": "number"
+                            },
+                            "falsasAlarmas": {
+                              "type": "number"
+                            },
+                            "aciertos": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "evaluadas",
+                            "cerradas",
+                            "anticipadas",
+                            "falsasAlarmas",
+                            "aciertos"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "hora": {
+                          "type": "object",
+                          "properties": {
+                            "evaluadas": {
+                              "type": "number"
+                            },
+                            "dentroDelRango": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "evaluadas",
+                            "dentroDelRango"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "cierre",
+                        "hora"
+                      ],
+                      "additionalProperties": false
+                    },
                     "ultimaEjecucion": {
                       "type": "object",
                       "properties": {
@@ -20998,6 +21390,60 @@
                                 "soloGpsConfirmados",
                                 "soloBoton",
                                 "casos"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "bancoFicha": {
+                              "type": "object",
+                              "properties": {
+                                "cierre": {
+                                  "type": "object",
+                                  "properties": {
+                                    "evaluadas": {
+                                      "type": "number"
+                                    },
+                                    "cerradas": {
+                                      "type": "number"
+                                    },
+                                    "anticipadas": {
+                                      "type": "number"
+                                    },
+                                    "falsasAlarmas": {
+                                      "type": "number"
+                                    },
+                                    "aciertos": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "evaluadas",
+                                    "cerradas",
+                                    "anticipadas",
+                                    "falsasAlarmas",
+                                    "aciertos"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "hora": {
+                                  "type": "object",
+                                  "properties": {
+                                    "evaluadas": {
+                                      "type": "number"
+                                    },
+                                    "dentroDelRango": {
+                                      "type": "number"
+                                    }
+                                  },
+                                  "required": [
+                                    "evaluadas",
+                                    "dentroDelRango"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "cierre",
+                                "hora"
                               ],
                               "additionalProperties": false
                             }
@@ -21454,6 +21900,60 @@
                         "soloGpsConfirmados",
                         "soloBoton",
                         "casos"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "bancoFicha": {
+                      "type": "object",
+                      "properties": {
+                        "cierre": {
+                          "type": "object",
+                          "properties": {
+                            "evaluadas": {
+                              "type": "number"
+                            },
+                            "cerradas": {
+                              "type": "number"
+                            },
+                            "anticipadas": {
+                              "type": "number"
+                            },
+                            "falsasAlarmas": {
+                              "type": "number"
+                            },
+                            "aciertos": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "evaluadas",
+                            "cerradas",
+                            "anticipadas",
+                            "falsasAlarmas",
+                            "aciertos"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "hora": {
+                          "type": "object",
+                          "properties": {
+                            "evaluadas": {
+                              "type": "number"
+                            },
+                            "dentroDelRango": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "evaluadas",
+                            "dentroDelRango"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "cierre",
+                        "hora"
                       ],
                       "additionalProperties": false
                     }

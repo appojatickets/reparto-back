@@ -75,6 +75,7 @@ export const casosVacios = (): CasosDeUso => {
     verAnalitica: sinImplementar,
     ejecutarAnalisis: sinImplementar,
     registrarEvento: sinImplementar,
+    verFichaAprendida: sinImplementar,
     registrarEmergencia: sinImplementar,
     listarEmergencias: sinImplementar,
     obtenerHorario: sinImplementar,
