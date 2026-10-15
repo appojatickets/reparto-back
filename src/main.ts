@@ -15,6 +15,7 @@ import { PostgresContribucionesRepository } from './adapters/out/postgres/reposi
 import { crearVerificarPin } from './application/use-cases/pin-verificado.js';
 import { crearRevisarPines } from './application/use-cases/revisar-pines.js';
 import { crearVerAnalitica } from './application/use-cases/analitica.js';
+import { crearVerificarPinesRespaldados } from './application/use-cases/verificar-pines-respaldados.js';
 import { crearAnalizarAprendizaje } from './application/use-cases/analizar-aprendizaje.js';
 import { crearRegistrarPosiciones } from './application/use-cases/seguimiento.js';
 import { crearRegistrarEvento } from './application/use-cases/entregas.js';
@@ -108,7 +109,13 @@ const analitica = new PostgresAnaliticaRepository(db);
 // Tiempos por calles: solo si hay clave de OpenRouteService; sin ella la ruta mide en línea recta.
 const viajes = crearViajesPorCalle({ proveedor: env.ORS_API_KEY ? crearProveedorOrs(env.ORS_API_KEY) : undefined, cache: new PostgresCacheDeViajes(db) });
 const serviciosDeRuta = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas, jornadas, registro, aprendizaje, viajes, clock, resolverCamion, programarPines });
-const analizarAprendizaje = crearAnalizarAprendizaje({ aprendizaje, empresas, pines, clock });
+const analizarSoloAprendizaje = crearAnalizarAprendizaje({ aprendizaje, empresas, pines, clock });
+const verificarRespaldados = crearVerificarPinesRespaldados({ clientes, entregas, clock });
+// Antes de analizar se verifican solos los pines que dos entregas parecidas ya respaldan; si eso falla, el análisis sigue igual.
+const analizarAprendizaje: typeof analizarSoloAprendizaje = async (empresaId) => {
+  await verificarRespaldados(empresaId).catch((e: unknown) => { console.error('No se pudieron verificar los pines respaldados', e); });
+  return analizarSoloAprendizaje(empresaId);
+};
 
 // El analizador corre en segundo plano: poco después de terminar una ruta (con calma, juntando varias) y cada pocas horas. Nunca bloquea una petición.
 const CADA_HORAS = 3;
