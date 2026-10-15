@@ -1,3 +1,4 @@
+import type { ValidacionCierres } from '../../../domain/aprendizaje/cierres-gps.js';
 import type { CalidadJornada, CierreFrecuente, EventoObs, JornadaObs, LocalObs, OperacionObs, ParametroAprendido, PinDudoso, PosicionObs, SeguimientoRuta } from '../../../domain/aprendizaje/analisis.js';
 
 /** Todo lo registrado desde `desde`, listo para que el analizador lo recorra (el volumen es chico: unas decenas de avisos por camión y día). */
@@ -25,6 +26,8 @@ export type ResumenAnalisis = {
   readonly pinesDudosos: readonly PinDudoso[];
   /** Los locales encontrados cerrados con más frecuencia (los 20 primeros). */
   readonly cierresFrecuentes: readonly CierreFrecuente[];
+  /** El cierre deducido del recorrido frente a los botones (ADR 0046). Ausente en análisis guardados antes de este registro. */
+  readonly cierresGps?: ValidacionCierres;
 };
 
 export type EjecucionAnalisis = { readonly iniciadoEn: Date; readonly terminadoEn: Date; readonly resumen: ResumenAnalisis };

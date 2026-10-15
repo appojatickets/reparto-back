@@ -15,7 +15,7 @@ export class PostgresAprendizajeRepository implements AprendizajeRepository {
       this.db.selectFrom('entrega_evento').selectAll().where('empresa_id', '=', empresaId).where('creado_en', '>=', desde).orderBy('creado_en').execute(),
       this.db.selectFrom('jornada').select(['id', 'camion_id', sql<string>`to_char(fecha_reparto, 'YYYY-MM-DD')`.as('fecha'), 'desde', 'hasta']).where('empresa_id', '=', empresaId).where('desde', '>=', desde).execute(),
       this.db.selectFrom('ruta_operacion').select(['camion_id', sql<string>`to_char(fecha_reparto, 'YYYY-MM-DD')`.as('fecha'), 'tipo', 'modo', 'orden', 'creado_en']).where('empresa_id', '=', empresaId).where('creado_en', '>=', desde).orderBy('creado_en').execute(),
-      this.db.selectFrom('posicion_camion').select(['camion_id', 'lat', 'lng', 'precision_m', 'tomado_en']).where('empresa_id', '=', empresaId).where('tomado_en', '>=', desde).orderBy('tomado_en').execute(),
+      this.db.selectFrom('posicion_camion').select(['camion_id', 'lat', 'lng', 'precision_m', 'velocidad_ms', 'tomado_en']).where('empresa_id', '=', empresaId).where('tomado_en', '>=', desde).orderBy('tomado_en').execute(),
     ]);
     const localIds = [...new Set(eventos.map((e) => e.local_id))];
     const locales = localIds.length === 0
@@ -32,7 +32,7 @@ export class PostgresAprendizajeRepository implements AprendizajeRepository {
       })),
       locales: locales.map((l) => ({ id: l.id, comuna: l.comuna, direccion: l.direccion, ...(l.lat !== null && l.lng !== null ? { lat: l.lat, lng: l.lng } : {}), ...(l.pin_fuente !== null ? { pinFuente: l.pin_fuente } : {}), pinVerificado: l.pin_verificado_en !== null })),
       jornadas: jornadas.map((j) => ({ id: j.id, camionId: j.camion_id, fecha: j.fecha, desde: j.desde, ...(j.hasta !== null ? { hasta: j.hasta } : {}) })),
-      posiciones: posiciones.map((p) => ({ camionId: p.camion_id, lat: p.lat, lng: p.lng, ...(p.precision_m !== null ? { precisionM: p.precision_m } : {}), tomadoEn: p.tomado_en })),
+      posiciones: posiciones.map((p) => ({ camionId: p.camion_id, lat: p.lat, lng: p.lng, ...(p.precision_m !== null ? { precisionM: p.precision_m } : {}), ...(p.velocidad_ms !== null ? { velocidadMs: p.velocidad_ms } : {}), tomadoEn: p.tomado_en })),
       operaciones: operaciones.map((o) => ({ camionId: o.camion_id, fecha: o.fecha, tipo: o.tipo, modo: o.modo, orden: o.orden, creadoEn: o.creado_en })),
     };
   }

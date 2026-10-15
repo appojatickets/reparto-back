@@ -20660,6 +20660,131 @@
                         "additionalProperties": false
                       }
                     },
+                    "cierresGps": {
+                      "type": "object",
+                      "properties": {
+                        "visitas": {
+                          "type": "number"
+                        },
+                        "atendidas": {
+                          "type": "number"
+                        },
+                        "cerradoDeducido": {
+                          "type": "number"
+                        },
+                        "sinDesenlace": {
+                          "type": "number"
+                        },
+                        "botonCerrado": {
+                          "type": "number"
+                        },
+                        "botonSinRecorrido": {
+                          "type": "number"
+                        },
+                        "botonSinDesenlace": {
+                          "type": "number"
+                        },
+                        "coinciden": {
+                          "type": "number"
+                        },
+                        "soloGps": {
+                          "type": "number"
+                        },
+                        "soloGpsConfirmados": {
+                          "type": "number"
+                        },
+                        "soloBoton": {
+                          "type": "number"
+                        },
+                        "medianaMinCerradoBoton": {
+                          "type": "number"
+                        },
+                        "medianaMinAtendidas": {
+                          "type": "number"
+                        },
+                        "casos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "tipo": {
+                                "type": "string",
+                                "enum": [
+                                  "solo_gps",
+                                  "solo_boton"
+                                ]
+                              },
+                              "facturaId": {
+                                "type": "string"
+                              },
+                              "localId": {
+                                "type": "string"
+                              },
+                              "camionId": {
+                                "type": "string"
+                              },
+                              "fecha": {
+                                "type": "string"
+                              },
+                              "minutos": {
+                                "type": "number"
+                              },
+                              "entregadaDespues": {
+                                "type": "boolean"
+                              },
+                              "camion": {
+                                "type": "string"
+                              },
+                              "etiqueta": {
+                                "type": "object",
+                                "properties": {
+                                  "razonSocial": {
+                                    "type": "string"
+                                  },
+                                  "direccion": {
+                                    "type": "string"
+                                  },
+                                  "comuna": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "razonSocial",
+                                  "direccion",
+                                  "comuna"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "tipo",
+                              "facturaId",
+                              "localId",
+                              "camionId",
+                              "fecha",
+                              "minutos",
+                              "entregadaDespues"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "visitas",
+                        "atendidas",
+                        "cerradoDeducido",
+                        "sinDesenlace",
+                        "botonCerrado",
+                        "botonSinRecorrido",
+                        "botonSinDesenlace",
+                        "coinciden",
+                        "soloGps",
+                        "soloGpsConfirmados",
+                        "soloBoton",
+                        "casos"
+                      ],
+                      "additionalProperties": false
+                    },
                     "ultimaEjecucion": {
                       "type": "object",
                       "properties": {
@@ -20750,6 +20875,131 @@
                                 ],
                                 "additionalProperties": false
                               }
+                            },
+                            "cierresGps": {
+                              "type": "object",
+                              "properties": {
+                                "visitas": {
+                                  "type": "number"
+                                },
+                                "atendidas": {
+                                  "type": "number"
+                                },
+                                "cerradoDeducido": {
+                                  "type": "number"
+                                },
+                                "sinDesenlace": {
+                                  "type": "number"
+                                },
+                                "botonCerrado": {
+                                  "type": "number"
+                                },
+                                "botonSinRecorrido": {
+                                  "type": "number"
+                                },
+                                "botonSinDesenlace": {
+                                  "type": "number"
+                                },
+                                "coinciden": {
+                                  "type": "number"
+                                },
+                                "soloGps": {
+                                  "type": "number"
+                                },
+                                "soloGpsConfirmados": {
+                                  "type": "number"
+                                },
+                                "soloBoton": {
+                                  "type": "number"
+                                },
+                                "medianaMinCerradoBoton": {
+                                  "type": "number"
+                                },
+                                "medianaMinAtendidas": {
+                                  "type": "number"
+                                },
+                                "casos": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "tipo": {
+                                        "type": "string",
+                                        "enum": [
+                                          "solo_gps",
+                                          "solo_boton"
+                                        ]
+                                      },
+                                      "facturaId": {
+                                        "type": "string"
+                                      },
+                                      "localId": {
+                                        "type": "string"
+                                      },
+                                      "camionId": {
+                                        "type": "string"
+                                      },
+                                      "fecha": {
+                                        "type": "string"
+                                      },
+                                      "minutos": {
+                                        "type": "number"
+                                      },
+                                      "entregadaDespues": {
+                                        "type": "boolean"
+                                      },
+                                      "camion": {
+                                        "type": "string"
+                                      },
+                                      "etiqueta": {
+                                        "type": "object",
+                                        "properties": {
+                                          "razonSocial": {
+                                            "type": "string"
+                                          },
+                                          "direccion": {
+                                            "type": "string"
+                                          },
+                                          "comuna": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "razonSocial",
+                                          "direccion",
+                                          "comuna"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "tipo",
+                                      "facturaId",
+                                      "localId",
+                                      "camionId",
+                                      "fecha",
+                                      "minutos",
+                                      "entregadaDespues"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                }
+                              },
+                              "required": [
+                                "visitas",
+                                "atendidas",
+                                "cerradoDeducido",
+                                "sinDesenlace",
+                                "botonCerrado",
+                                "botonSinRecorrido",
+                                "botonSinDesenlace",
+                                "coinciden",
+                                "soloGps",
+                                "soloGpsConfirmados",
+                                "soloBoton",
+                                "casos"
+                              ],
+                              "additionalProperties": false
                             }
                           },
                           "required": [
@@ -21081,6 +21331,131 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "cierresGps": {
+                      "type": "object",
+                      "properties": {
+                        "visitas": {
+                          "type": "number"
+                        },
+                        "atendidas": {
+                          "type": "number"
+                        },
+                        "cerradoDeducido": {
+                          "type": "number"
+                        },
+                        "sinDesenlace": {
+                          "type": "number"
+                        },
+                        "botonCerrado": {
+                          "type": "number"
+                        },
+                        "botonSinRecorrido": {
+                          "type": "number"
+                        },
+                        "botonSinDesenlace": {
+                          "type": "number"
+                        },
+                        "coinciden": {
+                          "type": "number"
+                        },
+                        "soloGps": {
+                          "type": "number"
+                        },
+                        "soloGpsConfirmados": {
+                          "type": "number"
+                        },
+                        "soloBoton": {
+                          "type": "number"
+                        },
+                        "medianaMinCerradoBoton": {
+                          "type": "number"
+                        },
+                        "medianaMinAtendidas": {
+                          "type": "number"
+                        },
+                        "casos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "tipo": {
+                                "type": "string",
+                                "enum": [
+                                  "solo_gps",
+                                  "solo_boton"
+                                ]
+                              },
+                              "facturaId": {
+                                "type": "string"
+                              },
+                              "localId": {
+                                "type": "string"
+                              },
+                              "camionId": {
+                                "type": "string"
+                              },
+                              "fecha": {
+                                "type": "string"
+                              },
+                              "minutos": {
+                                "type": "number"
+                              },
+                              "entregadaDespues": {
+                                "type": "boolean"
+                              },
+                              "camion": {
+                                "type": "string"
+                              },
+                              "etiqueta": {
+                                "type": "object",
+                                "properties": {
+                                  "razonSocial": {
+                                    "type": "string"
+                                  },
+                                  "direccion": {
+                                    "type": "string"
+                                  },
+                                  "comuna": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "razonSocial",
+                                  "direccion",
+                                  "comuna"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "tipo",
+                              "facturaId",
+                              "localId",
+                              "camionId",
+                              "fecha",
+                              "minutos",
+                              "entregadaDespues"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "visitas",
+                        "atendidas",
+                        "cerradoDeducido",
+                        "sinDesenlace",
+                        "botonCerrado",
+                        "botonSinRecorrido",
+                        "botonSinDesenlace",
+                        "coinciden",
+                        "soloGps",
+                        "soloGpsConfirmados",
+                        "soloBoton",
+                        "casos"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [

@@ -1,6 +1,7 @@
 import {
   atenciones, calidadDeJornada, jornadasDelEquipo, capacidadAprendida, cierresFrecuentes, completarConVisitas, pinesDudosos, pinesSugeridos, resumenesDelDia, ritmoAprendido, seguimientoDeLaRuta, servicioAprendido, tramosDeViaje, visitasDeducidas, type LocalObs, type ParametroAprendido,
 } from '../../domain/aprendizaje/analisis.js';
+import { validarCierresPorGps } from '../../domain/aprendizaje/cierres-gps.js';
 import { distanciaMetros } from '../../domain/importacion/propuesta-pin.js';
 import type { AprendizajeRepository, ResumenAnalisis } from '../ports/out/aprendizaje.js';
 import type { Clock } from '../ports/out/clock.js';
@@ -55,6 +56,7 @@ export const crearAnalizarAprendizaje = ({ aprendizaje, empresas, pines, clock }
       eventos: datos.eventos.length, jornadas: datos.jornadas.length, parametros: parametros.length, jornadasComparadas: calidad.length,
       pinesSugeridos: sugeridos.length, pinesProponidos, seguimientoRuta: seguimientoDeLaRuta(datos.eventos, datos.operaciones), llegadasDeducidas: visitas.llegadasDeducidas,
       pinesDudosos: pinesDudosos(datos.eventos, locales).slice(0, 20), cierresFrecuentes: cierresFrecuentes(datos.eventos).slice(0, 20),
+      cierresGps: validarCierresPorGps(datos.eventos, locales, datos.posiciones),
     };
     await aprendizaje.registrarEjecucion(empresaId, { iniciadoEn, terminadoEn: clock.now(), resumen });
     return resumen;

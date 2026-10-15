@@ -39,7 +39,7 @@ export type EventoObs = {
 export type LocalObs = { readonly id: string; readonly comuna: string; readonly lat?: number; readonly lng?: number; readonly pinFuente?: string; readonly pinVerificado?: boolean };
 
 /** Un punto del recorrido del camión. */
-export type PosicionObs = { readonly camionId: string; readonly lat: number; readonly lng: number; readonly precisionM?: number; readonly tomadoEn: Date };
+export type PosicionObs = { readonly camionId: string; readonly lat: number; readonly lng: number; readonly precisionM?: number; readonly velocidadMs?: number; readonly tomadoEn: Date };
 
 export type OperacionObs = {
   readonly camionId: string;

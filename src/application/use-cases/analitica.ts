@@ -1,3 +1,4 @@
+import type { CasoCierre, ValidacionCierres } from '../../domain/aprendizaje/cierres-gps.js';
 import type { ParametroAprendido } from '../../domain/aprendizaje/analisis.js';
 import type { AnaliticaRepository, CalidadDeRuta, Cobertura, DiaDeTrabajo, EtiquetaLocal } from '../ports/out/analitica.js';
 import type { AprendizajeRepository, EjecucionAnalisis } from '../ports/out/aprendizaje.js';
@@ -12,6 +13,9 @@ export type LocalLento = ParametroAprendido & { readonly etiqueta?: EtiquetaLoca
 export type CierreConEtiqueta = { readonly localId: string; readonly cerrados: number; readonly intentos: number; readonly horasCerrado: readonly number[]; readonly etiqueta?: EtiquetaLocal };
 
 export type PinDudosoConEtiqueta = { readonly localId: string; readonly distanciaM: number; readonly visitas: number; readonly fuente?: string; readonly etiqueta?: EtiquetaLocal };
+
+export type CasoCierreConEtiqueta = CasoCierre & { readonly camion?: string; readonly etiqueta?: EtiquetaLocal };
+export type CierresGpsConEtiquetas = Omit<ValidacionCierres, 'casos'> & { readonly casos: readonly CasoCierreConEtiqueta[] };
 
 export type PanelAnalitica = {
   readonly desde: Date;
@@ -28,6 +32,8 @@ export type PanelAnalitica = {
   };
   readonly cierres: readonly CierreConEtiqueta[];
   readonly pinesDudosos: readonly PinDudosoConEtiqueta[];
+  /** El cierre que deduce el GPS frente al botón CERRADO: sirve para validar si la hipótesis se sostiene. */
+  readonly cierresGps?: CierresGpsConEtiquetas;
   readonly ultimaEjecucion?: EjecucionAnalisis;
 };
 
@@ -47,7 +53,7 @@ export const crearVerAnalitica = ({ analitica, aprendizaje, camiones, clientes, 
     const lentos = parametros.filter((p) => p.clave === 'servicio_min' && p.ambito.startsWith('local:')).sort((a, b) => b.valor - a.valor).slice(0, LOCALES_LENTOS);
     const cierres = ultima?.resumen.cierresFrecuentes ?? [];
     const dudosos = ultima?.resumen.pinesDudosos ?? [];
-    const etiquetas = await analitica.etiquetasDeLocales(empresaId, [...lentos.map((p) => p.ambito.slice(6)), ...cierres.map((c) => c.localId), ...dudosos.map((d) => d.localId)]);
+    const etiquetas = await analitica.etiquetasDeLocales(empresaId, [...lentos.map((p) => p.ambito.slice(6)), ...cierres.map((c) => c.localId), ...dudosos.map((d) => d.localId), ...(ultima?.resumen.cierresGps?.casos.map((c) => c.localId) ?? [])]);
     const servicioGeneral = parametros.find((p) => p.clave === 'servicio_min' && p.ambito === 'global');
     return {
       desde,
@@ -63,6 +69,7 @@ export const crearVerAnalitica = ({ analitica, aprendizaje, camiones, clientes, 
       },
       cierres: cierres.map((c) => { const e = etiquetas.get(c.localId); return { localId: c.localId, cerrados: c.cerrados, intentos: c.intentos, horasCerrado: c.horasCerrado, ...(e ? { etiqueta: e } : {}) }; }),
       pinesDudosos: dudosos.map((d) => { const e = etiquetas.get(d.localId); return { ...d, ...(e ? { etiqueta: e } : {}) }; }),
+      ...(ultima?.resumen.cierresGps ? { cierresGps: { ...ultima.resumen.cierresGps, casos: ultima.resumen.cierresGps.casos.map((c) => { const e = etiquetas.get(c.localId); const camion = nombreCamion.get(c.camionId); return { ...c, ...(camion !== undefined ? { camion } : {}), ...(e ? { etiqueta: e } : {}) }; }) } } : {}),
       ...(ultima ? { ultimaEjecucion: ultima } : {}),
     };
   };
