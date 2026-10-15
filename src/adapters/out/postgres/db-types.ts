@@ -143,6 +143,18 @@ export type Tabla = {
     actualizado_en: Generated<Date>;
   };
   parada_ruta: { ruta_id: string; factura_id: string; orden: number; fijada: Generated<boolean> };
+  parada_emergencia: {
+    id: Generated<string>;
+    empresa_id: string;
+    camion_id: string;
+    usuario_id: string | null;
+    tipo: 'mecanico' | 'vulcanizacion' | 'otro';
+    texto: string | null;
+    lat: number | null;
+    lng: number | null;
+    precision_m: number | null;
+    creado_en: Generated<Date>;
+  };
   entrega_evento: {
     id: Generated<string>;
     empresa_id: string;

@@ -15,6 +15,7 @@ import { PostgresContribucionesRepository } from './adapters/out/postgres/reposi
 import { crearVerificarPin } from './application/use-cases/pin-verificado.js';
 import { crearRevisarPines } from './application/use-cases/revisar-pines.js';
 import { crearVerAnalitica } from './application/use-cases/analitica.js';
+import { crearListarEmergencias, crearRegistrarEmergencia } from './application/use-cases/emergencias.js';
 import { crearVerificarPinesRespaldados } from './application/use-cases/verificar-pines-respaldados.js';
 import { crearAnalizarAprendizaje } from './application/use-cases/analizar-aprendizaje.js';
 import { crearRegistrarPosiciones } from './application/use-cases/seguimiento.js';
@@ -44,6 +45,7 @@ import { PostgresAprendizajeRepository } from './adapters/out/postgres/repositor
 import { PostgresRegistroAprendizajeRepository } from './adapters/out/postgres/repositorio-registro-aprendizaje.js';
 import { PostgresRutaRepository } from './adapters/out/postgres/repositorio-rutas.js';
 import { PostgresHorarioRepository } from './adapters/out/postgres/repositorio-horarios.js';
+import { PostgresEmergenciaRepository } from './adapters/out/postgres/repositorio-emergencias.js';
 import { PostgresJornadaRepository } from './adapters/out/postgres/repositorio-jornadas.js';
 import { PostgresEntregaRepository } from './adapters/out/postgres/repositorio-entregas.js';
 import { crearFotosParaRevision, crearReportarFoto, crearResolverReporteFoto, crearVerificarFoto } from './application/use-cases/fotos-revision.js';
@@ -90,6 +92,7 @@ const rutas = new PostgresRutaRepository(db);
 const horarios = new PostgresHorarioRepository(db);
 const jornadas = new PostgresJornadaRepository(db);
 const entregas = new PostgresEntregaRepository(db);
+const emergencias = new PostgresEmergenciaRepository(db);
 const registro = new PostgresRegistroAprendizajeRepository(db);
 const identidad = new IdentidadSupabase({ urlBase: env.SUPABASE_URL, claveServicio: env.SUPABASE_SERVICE_ROLE_KEY, clavePublica: env.SUPABASE_ANON_KEY });
 const almacen = new AlmacenSupabase({ urlBase: env.SUPABASE_URL, claveServicio: env.SUPABASE_SERVICE_ROLE_KEY });
@@ -206,6 +209,8 @@ const casos: CasosDeUso = {
   verAnalitica: crearVerAnalitica({ analitica, aprendizaje, camiones, clientes, clock }),
   ejecutarAnalisis: analizarAprendizaje,
   registrarPosiciones: crearRegistrarPosiciones({ registro, rutas, entregas, resolverCamion, clock }),
+  registrarEmergencia: crearRegistrarEmergencia({ emergencias, resolverCamion }),
+  listarEmergencias: crearListarEmergencias({ emergencias, resolverCamion }),
   registrarEvento: crearRegistrarEvento({ facturas, entregas, clientes, rutas, resolverCamion, reloj: clock, reordenarTrasVisita: serviciosDeRuta.reordenarTrasVisita }),
   obtenerHorario: crearObtenerHorario({ horarios }),
   guardarHorario: crearGuardarHorario({ horarios }),

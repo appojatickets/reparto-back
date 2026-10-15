@@ -17,6 +17,7 @@ import { rutasFotos } from './rutas/fotos.js';
 import { rutasReportes } from './rutas/reportes.js';
 import { rutasCamionesYFacturas } from './rutas/camiones-y-facturas.js';
 import { rutasDelDia } from './rutas/rutas-del-dia.js';
+import { rutasEmergencias } from './rutas/emergencias.js';
 import { rutasEntregas } from './rutas/entregas.js';
 import { rutasAnalitica } from './rutas/analitica.js';
 import { rutasJornada } from './rutas/jornada.js';
@@ -95,6 +96,7 @@ export const buildServer = async (deps: HttpDeps): Promise<FastifyInstance> => {
   rutasJornada(contexto);
   rutasAnalitica(contexto);
   rutasEntregas(contexto);
+  rutasEmergencias(contexto);
 
   app.get('/openapi.json', { schema: { hide: true } }, () => app.swagger());
   return app;
