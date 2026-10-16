@@ -47,6 +47,7 @@ export const rutasAnalitica = ({ app, casos, guard }: ContextoRutas): void => {
               paradasResueltas: z.number(), puntosGps: z.number(), ultimoPuntoGps: z.string().optional(), operacionesRuta: z.number(), correccionesManuales: z.number(),
             }),
             pines: z.object({ verificados: z.number(), porVerificar: z.number(), sinPin: z.number() }),
+            coberturaGps: z.array(z.object({ fecha: z.string(), camionId: z.string(), camion: z.string().optional(), minutosConGps: z.number(), minutosEnRuta: z.number() })),
             porDia: z.array(z.object({ fecha: z.string(), jornadas: z.number(), atendidas: z.number(), sinHacer: z.number() })),
             calidad: z.array(z.object({ fecha: z.string(), camionId: z.string(), camion: z.string().optional(), distSugeridaM: z.number(), distRealM: z.number(), inversiones: z.number(), origen: z.enum(['sistema', 'chofer']), cambios: z.number(), entregadas: z.number().optional(), inversionesSalida: z.number().optional(), salioComoSugeria: z.boolean().optional() })),
             aprendido: z.object({
@@ -73,6 +74,7 @@ export const rutasAnalitica = ({ app, casos, guard }: ContextoRutas): void => {
         cobertura: { ...cobertura, ...(ultimoPuntoGps ? { ultimoPuntoGps: ultimoPuntoGps.toISOString() } : {}) },
         pines: p.pines,
         porDia: [...p.porDia],
+        coberturaGps: [...p.coberturaGps],
         calidad: [...p.calidad],
         aprendido: {
           ritmo: [...p.aprendido.ritmo],

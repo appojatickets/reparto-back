@@ -1,7 +1,7 @@
 import type { BancoDePruebasFicha } from '../../domain/aprendizaje/ficha-aprendida.js';
 import type { CasoCierre, ValidacionCierres } from '../../domain/aprendizaje/cierres-gps.js';
 import type { ParametroAprendido } from '../../domain/aprendizaje/analisis.js';
-import type { AnaliticaRepository, CalidadDeRuta, Cobertura, DiaDeTrabajo, EtiquetaLocal } from '../ports/out/analitica.js';
+import type { AnaliticaRepository, CalidadDeRuta, Cobertura, CoberturaGpsDia, DiaDeTrabajo, EtiquetaLocal } from '../ports/out/analitica.js';
 import type { AprendizajeRepository, EjecucionAnalisis } from '../ports/out/aprendizaje.js';
 import type { CamionRepository } from '../ports/out/camiones.js';
 import type { ClienteRepository } from '../ports/out/clientes.js';
@@ -35,6 +35,8 @@ export type PanelAnalitica = {
   readonly pinesDudosos: readonly PinDudosoConEtiqueta[];
   /** El cierre que deduce el GPS frente al botón CERRADO: sirve para validar si la hipótesis se sostiene. */
   readonly cierresGps?: CierresGpsConEtiquetas;
+  /** Cuánto de cada día de reparto quedó con GPS (los últimos días), para ver si mantener la pantalla encendida está sirviendo. */
+  readonly coberturaGps: readonly (CoberturaGpsDia & { readonly camion?: string })[];
   /** Si la ficha aprendida de los locales acierta (cierres anticipados y hora habitual), probada solo con días anteriores. */
   readonly bancoFicha?: BancoDePruebasFicha;
   /** Cuántos locales ya tienen hora habitual y cuántos tienen franjas de cierre probable (lo que la ruta puede usar). */
@@ -46,9 +48,10 @@ export type PanelAnalitica = {
 export const crearVerAnalitica = ({ analitica, aprendizaje, camiones, clientes, clock }: { analitica: AnaliticaRepository; aprendizaje: AprendizajeRepository; camiones: CamionRepository; clientes: ClienteRepository; clock: Clock }) =>
   async (empresaId: string): Promise<PanelAnalitica> => {
     const desde = new Date(clock.now().getTime() - DIAS_DEL_PANEL * 86_400_000);
-    const [cobertura, porDia, calidad, parametros, ultima, cams, pines] = await Promise.all([
+    const [cobertura, porDia, calidad, parametros, ultima, cams, pines, gps] = await Promise.all([
       analitica.cobertura(empresaId, desde), analitica.porDia(empresaId, desde), analitica.calidad(empresaId, desde, 20),
       aprendizaje.parametros(empresaId), aprendizaje.ultimaEjecucion(empresaId), camiones.listar(empresaId, {}), clientes.contarPines(empresaId),
+      analitica.coberturaGps(empresaId, desde, 14).catch((): readonly CoberturaGpsDia[] => []),
     ]);
     const nombreCamion = new Map(cams.map((c) => [c.id, c.alias ?? c.patente]));
     const camionDe = (p: ParametroAprendido): { readonly camion?: string } => {
@@ -65,6 +68,7 @@ export const crearVerAnalitica = ({ analitica, aprendizaje, camiones, clientes, 
       cobertura,
       pines,
       porDia,
+      coberturaGps: gps.map((g) => { const camion = nombreCamion.get(g.camionId); return { ...g, ...(camion !== undefined ? { camion } : {}) }; }),
       calidad: calidad.map((c) => { const camion = nombreCamion.get(c.camionId); return { ...c, ...(camion !== undefined ? { camion } : {}) }; }),
       aprendido: {
         ritmo: parametros.filter((p) => p.clave === 'ritmo').map((p) => ({ ...p, ...camionDe(p) })),

@@ -20650,6 +20650,36 @@
                       ],
                       "additionalProperties": false
                     },
+                    "coberturaGps": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "fecha": {
+                            "type": "string"
+                          },
+                          "camionId": {
+                            "type": "string"
+                          },
+                          "camion": {
+                            "type": "string"
+                          },
+                          "minutosConGps": {
+                            "type": "number"
+                          },
+                          "minutosEnRuta": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "fecha",
+                          "camionId",
+                          "minutosConGps",
+                          "minutosEnRuta"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "porDia": {
                       "type": "array",
                       "items": {
@@ -21532,6 +21562,7 @@
                     "desde",
                     "cobertura",
                     "pines",
+                    "coberturaGps",
                     "porDia",
                     "calidad",
                     "aprendido",
