@@ -9,7 +9,7 @@ El GPS nativo permite medir recorrido y permanencias con la pantalla bloqueada, 
 - La reconstrucción diaria requiere precisión explícita de hasta 60 m, elimina duplicados por instante y excluye intervalos de más de cinco minutos o velocidades imposibles (>120 km/h). La distancia observada ignora oscilación menor que el error conjunto; es parcial, no un odómetro certificado ni distancia exacta por calles.
 - Cada camión/día conserva primer/último GPS, inicio/fin registrados, salida/regreso observados al depósito, minutos cubiertos y sin evidencia, entregas, cierres confirmados y llegadas sin resultado confirmado. CERRADO seguido por NO ENTREGADO por cerrado en menos de 30 minutos es una visita.
 - Regresar al depósito no termina la jornada automáticamente. Si hay varios integrantes del camión, solo se informa cierre confirmado cuando todos terminaron sus jornadas.
-- La duración aprendida del día usa salida/regreso al depósito solo con jornada cerrada y al menos 80% de cobertura GPS. En los demás casos conserva el respaldo basado en eventos. El motor ya utiliza tiempos por local, ritmo por camión y franjas de cierres confirmados con confianza suficiente.
+- La duración aprendida del día usa salida/regreso al depósito solo con jornada cerrada y al menos 80% de cobertura GPS tanto del tramo observado como de toda la jornada registrada. En los demás casos conserva el respaldo basado en eventos. El motor ya utiliza tiempos por local, ritmo por camión y franjas de cierres confirmados con confianza suficiente.
 
 ## Panel y compatibilidad
 

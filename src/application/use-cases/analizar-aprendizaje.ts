@@ -27,6 +27,10 @@ const resumenDeFichas = (porLocal: ReadonlyMap<string, readonly EventoObs[]>): {
   return { locales: porLocal.size, conHoraHabitual, conCierreProbable };
 };
 
+/** La cobertura debe respaldar la jornada registrada entera, no solo el fragmento con GPS. */
+const registradoCompleto = (observados: number | undefined, registrados: number | undefined): boolean =>
+  observados !== undefined && registrados !== undefined && registrados > 0 && observados / registrados >= 0.8;
+
 /** Se mira lo de los últimos 90 días: lo viejo ya no representa cómo se reparte hoy. */
 export const VENTANA_ANALISIS_DIAS = 90;
 
@@ -48,7 +52,10 @@ export const crearAnalizarAprendizaje = ({ aprendizaje, empresas, pines, clock }
     const gps = jornadasObservadas(datos.posiciones, datos.eventos, datos.jornadas, config?.deposito);
     const dias = resumenesDelDia(datos.eventos).map((d) => {
       const observado = gps.find((g) => g.camionId === d.camionId && g.fecha === d.fecha);
-      const duracion = observado?.jornadaCerrada && observado.salidaDeposito && observado.regresoDeposito && observado.cobertura >= 0.8
+      const registrada = observado?.inicioRegistrado && observado.finRegistrado
+        ? (Date.parse(observado.finRegistrado) - Date.parse(observado.inicioRegistrado)) / 60_000 : undefined;
+      const cubreJornada = registradoCompleto(observado?.minutosObservados, registrada);
+      const duracion = cubreJornada && observado?.jornadaCerrada && observado.salidaDeposito && observado.regresoDeposito && observado.cobertura >= 0.8
         ? (Date.parse(observado.regresoDeposito) - Date.parse(observado.salidaDeposito)) / 60_000 : undefined;
       return duracion !== undefined && duracion >= 5 ? { ...d, duracionMin: Math.round(duracion) } : d;
     });
