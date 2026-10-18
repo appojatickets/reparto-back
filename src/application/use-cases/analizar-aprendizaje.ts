@@ -1,3 +1,4 @@
+import { servicioGpsAprendido } from '../../domain/aprendizaje/servicio-gps.js';
 import { jornadasObservadas } from '../../domain/seguimiento/jornada-observada.js';
 import {
   atenciones, calidadDeJornada, jornadasDelEquipo, capacidadAprendida, cierresFrecuentes, completarConVisitas, pinesDudosos, pinesSugeridos, resumenesDelDia, ritmoAprendido, seguimientoDeLaRuta, servicioAprendido, tramosDeViaje, visitasDeducidas, type EventoObs, type LocalObs, type ParametroAprendido,
@@ -47,7 +48,8 @@ export const crearAnalizarAprendizaje = ({ aprendizaje, empresas, pines, clock }
     const locales = new Map<string, LocalObs>(datos.locales.map((l) => [l.id, l]));
 
     // Casi nadie avisa LLEGUÉ y ENTREGADO se toca al llegar: la atención y el viaje se miden con el recorrido del camión.
-    const visitas = completarConVisitas(datos.eventos, visitasDeducidas(datos.eventos, locales, datos.posiciones));
+    const medidasGps = visitasDeducidas(datos.eventos, locales, datos.posiciones.filter((p) => p.precisionM !== undefined && p.precisionM <= 60));
+    const visitas = completarConVisitas(datos.eventos, medidasGps);
     const config = await empresas.obtenerConfig(empresaId);
     const gps = jornadasObservadas(datos.posiciones, datos.eventos, datos.jornadas, config?.deposito);
     const dias = resumenesDelDia(datos.eventos).map((d) => {
@@ -60,6 +62,7 @@ export const crearAnalizarAprendizaje = ({ aprendizaje, empresas, pines, clock }
       return duracion !== undefined && duracion >= 5 ? { ...d, duracionMin: Math.round(duracion) } : d;
     });
     const parametros: ParametroAprendido[] = [
+      ...servicioGpsAprendido(medidasGps),
       ...servicioAprendido(atenciones(visitas.eventos, visitas.salidas)),
       ...ritmoAprendido(tramosDeViaje(visitas.eventos, locales, visitas.salidas)),
       ...capacidadAprendida(dias),

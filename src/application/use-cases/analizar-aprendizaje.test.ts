@@ -103,6 +103,7 @@ describe('analizador de segundo plano', () => {
     const t = montar({ ...d, eventos: sinLlegada, posiciones: recorrido });
     const r = await t.analizar('empresa-1');
     expect(r.llegadasDeducidas).toBe(5);
+    expect(t.aprendizaje.guardarParametros.mock.calls[0]?.[1].find((p) => p.ambito === 'gps:global')).toMatchObject({ muestras: 5, valor: expect.any(Number) as number });
     const guardados = t.aprendizaje.guardarParametros.mock.calls[0]?.[1] ?? [];
     expect(guardados.find((p) => p.clave === 'servicio_min' && p.ambito === 'global')).toMatchObject({ valor: 8, muestras: 5 });
   });

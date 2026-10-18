@@ -382,6 +382,21 @@ describe('camiones y facturas', () => {
 });
 
 describe('terminar la ruta', () => {
+  it('acepta el POST vacío de Android con cabecera form sin aceptar formularios con datos', async () => {
+    const terminarJornada = vi.fn(() => Promise.resolve(undefined));
+    const app = await construir({ terminarJornada });
+    const headers = { authorization: `Bearer ${ROLES.chofer}`, 'content-type': 'application/x-www-form-urlencoded', 'content-length': '0' };
+    const vacia = await app.inject({ method: 'POST', url: '/v1/jornada/terminar', headers });
+    expect(vacia.statusCode).toBe(200);
+    expect(vacia.json()).toEqual({ resumen: null });
+    const conDatos = await app.inject({ method: 'POST', url: '/v1/jornada/terminar', headers: { authorization: headers.authorization, 'content-type': headers['content-type'] }, payload: 'dato=1' });
+    expect(conDatos.statusCode).toBe(415);
+    expect(terminarJornada).toHaveBeenCalledTimes(1);
+    const sinSesion = await app.inject({ method: 'POST', url: '/v1/jornada/terminar', headers: { 'content-type': headers['content-type'], 'content-length': '0' } });
+    expect(sinSesion.statusCode).toBe(401);
+    await app.close();
+  });
+
   it('devuelve el resumen del día con las horas en ISO; sin jornada devuelve null', async () => {
     const terminarJornada = vi.fn()
       .mockResolvedValueOnce({ fecha: '2026-10-05', camionId: UUID, desde: new Date('2026-10-05T11:00:00Z'), hasta: new Date('2026-10-05T20:30:00Z'), entregadas: 28, noEntregadas: 2, pendientes: 3 })

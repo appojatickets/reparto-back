@@ -434,12 +434,12 @@ const mitad = (a: Date, b: Date): Date => new Date((ms(a) + ms(b)) / 2);
  */
 export const visitasDeducidas = (eventos: readonly EventoObs[], locales: ReadonlyMap<string, LocalObs>, posiciones: readonly PosicionObs[]): readonly VisitaDeducida[] => {
   const porCamion = new Map<string, PosicionObs[]>();
-  for (const [camionId, lista] of porClave(posiciones, (p) => p.camionId)) porCamion.set(camionId, [...lista].sort((a, b) => ms(a.tomadoEn) - ms(b.tomadoEn)));
+  for (const [clave, lista] of porClave(posiciones, (p) => `${p.camionId}|${dia(p.tomadoEn)}`)) porCamion.set(clave, [...lista].sort((a, b) => ms(a.tomadoEn) - ms(b.tomadoEn)));
   const salida: VisitaDeducida[] = [];
   for (const e of eventos) {
     if (e.tipo !== 'entregado' || e.camionId === undefined) continue;
     const l = locales.get(e.localId);
-    const recorrido = porCamion.get(e.camionId);
+    const recorrido = porCamion.get(`${e.camionId}|${dia(e.creadoEn)}`);
     if (l?.lat === undefined || l.lng === undefined || !recorrido) continue;
     const pin = { lat: l.lat, lng: l.lng };
     const cerca = recorrido.map((p) => (p.precisionM === undefined || p.precisionM <= PRECISION_VISITA_DEDUCIDA_M) && distanciaKm(p, pin) * 1000 <= RADIO_VISITA_M);

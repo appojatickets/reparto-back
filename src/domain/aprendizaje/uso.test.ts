@@ -6,6 +6,17 @@ import { SERVICIO_POR_DEFECTO_MIN } from '../ruteo/parametros.js';
 const p = (clave: ParametroAprendido['clave'], ambito: string, valor: number, confianza = 0.8, muestras = 10): ParametroAprendido => ({ clave, ambito, valor, muestras, confianza });
 
 describe('qué de lo aprendido usa la ruta', () => {
+  it('usa GPS de local, luego histórico local, camión y general sin copiar datos de otro camión', () => {
+    const ps = [p('servicio_min', 'gps:global', 5, 0.8, 15), p('servicio_min', 'gps:camion:cam-1', 4, 0.8, 10), p('servicio_min', 'gps:local:l-1', 2, 0.5, 3), p('servicio_min', 'local:l-2', 8, 0.8, 10)];
+    const a = aprendidoParaRuta(ps, 'cam-1');
+    expect(a.servicioMin('l-1')).toBe(2);
+    expect(a.servicioMin('l-2')).toBe(8);
+    expect(a.servicioMin('sin-historia')).toBe(4);
+    expect(aprendidoParaRuta(ps, 'otro').servicioMin('sin-historia')).toBe(5);
+    expect(aprendidoParaRuta([p('servicio_min', 'gps:global', 2, 0.1, 20)], 'cam-1').servicioMin('x')).toBeUndefined();
+    expect(aprendidoParaRuta([p('servicio_min', 'gps:global', 2, 0.9, 2)], 'cam-1').servicioMin('x')).toBeUndefined();
+  });
+
   it('sin nada aprendido todo queda como antes', () => {
     const a = aprendidoParaRuta([], 'cam-1');
     expect(a.ritmo).toBe(1);

@@ -279,6 +279,21 @@ describe('cada cálculo y cada movimiento de la ruta queda guardado para aprende
 });
 
 describe('la ruta usa lo que el sistema aprendió', () => {
+  it('acorta el regreso con atención GPS medida manteniendo las mismas distancias y paradas', async () => {
+    const pendientes = [paradaDe('A'), paradaDe('B'), paradaDe('C'), paradaDe('D')];
+    const base = montar({ pendientes });
+    const rutas = fakeRutas(pendientes);
+    const aprendizaje = { parametros: () => Promise.resolve([{ clave: 'servicio_min' as const, ambito: 'gps:camion:cam-1', valor: 3, muestras: 30, confianza: 0.9 }]) };
+    const real = crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), entregas: fakeEntregasRuta(), jornadas: fakeJornadas(), registro: fakeRegistro(), aprendizaje, clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba() });
+    const a = await base.planificar(despachador, entrada);
+    const b = await real.planificar(despachador, entrada);
+    expect(a.ok && b.ok).toBe(true);
+    if (!a.ok || !b.ok) return;
+    expect(b.value.paradas).toHaveLength(4);
+    expect(b.value.paradas.every((p) => Math.abs(p.salida - p.inicioServicio - 3) < 0.01)).toBe(true);
+    expect(b.value.regreso ?? Infinity).toBeLessThan(a.value.regreso ?? 0);
+  });
+
   it('un camión más lento que lo calculado alarga los tiempos de viaje de su ruta (ritmo aprendido) y un local lento alarga su atención', async () => {
     const base = montar({ pendientes: [paradaDe('A'), paradaDe('B')] });
     const aprendizaje = { parametros: () => Promise.resolve([{ clave: 'ritmo' as const, ambito: 'camion:cam-1', valor: 1.5, muestras: 40, confianza: 1 }, { clave: 'servicio_min' as const, ambito: 'local:l-A', valor: 30, muestras: 6, confianza: 0.6 }]) };

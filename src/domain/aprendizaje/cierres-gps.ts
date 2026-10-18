@@ -100,7 +100,11 @@ const esAvisoDeCerrado = (e: EventoObs): boolean => e.tipo === 'cerrado' || (e.t
 
 export const validarCierresPorGps = (eventos: readonly EventoObs[], locales: ReadonlyMap<string, LocalObs>, posiciones: readonly PosicionObs[]): ValidacionCierres => {
   const recorridos = new Map<string, PosicionObs[]>();
-  for (const p of posiciones) recorridos.set(p.camionId, [...(recorridos.get(p.camionId) ?? []), p]);
+  for (const p of posiciones) {
+    const clave = `${p.camionId}|${fechaEnChile(p.tomadoEn)}`;
+    const lista = recorridos.get(clave) ?? [];
+    lista.push(p); recorridos.set(clave, lista);
+  }
   for (const r of recorridos.values()) r.sort((a, b) => ms(a.tomadoEn) - ms(b.tomadoEn));
 
   const porFactura = new Map<string, EventoObs[]>();
@@ -115,8 +119,8 @@ export const validarCierresPorGps = (eventos: readonly EventoObs[], locales: Rea
   for (const [facturaId, evs] of porFactura) {
     const camionId = evs.find((e) => e.camionId !== undefined)?.camionId;
     const local = locales.get(evs[0]?.localId ?? '');
-    const recorrido = camionId !== undefined ? recorridos.get(camionId) : undefined;
     const dias = new Set(evs.map((e) => fechaEnChile(e.creadoEn)));
+    const recorrido = camionId !== undefined ? [...dias].flatMap((dia) => recorridos.get(`${camionId}|${dia}`) ?? []).sort((a, b) => ms(a.tomadoEn) - ms(b.tomadoEn)) : undefined;
     const tramos = camionId !== undefined && local?.lat !== undefined && local.lng !== undefined && recorrido
       ? tramosJuntoAlPin(recorrido, { lat: local.lat, lng: local.lng }).filter((t) => dias.has(fechaEnChile(t.llegada)))
       : [];

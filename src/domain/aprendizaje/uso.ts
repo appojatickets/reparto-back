@@ -1,3 +1,4 @@
+import { MIN_VISITAS_GPS_LOCAL, MIN_VISITAS_GPS_GENERAL } from './servicio-gps.js';
 import type { ParametroAprendido } from './analisis.js';
 
 /** Un valor aprendido con menos confianza que esto no se usa: el motor sigue con su valor de respaldo. */
@@ -16,7 +17,7 @@ const acotar = (x: number, r: { readonly min: number; readonly max: number }): n
 export type AprendidoParaRuta = {
   /** Multiplica los tiempos de viaje: 1 = lo calculado; 1,2 = este camión demora 20 % más. */
   readonly ritmo: number;
-  /** Minutos que se demora atender ese local, si se sabe con suficientes datos; si no, la ruta usa el estándar de 10 minutos. */
+  /** Minutos que se demora atender ese local, si se sabe con suficientes datos; si no, se usa el promedio GPS del camión/global o el estándar de 10 minutos. */
   readonly servicioMin: (localId: string) => number | undefined;
 };
 
@@ -26,10 +27,14 @@ export const aprendidoParaRuta = (parametros: readonly ParametroAprendido[], cam
     parametros.find((p) => p.clave === clave && p.ambito === ambito && p.confianza >= CONFIANZA_MINIMA);
   const ritmo = buscar('ritmo', `camion:${camionId}`) ?? buscar('ritmo', 'global');
   const porLocal = new Map(parametros.filter((p) => p.clave === 'servicio_min' && p.ambito.startsWith('local:') && p.confianza >= CONFIANZA_MINIMA && p.muestras >= MINIMO_MUESTRAS_SERVICIO_LOCAL).map((p) => [p.ambito.slice(6), p.valor]));
+  const gpsLocal = new Map(parametros.filter((p) => p.clave === 'servicio_min' && p.ambito.startsWith('gps:local:') && p.confianza >= CONFIANZA_MINIMA && p.muestras >= MIN_VISITAS_GPS_LOCAL).map((p) => [p.ambito.slice(10), p.valor]));
+  const gpsCamion = buscar('servicio_min', `gps:camion:${camionId}`);
+  const gpsGlobal = buscar('servicio_min', 'gps:global');
+  const general = [gpsCamion, gpsGlobal].find((p) => p !== undefined && p.muestras >= MIN_VISITAS_GPS_GENERAL);
   return {
     ritmo: ritmo ? acotar(ritmo.valor, RITMO_ACOTADO) : 1,
     servicioMin: (localId) => {
-      const v = porLocal.get(localId);
+      const v = gpsLocal.get(localId) ?? porLocal.get(localId) ?? general?.valor;
       return v === undefined ? undefined : acotar(v, SERVICIO_ACOTADO_MIN);
     },
   };

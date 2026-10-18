@@ -124,7 +124,7 @@ const analizarAprendizaje: typeof analizarSoloAprendizaje = async (empresaId) =>
 };
 
 // El analizador corre en segundo plano: poco después de terminar una ruta (con calma, juntando varias) y cada pocas horas. Nunca bloquea una petición.
-const CADA_HORAS = 3;
+const CADA_HORAS = 1;
 let analizando = false;
 let programado: NodeJS.Timeout | undefined;
 const analizarTodo = async (): Promise<void> => {

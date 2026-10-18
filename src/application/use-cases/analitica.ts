@@ -60,11 +60,16 @@ export const crearVerAnalitica = ({ analitica, aprendizaje, camiones, clientes, 
       const nombre = p.ambito.startsWith('camion:') ? nombreCamion.get(p.ambito.slice(7)) : undefined;
       return nombre !== undefined ? { camion: nombre } : {};
     };
-    const lentos = parametros.filter((p) => p.clave === 'servicio_min' && p.ambito.startsWith('local:')).sort((a, b) => b.valor - a.valor).slice(0, LOCALES_LENTOS);
+    const porLocal = new Map(parametros.filter((p) => p.clave === 'servicio_min' && p.ambito.startsWith('local:')).map((p) => [p.ambito, p]));
+    for (const p of parametros.filter((p) => p.clave === 'servicio_min' && p.ambito.startsWith('gps:local:'))) {
+      const ambito = p.ambito.slice(4);
+      porLocal.set(ambito, { ...p, ambito });
+    }
+    const lentos = [...porLocal.values()].sort((a, b) => b.valor - a.valor).slice(0, LOCALES_LENTOS);
     const cierres = ultima?.resumen.cierresFrecuentes ?? [];
     const dudosos = ultima?.resumen.pinesDudosos ?? [];
     const etiquetas = await analitica.etiquetasDeLocales(empresaId, [...lentos.map((p) => p.ambito.slice(6)), ...cierres.map((c) => c.localId), ...dudosos.map((d) => d.localId), ...(ultima?.resumen.cierresGps?.casos.map((c) => c.localId) ?? [])]);
-    const servicioGeneral = parametros.find((p) => p.clave === 'servicio_min' && p.ambito === 'global');
+    const servicioGeneral = parametros.find((p) => p.clave === 'servicio_min' && p.ambito === 'gps:global') ?? parametros.find((p) => p.clave === 'servicio_min' && p.ambito === 'global');
     return {
       desde,
       jornadasGps: (ultima?.resumen.jornadasGps ?? []).filter((g) => g.fecha >= desde.toISOString().slice(0, 10)).map((g) => {
