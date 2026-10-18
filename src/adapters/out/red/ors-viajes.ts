@@ -14,12 +14,12 @@ const aNumeros = (m: (number | null)[][]): number[][] => m.map((fila) => fila.ma
  * Tiempos y distancias por calles de OpenRouteService (datos de OpenStreetMap, plan gratuito con clave; 500 consultas de matriz al día).
  * Cualquier falla (sin clave válida, límite diario, red, respuesta rara) devuelve `undefined`: la ruta sigue en línea recta.
  */
-export const crearProveedorOrs = (clave: string, buscar: typeof fetch = fetch): ProveedorDeViajes => ({
+export const crearProveedorOrs = (clave: string, buscar: typeof fetch = fetch, perfil: 'driving-car' | 'driving-hgv' = 'driving-car'): ProveedorDeViajes => ({
   async matriz(puntos, desde, hacia): Promise<MatrizDeCalles | undefined> {
     if (puntos.length < 2 || desde.length === 0 || hacia.length === 0 || desde.length * hacia.length > MAX_TRAMOS_POR_CONSULTA) return undefined;
     let respuesta: Response;
     try {
-      respuesta = await buscar(URL_MATRIZ, {
+      respuesta = await buscar(URL_MATRIZ.replace('driving-car', perfil), {
         method: 'POST',
         headers: { authorization: clave, 'content-type': 'application/json; charset=utf-8', accept: 'application/json' },
         body: JSON.stringify({ locations: puntos.map((p) => [p.lng, p.lat]), sources: [...desde], destinations: [...hacia], metrics: ['duration', 'distance'], units: 'm' }),

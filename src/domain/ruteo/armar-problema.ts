@@ -79,8 +79,8 @@ export const armarProblema = (d: DatosProblema): { readonly problema: ProblemaRu
       salida: d.salida,
       paradas,
       fijas: (d.fijas ?? []).filter((id) => ids.has(id)),
-      tiempos: d.viajeMin ? crearTiemposConViajes(crearTiemposHaversine(coordenadas), d.viajeMin, crearFactorHorario()) : crearTiemposHaversine(coordenadas),
-      ritmo: d.ritmo ?? 1,
+      tiempos: d.viajeMin ? crearTiemposConViajes(crearTiemposHaversine(coordenadas), d.viajeMin, crearFactorHorario(), d.ritmo ?? 1) : crearTiemposHaversine(coordenadas),
+      ritmo: d.viajeMin ? 1 : (d.ritmo ?? 1),
       parametros: {
         ...PARAMETROS_POR_DEFECTO,
         epsLlegada: EPS_LLEGADA_CALIBRADO,

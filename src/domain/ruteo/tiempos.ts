@@ -109,11 +109,12 @@ export const crearTiemposConViajes = (
   respaldo: TiemposViaje,
   viajeMin: (desde: string, hasta: string) => number | undefined,
   factor: (minuto: number) => number = () => 1,
+  ritmoRespaldo = 1,
 ): TiemposViaje => ({
   cortes: respaldo.cortes,
   tiempo: (desde, hasta, minuto) => {
     if (desde === hasta) return 0;
     const m = viajeMin(desde, hasta);
-    return m !== undefined && Number.isFinite(m) && m >= 0 ? m * factor(minuto) : respaldo.tiempo(desde, hasta, minuto);
+    return m !== undefined && Number.isFinite(m) && m >= 0 ? m * factor(minuto) : respaldo.tiempo(desde, hasta, minuto) * ritmoRespaldo;
   },
 });

@@ -50,7 +50,7 @@ export const optimizar = (problema: ProblemaRuta, opciones: OpcionesOptimizacion
   // El reloj solo acota el tiempo de cómputo (válvula de seguridad); sin presupuesto el resultado no depende de él.
   const agotado = presupuesto ? () => presupuesto.reloj() - inicio >= presupuesto.limiteMs : () => false;
 
-  const inicial = construir(c, base, restantes, f);
+  const inicial = construir(c, base, restantes, f, agotado);
   const { orden } = mejorar(c, inicial, f, crearAzar(problema.parametros.semilla), agotado);
   return armarSolucion(c, orden, vencidas, f);
 };

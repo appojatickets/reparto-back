@@ -71,6 +71,16 @@ const operacion = z.discriminatedUnion('tipo', [
 export const rutasDelDia = ({ app, casos, guard }: ContextoRutas): void => {
   const a = tipada(app);
 
+  a.get('/v1/rutas/trazado', {
+    preHandler: guard('rutas:leer'),
+    schema: { tags: ['rutas'], summary: 'Recorrido por calles en el orden elegido, sin geocodificación', security: SEGURIDAD,
+      querystring: z.object({ camionId: z.uuid(), fecha }),
+      response: { 200: z.object({ version: z.number().optional(), perfil: z.string(), tramos: z.array(z.object({ coordenadas: z.array(z.tuple([z.number(), z.number()]).readonly()).readonly(), porCalles: z.boolean() })) }), ...RESPUESTAS_ERROR } },
+  }, async (req, reply) => {
+    const r = await casos.verTrazado(actor(req), req.query);
+    return r.ok ? reply.send(r.value) : enviarError(reply, r.error);
+  });
+
   a.get(
     '/v1/rutas',
     {

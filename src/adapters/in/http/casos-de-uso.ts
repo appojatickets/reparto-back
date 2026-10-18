@@ -1,3 +1,4 @@
+import type { crearVerTrazado } from '../../../application/use-cases/trazado.js';
 import type { HealthReport } from '../../../application/use-cases/check-health.js';
 import type { crearActualizarLocal } from '../../../application/use-cases/actualizar-local.js';
 import type { crearVerContribuyentes } from '../../../application/use-cases/contribuyentes-local.js';
@@ -92,6 +93,7 @@ export type CasosDeUso = {
   readonly registrarFactura: ReturnType<typeof crearRegistrarFactura>;
   readonly listarFacturas: ReturnType<typeof crearListarFacturas>;
   readonly actualizarFactura: ReturnType<typeof crearActualizarFactura>;
+  readonly verTrazado: ReturnType<typeof crearVerTrazado>;
   readonly verRuta: ReturnType<typeof crearServiciosDeRuta>['ver'];
   readonly marcaDeRuta: ReturnType<typeof crearServiciosDeRuta>['marca'];
   readonly planificarRuta: ReturnType<typeof crearServiciosDeRuta>['planificar'];

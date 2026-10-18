@@ -199,3 +199,11 @@ describe('lo aprendido sobre cierres (pista blanda, ADR 0050)', () => {
     expect(s.enRiesgo).toEqual([]);
   });
 });
+
+it('con presupuesto agotado conserva cada parada sin tocar el prefijo fijado', () => {
+  const p = problemaPlano([parada('A'), parada('B'), parada('C')], { fijas: ['B'] });
+  let reloj = 0;
+  const r = optimizar(p, { presupuesto: { reloj: () => reloj++, limiteMs: 0 } });
+  expect(r.orden[0]).toBe('B');
+  expect(new Set(r.orden)).toEqual(new Set(['A', 'B', 'C']));
+});

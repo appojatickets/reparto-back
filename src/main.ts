@@ -1,3 +1,5 @@
+import { crearVerTrazado } from './application/use-cases/trazado.js';
+import { crearTrazadoOrs } from './adapters/out/red/ors-trazado.js';
 import { checkHealth } from './application/use-cases/check-health.js';
 import { crearActualizarLocal } from './application/use-cases/actualizar-local.js';
 import { crearVerContribuyentes } from './application/use-cases/contribuyentes-local.js';
@@ -111,7 +113,7 @@ const programarPines = (empresaId: string, localIds: readonly string[]): void =>
 const aprendizaje = new PostgresAprendizajeRepository(db);
 const analitica = new PostgresAnaliticaRepository(db);
 // Tiempos por calles: solo si hay clave de OpenRouteService; sin ella la ruta mide en línea recta.
-const viajes = crearViajesPorCalle({ proveedor: env.ORS_API_KEY ? crearProveedorOrs(env.ORS_API_KEY) : undefined, cache: new PostgresCacheDeViajes(db) });
+const viajes = crearViajesPorCalle({ proveedor: env.ORS_API_KEY ? crearProveedorOrs(env.ORS_API_KEY, fetch, env.ORS_PROFILE) : undefined, cache: new PostgresCacheDeViajes(db, env.ORS_PROFILE) });
 const serviciosDeRuta = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas, jornadas, registro, aprendizaje, viajes, clock, resolverCamion, programarPines });
 const analizarSoloAprendizaje = crearAnalizarAprendizaje({ aprendizaje, empresas, pines, clock });
 const verificarRespaldados = crearVerificarPinesRespaldados({ clientes, entregas, clock });
@@ -196,6 +198,7 @@ const casos: CasosDeUso = {
   estadoBusquedaPines: crearEstadoBusquedaPines({ clientes, cola: colaDePines }),
   listarFacturas: crearListarFacturas({ facturas, clock, resolverCamion }),
   actualizarFactura: crearActualizarFactura({ facturas, resolverCamion }),
+  verTrazado: crearVerTrazado({ ver: serviciosDeRuta.ver, proveedor: crearTrazadoOrs(env.ORS_API_KEY, env.ORS_PROFILE, () => clock.now().getTime()) }),
   verRuta: serviciosDeRuta.ver,
   marcaDeRuta: serviciosDeRuta.marca,
   planificarRuta: serviciosDeRuta.planificar,

@@ -64,7 +64,11 @@ export class PostgresClienteRepository implements ClienteRepository {
       join cliente c on c.id = l.cliente_id
       where l.empresa_id = ${empresaId} and c.estado in ('nuevo', 'activo') ${filtroComuna}
         and ${filtroTexto}
-      order by score desc, c.razon_social, l.direccion
+      order by ${rutDigitos === undefined ? sql`case
+        when c.razon_social_norm = ${texto} or l.direccion_norm = ${texto} then 0
+        when c.razon_social_norm like ${`${escaparLike(texto)}%`} or l.direccion_norm like ${`${escaparLike(texto)}%`} then 1
+        else 2 end` : sql`case when replace(c.rut, '-', '') = ${rutDigitos} then 0 else 1 end`},
+        score desc, c.razon_social, l.direccion, l.id
       limit ${limite}`.execute(this.db);
     return r.rows.map((f) => ({
       localId: f.local_id,
