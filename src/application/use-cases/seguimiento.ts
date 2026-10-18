@@ -69,7 +69,7 @@ export const crearRegistrarPosiciones = ({ registro, rutas, entregas, resolverCa
         if (!punto) continue;
         const lugar = ruta ? ruta.orden.indexOf(f.facturaId) + 1 : 0;
         await entregas.registrar(actor.empresaId, {
-          tipo: 'llegada', facturaId: f.facturaId, localId: f.localId, camionId, usuarioId: actor.id, origen: 'auto',
+          ocurridoEn: punto.tomadoEn, tipo: 'llegada', facturaId: f.facturaId, localId: f.localId, camionId, usuarioId: actor.id, origen: 'auto',
           lat: punto.lat, lng: punto.lng, ...(punto.precisionM !== undefined ? { precisionM: punto.precisionM } : {}),
           ...(ruta && lugar > 0 ? { posicionEnRuta: lugar, paradasEnRuta: ruta.orden.length } : {}),
         });

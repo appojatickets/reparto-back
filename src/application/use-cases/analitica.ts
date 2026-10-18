@@ -1,3 +1,4 @@
+import type { JornadaObservada } from '../../domain/seguimiento/jornada-observada.js';
 import type { BancoDePruebasFicha } from '../../domain/aprendizaje/ficha-aprendida.js';
 import type { CasoCierre, ValidacionCierres } from '../../domain/aprendizaje/cierres-gps.js';
 import type { ParametroAprendido } from '../../domain/aprendizaje/analisis.js';
@@ -19,6 +20,7 @@ export type CasoCierreConEtiqueta = CasoCierre & { readonly camion?: string; rea
 export type CierresGpsConEtiquetas = Omit<ValidacionCierres, 'casos'> & { readonly casos: readonly CasoCierreConEtiqueta[] };
 
 export type PanelAnalitica = {
+  readonly jornadasGps?: readonly (JornadaObservada & { readonly camion?: string })[];
   readonly desde: Date;
   readonly cobertura: Cobertura;
   /** Cuántos locales tienen el pin verificado (fijo), por verificar (se ajusta con las entregas) o ningún pin. */
@@ -65,6 +67,10 @@ export const crearVerAnalitica = ({ analitica, aprendizaje, camiones, clientes, 
     const servicioGeneral = parametros.find((p) => p.clave === 'servicio_min' && p.ambito === 'global');
     return {
       desde,
+      jornadasGps: (ultima?.resumen.jornadasGps ?? []).filter((g) => g.fecha >= desde.toISOString().slice(0, 10)).map((g) => {
+        const camion = nombreCamion.get(g.camionId);
+        return { ...g, ...(camion !== undefined ? { camion } : {}) };
+      }),
       cobertura,
       pines,
       porDia,

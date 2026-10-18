@@ -1,3 +1,4 @@
+import type { JornadaObservada } from '../../../domain/seguimiento/jornada-observada.js';
 import type { BancoDePruebasFicha } from '../../../domain/aprendizaje/ficha-aprendida.js';
 import type { ValidacionCierres } from '../../../domain/aprendizaje/cierres-gps.js';
 import type { CalidadJornada, CierreFrecuente, EventoObs, JornadaObs, LocalObs, OperacionObs, ParametroAprendido, PinDudoso, PosicionObs, SeguimientoRuta } from '../../../domain/aprendizaje/analisis.js';
@@ -13,6 +14,7 @@ export type DatosAnalisis = {
 };
 
 export type ResumenAnalisis = {
+  readonly jornadasGps?: readonly JornadaObservada[];
   readonly eventos: number;
   readonly jornadas: number;
   readonly parametros: number;

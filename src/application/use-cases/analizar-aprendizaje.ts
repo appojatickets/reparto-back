@@ -1,3 +1,4 @@
+import { jornadasObservadas } from '../../domain/seguimiento/jornada-observada.js';
 import {
   atenciones, calidadDeJornada, jornadasDelEquipo, capacidadAprendida, cierresFrecuentes, completarConVisitas, pinesDudosos, pinesSugeridos, resumenesDelDia, ritmoAprendido, seguimientoDeLaRuta, servicioAprendido, tramosDeViaje, visitasDeducidas, type EventoObs, type LocalObs, type ParametroAprendido,
 } from '../../domain/aprendizaje/analisis.js';
@@ -43,14 +44,21 @@ export const crearAnalizarAprendizaje = ({ aprendizaje, empresas, pines, clock }
 
     // Casi nadie avisa LLEGUÉ y ENTREGADO se toca al llegar: la atención y el viaje se miden con el recorrido del camión.
     const visitas = completarConVisitas(datos.eventos, visitasDeducidas(datos.eventos, locales, datos.posiciones));
+    const config = await empresas.obtenerConfig(empresaId);
+    const gps = jornadasObservadas(datos.posiciones, datos.eventos, datos.jornadas, config?.deposito);
+    const dias = resumenesDelDia(datos.eventos).map((d) => {
+      const observado = gps.find((g) => g.camionId === d.camionId && g.fecha === d.fecha);
+      const duracion = observado?.jornadaCerrada && observado.salidaDeposito && observado.regresoDeposito && observado.cobertura >= 0.8
+        ? (Date.parse(observado.regresoDeposito) - Date.parse(observado.salidaDeposito)) / 60_000 : undefined;
+      return duracion !== undefined && duracion >= 5 ? { ...d, duracionMin: Math.round(duracion) } : d;
+    });
     const parametros: ParametroAprendido[] = [
       ...servicioAprendido(atenciones(visitas.eventos, visitas.salidas)),
       ...ritmoAprendido(tramosDeViaje(visitas.eventos, locales, visitas.salidas)),
-      ...capacidadAprendida(resumenesDelDia(datos.eventos)),
+      ...capacidadAprendida(dias),
     ];
     await aprendizaje.guardarParametros(empresaId, parametros, iniciadoEn);
 
-    const config = await empresas.obtenerConfig(empresaId);
     const deposito = config?.deposito;
     const calidad = deposito ? jornadasDelEquipo(datos.jornadas).flatMap((j) => { const q = calidadDeJornada(j, visitas.eventos, datos.operaciones, locales, deposito); return q ? [q] : []; }) : [];
     if (calidad.length > 0) await aprendizaje.guardarCalidad(empresaId, calidad, iniciadoEn);
@@ -71,6 +79,7 @@ export const crearAnalizarAprendizaje = ({ aprendizaje, empresas, pines, clock }
     for (const [usuarioId, propuestas] of porProponente) pinesProponidos += await pines.crearLote(empresaId, usuarioId, propuestas);
 
     const resumen: ResumenAnalisis = {
+      jornadasGps: gps.slice(0, 60),
       eventos: datos.eventos.length, jornadas: datos.jornadas.length, parametros: parametros.length, jornadasComparadas: calidad.length,
       pinesSugeridos: sugeridos.length, pinesProponidos, seguimientoRuta: seguimientoDeLaRuta(datos.eventos, datos.operaciones), llegadasDeducidas: visitas.llegadasDeducidas,
       pinesDudosos: pinesDudosos(datos.eventos, locales).slice(0, 20), cierresFrecuentes: cierresFrecuentes(datos.eventos).slice(0, 20),

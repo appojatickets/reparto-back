@@ -11,6 +11,7 @@ export class PostgresEntregaRepository implements EntregaRepository {
       await trx
         .insertInto('entrega_evento')
         .values({
+          ...(e.ocurridoEn ? { creado_en: e.ocurridoEn } : {}),
           empresa_id: empresaId,
           factura_id: e.facturaId,
           local_id: e.localId,

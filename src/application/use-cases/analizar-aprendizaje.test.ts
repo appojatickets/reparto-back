@@ -45,6 +45,16 @@ const montar = (d = datos(), pendientes: Awaited<ReturnType<PropuestaPinReposito
 };
 
 describe('analizador de segundo plano', () => {
+  it('registra visitas GPS sin resultado como inciertas, sin aprender que el local estaba cerrado', async () => {
+    const d = datos();
+    const posiciones = [0, 1, 2].map((m) => ({ camionId: 'cam-1', lat: -33.51, lng: -70.7, precisionM: 10, tomadoEn: en(m) }));
+    const t = montar({ ...d, eventos: [ev('incierta', 'l1', 'llegada', 1)], posiciones });
+    const resumen = await t.analizar('empresa-1');
+    expect(resumen.jornadasGps?.[0]).toMatchObject({ visitasSinResultado: 1, entregadas: 0, visitasCerrado: 0 });
+    expect(resumen.fichas?.conCierreProbable).toBe(0);
+    expect(t.aprendizaje.guardarParametros.mock.calls[0]?.[1].filter((p) => p.clave === 'servicio_min')).toEqual([]);
+  });
+
   it('calcula lo aprendido, lo guarda, mide la ruta sugerida contra la manejada y deja anotada la ejecución', async () => {
     const t = montar();
     const r = await t.analizar('empresa-1');

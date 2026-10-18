@@ -417,7 +417,8 @@ export const cierresFrecuentes = (eventos: readonly EventoObs[]): readonly Cierr
 /** A cuántos metros del pin se considera que el camión estaba en el local. */
 export const RADIO_VISITA_M = 80;
 const PRECISION_VISITA_DEDUCIDA_M = 60;
-const VENTANA_VISITA_MIN = 40;
+// Un aviso muy posterior no permite atribuir una visita anterior al resultado de hoy.
+const VENTANA_VISITA_MIN = 2;
 /** Entre dos puntos del recorrido, más separados que esto no se sabe qué pasó (la app estuvo cerrada). */
 const HUECO_MAXIMO_MIN = 10;
 
@@ -449,7 +450,7 @@ export const visitasDeducidas = (eventos: readonly EventoObs[], locales: Readonl
     for (let i = 0; i < recorrido.length; i += 1) {
       if (!cerca[i]) continue;
       let j = i;
-      while (j + 1 < recorrido.length && cerca[j + 1]) j += 1;
+      while (j + 1 < recorrido.length && cerca[j + 1] && ms(recorrido[j + 1]?.tomadoEn ?? new Date(0)) - ms(recorrido[j]?.tomadoEn ?? new Date(0)) <= HUECO_MAXIMO_MIN * 60_000) j += 1;
       const inicio = ms(recorrido[i]?.tomadoEn ?? new Date(0));
       const fin = ms(recorrido[j]?.tomadoEn ?? new Date(0));
       if (inicio <= entrega + 60_000 && fin >= entrega - VENTANA_VISITA_MIN * 60_000) {

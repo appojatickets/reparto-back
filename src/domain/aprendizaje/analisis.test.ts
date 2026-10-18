@@ -264,6 +264,16 @@ describe('visitas que se deducen del recorrido', () => {
     expect(v[0]?.salida.getTime()).toBe(en(11).getTime());
   });
 
+  it('no atribuye una entrega tardía a una visita breve anterior sin evidencia temporal', () => {
+    const v = visitasDeducidas([ev('fa', 'entregado', 30)], locales, [punto(0, LEJOS), punto(4, CERCA), punto(5, CERCA), punto(6, LEJOS)]);
+    expect(v).toEqual([]);
+  });
+
+  it('una pérdida de señal junto al local no se convierte en veinte minutos de atención', () => {
+    const v = visitasDeducidas([ev('fa', 'entregado', 4)], locales, [punto(4, CERCA), punto(24, CERCA)]);
+    expect(v).toEqual([]);
+  });
+
   it('con un hueco grande en el recorrido (la app estuvo cerrada) no inventa la mitad: usa el primer punto cerca', () => {
     const v = visitasDeducidas([entrega], locales, [punto(-30, LEJOS), punto(4, CERCA), punto(8, CERCA), punto(40, LEJOS)]);
     expect(v[0]?.llegada.getTime()).toBe(en(4).getTime());

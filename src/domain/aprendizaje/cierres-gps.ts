@@ -4,14 +4,14 @@ import { mediana, type EventoObs, type LocalObs, type PosicionObs } from './anal
 
 /**
  * ¿Se puede saber que un local estaba cerrado solo por el recorrido del camión, sin que el chofer toque CERRADO? (ADR 0046)
- * Hipótesis: el camión llega, se queda muy poco junto al pin, se va sin entregar y después vuelve (o entrega más tarde). Aquí no se decide nada
+ * Las visitas breves y los reintentos son candidatos a revisión, no evidencia de cierre. Aquí no se decide nada
  * en la ruta: se junta lo que dice el GPS y se compara con lo que dicen los botones para saber si la hipótesis se sostiene.
  */
 
 /** A cuántos metros del pin se considera que el camión estaba en el local. */
 export const RADIO_CIERRE_M = 80;
 const PRECISION_MAXIMA_M = 60;
-/** Más que esto sin entregar ya no es «llegó, vio que estaba cerrado y se fue». */
+/** Umbral histórico de visita breve para revisión, nunca una clasificación de cerrado. */
 export const PERMANENCIA_CIERRE_MAX_MIN = 5;
 /** Entre dos puntos más separados que esto no se sabe qué pasó (la app estuvo cerrada). */
 const HUECO_MAXIMO_MIN = 10;
@@ -35,7 +35,7 @@ const tramosJuntoAlPin = (recorrido: readonly PosicionObs[], pin: { readonly lat
   for (let i = 0; i < recorrido.length; i += 1) {
     if (!cerca[i]) continue;
     let j = i;
-    while (j + 1 < recorrido.length && cerca[j + 1]) j += 1;
+    while (j + 1 < recorrido.length && cerca[j + 1] && ms(recorrido[j + 1]?.tomadoEn ?? new Date(0)) - ms(recorrido[j]?.tomadoEn ?? new Date(0)) <= HUECO_MAXIMO_MIN * 60_000) j += 1;
     const puntos = recorrido.slice(i, j + 1);
     const primero = recorrido[i];
     const ultimo = recorrido[j];

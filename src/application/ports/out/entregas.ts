@@ -2,6 +2,8 @@ import type { EventoValido } from '../../../domain/entidades/entrega.js';
 import type { VisitaConGps } from '../../../domain/entidades/respaldo-del-pin.js';
 
 export type NuevoEvento = EventoValido & {
+  /** Hora observada por GPS validado del servidor; los avisos manuales usan la recepción. */
+  readonly ocurridoEn?: Date;
   readonly facturaId: string;
   readonly localId: string;
   readonly camionId?: string;

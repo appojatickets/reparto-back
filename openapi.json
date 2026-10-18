@@ -20863,6 +20863,84 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "jornadasGps": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "camionId": {
+                            "type": "string"
+                          },
+                          "fecha": {
+                            "type": "string"
+                          },
+                          "camion": {
+                            "type": "string"
+                          },
+                          "inicioGps": {
+                            "type": "string"
+                          },
+                          "ultimoGps": {
+                            "type": "string"
+                          },
+                          "inicioRegistrado": {
+                            "type": "string"
+                          },
+                          "finRegistrado": {
+                            "type": "string"
+                          },
+                          "salidaDeposito": {
+                            "type": "string"
+                          },
+                          "regresoDeposito": {
+                            "type": "string"
+                          },
+                          "puntos": {
+                            "type": "number"
+                          },
+                          "minutosObservados": {
+                            "type": "number"
+                          },
+                          "minutosSinSenal": {
+                            "type": "number"
+                          },
+                          "kmObservados": {
+                            "type": "number"
+                          },
+                          "cobertura": {
+                            "type": "number"
+                          },
+                          "entregadas": {
+                            "type": "number"
+                          },
+                          "visitasCerrado": {
+                            "type": "number"
+                          },
+                          "visitasSinResultado": {
+                            "type": "number"
+                          },
+                          "jornadaCerrada": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "camionId",
+                          "fecha",
+                          "inicioGps",
+                          "ultimoGps",
+                          "puntos",
+                          "minutosObservados",
+                          "minutosSinSenal",
+                          "kmObservados",
+                          "cobertura",
+                          "entregadas",
+                          "visitasCerrado",
+                          "visitasSinResultado",
+                          "jornadaCerrada"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "desde": {
                       "type": "string"
                     },
@@ -21544,6 +21622,84 @@
                         "resumen": {
                           "type": "object",
                           "properties": {
+                            "jornadasGps": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "camionId": {
+                                    "type": "string"
+                                  },
+                                  "fecha": {
+                                    "type": "string"
+                                  },
+                                  "camion": {
+                                    "type": "string"
+                                  },
+                                  "inicioGps": {
+                                    "type": "string"
+                                  },
+                                  "ultimoGps": {
+                                    "type": "string"
+                                  },
+                                  "inicioRegistrado": {
+                                    "type": "string"
+                                  },
+                                  "finRegistrado": {
+                                    "type": "string"
+                                  },
+                                  "salidaDeposito": {
+                                    "type": "string"
+                                  },
+                                  "regresoDeposito": {
+                                    "type": "string"
+                                  },
+                                  "puntos": {
+                                    "type": "number"
+                                  },
+                                  "minutosObservados": {
+                                    "type": "number"
+                                  },
+                                  "minutosSinSenal": {
+                                    "type": "number"
+                                  },
+                                  "kmObservados": {
+                                    "type": "number"
+                                  },
+                                  "cobertura": {
+                                    "type": "number"
+                                  },
+                                  "entregadas": {
+                                    "type": "number"
+                                  },
+                                  "visitasCerrado": {
+                                    "type": "number"
+                                  },
+                                  "visitasSinResultado": {
+                                    "type": "number"
+                                  },
+                                  "jornadaCerrada": {
+                                    "type": "boolean"
+                                  }
+                                },
+                                "required": [
+                                  "camionId",
+                                  "fecha",
+                                  "inicioGps",
+                                  "ultimoGps",
+                                  "puntos",
+                                  "minutosObservados",
+                                  "minutosSinSenal",
+                                  "kmObservados",
+                                  "cobertura",
+                                  "entregadas",
+                                  "visitasCerrado",
+                                  "visitasSinResultado",
+                                  "jornadaCerrada"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
                             "eventos": {
                               "type": "number"
                             },
@@ -22075,6 +22231,84 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "jornadasGps": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "camionId": {
+                            "type": "string"
+                          },
+                          "fecha": {
+                            "type": "string"
+                          },
+                          "camion": {
+                            "type": "string"
+                          },
+                          "inicioGps": {
+                            "type": "string"
+                          },
+                          "ultimoGps": {
+                            "type": "string"
+                          },
+                          "inicioRegistrado": {
+                            "type": "string"
+                          },
+                          "finRegistrado": {
+                            "type": "string"
+                          },
+                          "salidaDeposito": {
+                            "type": "string"
+                          },
+                          "regresoDeposito": {
+                            "type": "string"
+                          },
+                          "puntos": {
+                            "type": "number"
+                          },
+                          "minutosObservados": {
+                            "type": "number"
+                          },
+                          "minutosSinSenal": {
+                            "type": "number"
+                          },
+                          "kmObservados": {
+                            "type": "number"
+                          },
+                          "cobertura": {
+                            "type": "number"
+                          },
+                          "entregadas": {
+                            "type": "number"
+                          },
+                          "visitasCerrado": {
+                            "type": "number"
+                          },
+                          "visitasSinResultado": {
+                            "type": "number"
+                          },
+                          "jornadaCerrada": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "camionId",
+                          "fecha",
+                          "inicioGps",
+                          "ultimoGps",
+                          "puntos",
+                          "minutosObservados",
+                          "minutosSinSenal",
+                          "kmObservados",
+                          "cobertura",
+                          "entregadas",
+                          "visitasCerrado",
+                          "visitasSinResultado",
+                          "jornadaCerrada"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "eventos": {
                       "type": "number"
                     },
