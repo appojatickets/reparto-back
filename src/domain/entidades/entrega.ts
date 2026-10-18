@@ -15,6 +15,8 @@ export type EventoCrudo = {
   readonly precisionM?: number | undefined;
   readonly motivo?: string | undefined;
   readonly minutos?: number | undefined;
+  /** Solo al entregar: la entrega queda hecha pero esta posición no se usa (se avisó lejos de la puerta y fijaría un pin errado). */
+  readonly sinPin?: boolean | undefined;
 };
 
 export type EventoValido = {
@@ -24,6 +26,8 @@ export type EventoValido = {
   readonly precisionM?: number;
   readonly motivo?: MotivoNoEntrega;
   readonly minutos?: number;
+  /** Entregada sin dejar el pin: no lleva posición y el pin del local no se toca. */
+  readonly sinPin?: true;
 };
 
 /** Un punto con más error que esto (en metros) no sirve para fijar el pin de un local. */
@@ -63,7 +67,11 @@ export const validarEvento = (e: EventoCrudo): Result<EventoValido, ErrorDominio
     if (e.motivo === undefined || !esMotivo(e.motivo)) errores.push(errorDominio('MOTIVO_REQUERIDO', 'Indica por qué no se entregó (cerrado, no recibe, dirección, otro).'));
   } else if (e.motivo !== undefined) errores.push(errorDominio('MOTIVO_NO_APLICA', 'El motivo solo se indica cuando no se entrega.'));
 
+  if (e.sinPin === true && tipo !== 'entregado') errores.push(errorDominio('SIN_PIN_NO_APLICA', '«Sin pin» solo se indica al entregar.'));
+
   if (errores.length > 0) return err(errores);
+  // Entregada sin pin: la posición se descarta para que no sirva ni para el pin ni como evidencia de dónde está el local.
+  if (e.sinPin === true) return ok({ tipo, sinPin: true });
   return ok({
     tipo,
     ...(posicion ? posicion : {}),

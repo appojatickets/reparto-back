@@ -36,6 +36,7 @@ export const descenso = (c: Compilado, orden: number[], f: number, agotado: () =
 
     for (let i = f; i < m - 1; i++) {
       for (let j = i + 1; j < m; j++) {
+        if (agotado()) return costo;
         copiar();
         for (let a = i, b = j; a < b; a++, b--) {
           const x = candidata[a] ?? 0;
@@ -48,10 +49,12 @@ export const descenso = (c: Compilado, orden: number[], f: number, agotado: () =
 
     for (let largo = 1; largo <= 3; largo++) {
       for (let i = f; i + largo <= m; i++) {
+        if (agotado()) return costo;
         const segmento = orden.slice(i, i + largo);
         const resto = [...orden.slice(0, i), ...orden.slice(i + largo)];
         let movido = false;
         for (let pos = f; pos <= resto.length && !movido; pos++) {
+          if (agotado()) return costo;
           for (let vuelta = 0; vuelta < (largo > 1 ? 2 : 1); vuelta++) {
             // En su mismo lugar solo tiene sentido darlo vuelta.
             if (pos === i && vuelta === 0) continue;
@@ -72,6 +75,7 @@ export const descenso = (c: Compilado, orden: number[], f: number, agotado: () =
 
     for (let i = f; i < m - 1; i++) {
       for (let j = i + 1; j < m; j++) {
+        if (agotado()) return costo;
         copiar();
         candidata[i] = orden[j] ?? 0;
         candidata[j] = orden[i] ?? 0;

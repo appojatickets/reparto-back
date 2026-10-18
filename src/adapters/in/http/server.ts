@@ -8,6 +8,7 @@ import { crearGuard } from './auth.js';
 import type { CasosDeUso } from './casos-de-uso.js';
 import { rutasClientes } from './rutas/clientes.js';
 import { rutasPinesYArchivos } from './rutas/pines-y-archivos.js';
+import { rutasFotoPerfil } from './rutas/foto-perfil.js';
 import { rutasSesion } from './rutas/sesion.js';
 import { rutasPlanilla } from './rutas/planilla.js';
 import { rutasVendedores } from './rutas/vendedores.js';
@@ -16,6 +17,7 @@ import { rutasFotos } from './rutas/fotos.js';
 import { rutasReportes } from './rutas/reportes.js';
 import { rutasCamionesYFacturas } from './rutas/camiones-y-facturas.js';
 import { rutasDelDia } from './rutas/rutas-del-dia.js';
+import { rutasEmergencias } from './rutas/emergencias.js';
 import { rutasEntregas } from './rutas/entregas.js';
 import { rutasAnalitica } from './rutas/analitica.js';
 import { rutasJornada } from './rutas/jornada.js';
@@ -34,7 +36,7 @@ const estadoDe = (error: unknown): number => {
   return typeof s === 'number' && s >= 400 && s < 600 ? s : 500;
 };
 
-const healthSchema = z.object({ status: z.enum(['ok', 'degraded']), database: z.enum(['ok', 'error']), timestamp: z.iso.datetime() });
+const healthSchema = z.object({ status: z.enum(['ok', 'degraded']), database: z.enum(['ok', 'error']), timestamp: z.iso.datetime(), version: z.string().optional() });
 
 export const buildServer = async (deps: HttpDeps): Promise<FastifyInstance> => {
   // trustProxy: detrás de Render, sin esto todas las peticiones parecen venir de la misma IP y el límite de tasa
@@ -79,6 +81,7 @@ export const buildServer = async (deps: HttpDeps): Promise<FastifyInstance> => {
   const contexto = { app, casos: deps.casos, guard: crearGuard(deps.casos) };
   rutasSesion(contexto);
   rutasUsuarios(contexto);
+  rutasFotoPerfil(contexto);
   rutasClientes(contexto);
   rutasPinesYArchivos(contexto);
   rutasCamionesYFacturas(contexto);
@@ -93,6 +96,7 @@ export const buildServer = async (deps: HttpDeps): Promise<FastifyInstance> => {
   rutasJornada(contexto);
   rutasAnalitica(contexto);
   rutasEntregas(contexto);
+  rutasEmergencias(contexto);
 
   app.get('/openapi.json', { schema: { hide: true } }, () => app.swagger());
   return app;

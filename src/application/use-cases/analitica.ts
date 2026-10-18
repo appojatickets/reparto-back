@@ -1,5 +1,7 @@
+import type { BancoDePruebasFicha } from '../../domain/aprendizaje/ficha-aprendida.js';
+import type { CasoCierre, ValidacionCierres } from '../../domain/aprendizaje/cierres-gps.js';
 import type { ParametroAprendido } from '../../domain/aprendizaje/analisis.js';
-import type { AnaliticaRepository, CalidadDeRuta, Cobertura, DiaDeTrabajo, EtiquetaLocal } from '../ports/out/analitica.js';
+import type { AnaliticaRepository, CalidadDeRuta, Cobertura, CoberturaGpsDia, DiaDeTrabajo, EtiquetaLocal } from '../ports/out/analitica.js';
 import type { AprendizajeRepository, EjecucionAnalisis } from '../ports/out/aprendizaje.js';
 import type { CamionRepository } from '../ports/out/camiones.js';
 import type { ClienteRepository } from '../ports/out/clientes.js';
@@ -12,6 +14,9 @@ export type LocalLento = ParametroAprendido & { readonly etiqueta?: EtiquetaLoca
 export type CierreConEtiqueta = { readonly localId: string; readonly cerrados: number; readonly intentos: number; readonly horasCerrado: readonly number[]; readonly etiqueta?: EtiquetaLocal };
 
 export type PinDudosoConEtiqueta = { readonly localId: string; readonly distanciaM: number; readonly visitas: number; readonly fuente?: string; readonly etiqueta?: EtiquetaLocal };
+
+export type CasoCierreConEtiqueta = CasoCierre & { readonly camion?: string; readonly etiqueta?: EtiquetaLocal };
+export type CierresGpsConEtiquetas = Omit<ValidacionCierres, 'casos'> & { readonly casos: readonly CasoCierreConEtiqueta[] };
 
 export type PanelAnalitica = {
   readonly desde: Date;
@@ -28,6 +33,14 @@ export type PanelAnalitica = {
   };
   readonly cierres: readonly CierreConEtiqueta[];
   readonly pinesDudosos: readonly PinDudosoConEtiqueta[];
+  /** El cierre que deduce el GPS frente al botón CERRADO: sirve para validar si la hipótesis se sostiene. */
+  readonly cierresGps?: CierresGpsConEtiquetas;
+  /** Cuánto de cada día de reparto quedó con GPS (los últimos días), para ver si mantener la pantalla encendida está sirviendo. */
+  readonly coberturaGps: readonly (CoberturaGpsDia & { readonly camion?: string })[];
+  /** Si la ficha aprendida de los locales acierta (cierres anticipados y hora habitual), probada solo con días anteriores. */
+  readonly bancoFicha?: BancoDePruebasFicha;
+  /** Cuántos locales ya tienen hora habitual y cuántos tienen franjas de cierre probable (lo que la ruta puede usar). */
+  readonly fichas?: { readonly locales: number; readonly conHoraHabitual: number; readonly conCierreProbable: number };
   readonly ultimaEjecucion?: EjecucionAnalisis;
 };
 
@@ -35,9 +48,10 @@ export type PanelAnalitica = {
 export const crearVerAnalitica = ({ analitica, aprendizaje, camiones, clientes, clock }: { analitica: AnaliticaRepository; aprendizaje: AprendizajeRepository; camiones: CamionRepository; clientes: ClienteRepository; clock: Clock }) =>
   async (empresaId: string): Promise<PanelAnalitica> => {
     const desde = new Date(clock.now().getTime() - DIAS_DEL_PANEL * 86_400_000);
-    const [cobertura, porDia, calidad, parametros, ultima, cams, pines] = await Promise.all([
+    const [cobertura, porDia, calidad, parametros, ultima, cams, pines, gps] = await Promise.all([
       analitica.cobertura(empresaId, desde), analitica.porDia(empresaId, desde), analitica.calidad(empresaId, desde, 20),
       aprendizaje.parametros(empresaId), aprendizaje.ultimaEjecucion(empresaId), camiones.listar(empresaId, {}), clientes.contarPines(empresaId),
+      analitica.coberturaGps(empresaId, desde, 14).catch((): readonly CoberturaGpsDia[] => []),
     ]);
     const nombreCamion = new Map(cams.map((c) => [c.id, c.alias ?? c.patente]));
     const camionDe = (p: ParametroAprendido): { readonly camion?: string } => {
@@ -47,13 +61,14 @@ export const crearVerAnalitica = ({ analitica, aprendizaje, camiones, clientes, 
     const lentos = parametros.filter((p) => p.clave === 'servicio_min' && p.ambito.startsWith('local:')).sort((a, b) => b.valor - a.valor).slice(0, LOCALES_LENTOS);
     const cierres = ultima?.resumen.cierresFrecuentes ?? [];
     const dudosos = ultima?.resumen.pinesDudosos ?? [];
-    const etiquetas = await analitica.etiquetasDeLocales(empresaId, [...lentos.map((p) => p.ambito.slice(6)), ...cierres.map((c) => c.localId), ...dudosos.map((d) => d.localId)]);
+    const etiquetas = await analitica.etiquetasDeLocales(empresaId, [...lentos.map((p) => p.ambito.slice(6)), ...cierres.map((c) => c.localId), ...dudosos.map((d) => d.localId), ...(ultima?.resumen.cierresGps?.casos.map((c) => c.localId) ?? [])]);
     const servicioGeneral = parametros.find((p) => p.clave === 'servicio_min' && p.ambito === 'global');
     return {
       desde,
       cobertura,
       pines,
       porDia,
+      coberturaGps: gps.map((g) => { const camion = nombreCamion.get(g.camionId); return { ...g, ...(camion !== undefined ? { camion } : {}) }; }),
       calidad: calidad.map((c) => { const camion = nombreCamion.get(c.camionId); return { ...c, ...(camion !== undefined ? { camion } : {}) }; }),
       aprendido: {
         ritmo: parametros.filter((p) => p.clave === 'ritmo').map((p) => ({ ...p, ...camionDe(p) })),
@@ -63,6 +78,9 @@ export const crearVerAnalitica = ({ analitica, aprendizaje, camiones, clientes, 
       },
       cierres: cierres.map((c) => { const e = etiquetas.get(c.localId); return { localId: c.localId, cerrados: c.cerrados, intentos: c.intentos, horasCerrado: c.horasCerrado, ...(e ? { etiqueta: e } : {}) }; }),
       pinesDudosos: dudosos.map((d) => { const e = etiquetas.get(d.localId); return { ...d, ...(e ? { etiqueta: e } : {}) }; }),
+      ...(ultima?.resumen.cierresGps ? { cierresGps: { ...ultima.resumen.cierresGps, casos: ultima.resumen.cierresGps.casos.map((c) => { const e = etiquetas.get(c.localId); const camion = nombreCamion.get(c.camionId); return { ...c, ...(camion !== undefined ? { camion } : {}), ...(e ? { etiqueta: e } : {}) }; }) } } : {}),
+      ...(ultima?.resumen.bancoFicha ? { bancoFicha: ultima.resumen.bancoFicha } : {}),
+      ...(ultima?.resumen.fichas ? { fichas: ultima.resumen.fichas } : {}),
       ...(ultima ? { ultimaEjecucion: ultima } : {}),
     };
   };

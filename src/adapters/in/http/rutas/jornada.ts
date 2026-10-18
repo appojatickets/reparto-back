@@ -63,7 +63,7 @@ export const rutasJornada = ({ app, casos, guard }: ContextoRutas): void => {
         security: SEGURIDAD,
         response: {
           200: z.object({
-            resumen: z.object({ fecha: z.string(), camionId: z.string(), desde: z.string(), hasta: z.string(), entregadas: z.number(), noEntregadas: z.number(), pendientes: z.number() }).nullable(),
+            resumen: z.object({ fecha: z.string(), camionId: z.string(), desde: z.string(), hasta: z.string(), entregadas: z.number(), noEntregadas: z.number(), pendientes: z.number(), sigueElCamion: z.boolean().optional() }).nullable(),
           }),
           ...RESPUESTAS_ERROR,
         },

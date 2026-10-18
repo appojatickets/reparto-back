@@ -1,11 +1,21 @@
+import type { FranjaCierreProbable } from '../aprendizaje/ficha-aprendida.js';
 import type { Compilado } from './compilar.js';
+
+/** La franja de cierre probable en que cae la hora en que se empezaría a atender esa parada, si la hay. */
+export const franjaDeCierre = (c: Compilado, j: number, minuto: number): FranjaCierreProbable | undefined => {
+  const franjas = c.franjasCierre[j];
+  if (!franjas || franjas.length === 0) return undefined;
+  // El minuto puede pasar de 1440 (ruta que cruza la medianoche): las franjas son del día.
+  const m = minuto % 1440;
+  return franjas.find((f) => m >= f.desdeMin && m < f.hastaMin);
+};
 
 /**
  * Costo de una ruta: C = Σ viaje·ritmo + Σ(riesgo + μ·atraso) + ω·Σ espera (+ términos de prioridad y de llegada temprana).
  * Todos los términos son ≥ 0, así que se puede cortar en cuanto se supera `corte` (poda para la búsqueda local).
  */
 export const evaluar = (c: Compilado, orden: ArrayLike<number>, largo: number, corte = Infinity): number => {
-  const { mu, omega, penalizacionRiesgo, epsPrioridad, epsLlegada, pesoOrdenCarga, pesoOrdenInicio } = c.problema.parametros;
+  const { mu, omega, penalizacionRiesgo, epsPrioridad, epsLlegada, pesoOrdenCarga, pesoOrdenInicio, pesoCierreAprendido } = c.problema.parametros;
   let t = c.salida;
   let previo = c.origen;
   let costo = 0;
@@ -34,6 +44,10 @@ export const evaluar = (c: Compilado, orden: ArrayLike<number>, largo: number, c
         costo += omega * (inicio - llegada);
       }
     }
+    if (pesoCierreAprendido > 0) {
+      const franja = franjaDeCierre(c, j, inicio);
+      if (franja) costo += pesoCierreAprendido * franja.p;
+    }
     if (c.prioridad[j] === 1) costo += epsPrioridad * (llegada - c.salida);
     if (epsLlegada > 0) costo += epsLlegada * (llegada - c.salida);
     if (pesoOrdenCarga > 0) {
@@ -59,6 +73,8 @@ export type Itinerario = {
   readonly salida: number[];
   readonly espera: number[];
   readonly atraso: number[];
+  /** Para cada parada, la franja de cierre probable en que cae su atención (si la hay). */
+  readonly cierre: (FranjaCierreProbable | undefined)[];
   readonly regreso: number;
   readonly costo: number;
 };
@@ -70,6 +86,7 @@ export const detallar = (c: Compilado, orden: readonly number[]): Itinerario => 
   const salida: number[] = [];
   const espera: number[] = [];
   const atraso: number[] = [];
+  const cierre: (FranjaCierreProbable | undefined)[] = [];
   let t = c.salida;
   let previo = c.origen;
   for (const j of orden) {
@@ -86,10 +103,11 @@ export const detallar = (c: Compilado, orden: readonly number[]): Itinerario => 
     inicio.push(ini);
     espera.push(ini - arr);
     atraso.push(tarde);
+    cierre.push(c.problema.parametros.pesoCierreAprendido > 0 ? franjaDeCierre(c, j, ini) : undefined);
     t = ini + (c.servicio[j] ?? 0);
     salida.push(t);
     previo = j;
   }
   const regreso = t + c.viaje(previo, c.deposito, t);
-  return { llegada, inicio, salida, espera, atraso, regreso, costo: evaluar(c, orden, orden.length) };
+  return { llegada, inicio, salida, espera, atraso, cierre, regreso, costo: evaluar(c, orden, orden.length) };
 };

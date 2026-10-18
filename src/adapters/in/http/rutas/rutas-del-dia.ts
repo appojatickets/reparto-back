@@ -25,7 +25,7 @@ const item = z.object({
   nota: z.string().optional(),
 });
 
-const motivo = z.enum(['VENTANA_DURA', 'PRIORIDAD', 'CERCANIA_COMUNA', 'COLACION', 'FIJADA_POR_CHOFER', 'MENOR_DESVIO']);
+const motivo = z.enum(['VENTANA_DURA', 'PRIORIDAD', 'CERCANIA_COMUNA', 'COLACION', 'FIJADA_POR_CHOFER', 'CIERRE_PROBABLE', 'MENOR_DESVIO']);
 const sugerencia = z.object({ tipo: z.enum(['MOVER_AL_INICIO', 'SALIR_ANTES', 'OTRO_CAMION']), minutos: z.number().optional(), texto: z.string() });
 
 const vistaRuta = z.object({
@@ -64,12 +64,22 @@ const vistaRuta = z.object({
 const operacion = z.discriminatedUnion('tipo', [
   z.object({ tipo: z.enum(['subir', 'bajar', 'primero', 'despues', 'quitar']), facturaId: z.uuid() }),
   z.object({ tipo: z.literal('mover'), facturaId: z.uuid(), posicion: z.number().int().min(0).max(999) }),
-  z.object({ tipo: z.enum(['ordenar', 'insertar']) }),
+  z.object({ tipo: z.enum(['ordenar', 'insertar', 'fijar']) }),
   z.object({ tipo: z.literal('salida'), salidaMin: minuto }),
 ]);
 
 export const rutasDelDia = ({ app, casos, guard }: ContextoRutas): void => {
   const a = tipada(app);
+
+  a.get('/v1/rutas/trazado', {
+    preHandler: guard('rutas:leer'),
+    schema: { tags: ['rutas'], summary: 'Recorrido por calles en el orden elegido, sin geocodificación', security: SEGURIDAD,
+      querystring: z.object({ camionId: z.uuid(), fecha }),
+      response: { 200: z.object({ version: z.number().optional(), perfil: z.string(), tramos: z.array(z.object({ coordenadas: z.array(z.tuple([z.number(), z.number()]).readonly()).readonly(), porCalles: z.boolean() })) }), ...RESPUESTAS_ERROR } },
+  }, async (req, reply) => {
+    const r = await casos.verTrazado(actor(req), req.query);
+    return r.ok ? reply.send(r.value) : enviarError(reply, r.error);
+  });
 
   a.get(
     '/v1/rutas',
@@ -85,6 +95,24 @@ export const rutasDelDia = ({ app, casos, guard }: ContextoRutas): void => {
     },
     async (req, reply) => {
       const r = await casos.verRuta(actor(req), req.query);
+      return r.ok ? reply.send(r.value) : enviarError(reply, r.error);
+    },
+  );
+
+  a.get(
+    '/v1/rutas/marca',
+    {
+      preHandler: guard('rutas:leer'),
+      schema: {
+        tags: ['rutas'],
+        summary: 'Marca liviana del estado de la ruta del camión (cambia si alguien la mueve, carga una factura o avisa una entrega): quienes comparten el camión la consultan seguido y recargan la ruta solo si cambió',
+        security: SEGURIDAD,
+        querystring: z.object({ camionId: z.uuid(), fecha }),
+        response: { 200: z.object({ marca: z.string() }), ...RESPUESTAS_ERROR },
+      },
+    },
+    async (req, reply) => {
+      const r = await casos.marcaDeRuta(actor(req), req.query);
       return r.ok ? reply.send(r.value) : enviarError(reply, r.error);
     },
   );

@@ -88,6 +88,30 @@ describe('terminar la ruta: queda el resumen del día', () => {
     });
   });
 
+  it('si otra persona sigue en el camión, solo se baja ella: la ruta y lo pendiente quedan para el otro y no se cierra el día del camión', async () => {
+    const jornadas = fakeJornadas(JORNADA);
+    jornadas.abiertasEnCamion.mockResolvedValueOnce(1);
+    const facturas = fakeFacturas();
+    facturas.listar.mockResolvedValueOnce([facturaDe({ id: 'f1', estado: 'entregada' }), facturaDe({ id: 'f2', estado: 'pendiente' })]);
+    const { repo: rutas } = fakeRutas();
+    const registro = fakeRegistro();
+    const r = await crearTerminarJornada({ jornadas, facturas, rutas, registro, clock })(chofer);
+    expect(jornadas.terminar).toHaveBeenCalledWith('empresa-1', 'u-chofer', new Date('2026-10-05T12:00:00.000Z'));
+    expect(r).toMatchObject({ entregadas: 1, pendientes: 1, sigueElCamion: true });
+    expect(facturas.soltarPendientesDelCamion).not.toHaveBeenCalled();
+    expect(rutas.borrar).not.toHaveBeenCalled();
+    expect(registro.guardarResumenDeJornada).not.toHaveBeenCalled();
+  });
+
+  it('lo hecho cuenta desde que empezó el equipo: si el compañero entró antes, su trabajo entra en el resumen', async () => {
+    const jornadas = fakeJornadas(JORNADA);
+    jornadas.ultimaDelCamion.mockResolvedValueOnce({ desde: new Date('2026-10-05T10:00:00Z') });
+    const facturas = fakeFacturas();
+    const r = await crearTerminarJornada({ jornadas, facturas, rutas: fakeRutas().repo, registro: fakeRegistro(), clock })(chofer);
+    expect(facturas.listar).toHaveBeenCalledWith('empresa-1', expect.objectContaining({ hechasDesde: new Date('2026-10-05T10:00:00Z') }));
+    expect(r?.desde).toEqual(new Date('2026-10-05T10:00:00Z'));
+  });
+
   it('sin jornada de hoy igual cierra lo que hubiera abierto y no inventa un resumen', async () => {
     const jornadas = fakeJornadas();
     const facturas = fakeFacturas();

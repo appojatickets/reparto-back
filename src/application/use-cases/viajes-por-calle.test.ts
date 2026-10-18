@@ -92,3 +92,27 @@ describe('tiempos de manejar por calles', () => {
     expect(filas.size).toBe(0);
   });
 });
+
+// Regresiones de cobertura y escalabilidad del proveedor gratuito.
+describe('matrices parciales y grandes', () => {
+  it('no anuncia calles cuando fallaron todas las consultas', async () => {
+    const proveedor = { matriz: vi.fn<ProveedorDeViajes['matriz']>(() => Promise.resolve(undefined)) };
+    const { cache } = cacheEnMemoria();
+    expect((await crearViajesPorCalle({ proveedor, cache })([ORI, A, DEP])).conCalles).toBe(false);
+  });
+  it('divide 65 paradas en bloques y conserva todos los pares dirigidos', async () => {
+    const proveedor = proveedorDePrueba();
+    const { cache } = cacheEnMemoria();
+    const puntos = Array.from({ length: 65 }, (_, i) => nodo(`p${i}`, -33.4 - i * 0.001, -70.6));
+    const v = await crearViajesPorCalle({ proveedor, cache })([ORI, ...puntos, DEP]);
+    expect(v.minutos('p0', 'p64')).toBeGreaterThan(0);
+    expect(v.minutos('p64', 'p0')).toBeGreaterThan(0);
+    for (const [, desde, hacia] of proveedor.matriz.mock.calls) expect(desde.length * hacia.length).toBeLessThanOrEqual(3500);
+  });
+  it('un fallo de lectura de caché permite consultar calles', async () => {
+    const { cache } = cacheEnMemoria();
+    cache.leer.mockRejectedValueOnce(new Error('cache caída'));
+    const v = await crearViajesPorCalle({ proveedor: proveedorDePrueba(), cache })([ORI, A, B, DEP]);
+    expect(v.minutos('A', 'B')).toBeGreaterThan(0);
+  });
+});

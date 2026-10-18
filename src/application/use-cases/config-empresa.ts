@@ -12,9 +12,11 @@ export const crearObtenerConfigEmpresa = ({ empresas }: { empresas: EmpresaRepos
 
 export const crearGuardarConfigEmpresa = ({ empresas }: { empresas: EmpresaRepository }) =>
   async (actor: Usuario, entrada: ConfigCruda): Promise<Result<ConfigEmpresa, ErrorApp>> => {
-    // Un cliente que no conoce el orden de inicio (una pantalla vieja) no debe borrarlo al guardar lo demás.
-    const ordenInicio = entrada.ordenInicio ?? (await empresas.obtenerConfig(actor.empresaId))?.ordenInicio;
-    const v = validarConfig({ ...entrada, ...(ordenInicio !== undefined ? { ordenInicio } : {}) });
+    // Un cliente que no conoce el orden de inicio ni el interruptor de lo aprendido (una pantalla vieja) no debe borrarlos al guardar lo demás.
+    const previa = entrada.ordenInicio === undefined || entrada.usarCierresAprendidos === undefined ? await empresas.obtenerConfig(actor.empresaId) : undefined;
+    const ordenInicio = entrada.ordenInicio ?? previa?.ordenInicio;
+    const usarCierresAprendidos = entrada.usarCierresAprendidos ?? previa?.usarCierresAprendidos;
+    const v = validarConfig({ ...entrada, ...(ordenInicio !== undefined ? { ordenInicio } : {}), ...(usarCierresAprendidos !== undefined ? { usarCierresAprendidos } : {}) });
     if (!v.ok) return err(errorApp('VALIDACION', v.error.map((e) => e.mensaje).join(' '), { errores: v.error }));
     await empresas.guardarConfig(actor.empresaId, v.value);
     return ok(v.value);

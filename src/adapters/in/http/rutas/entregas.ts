@@ -12,7 +12,7 @@ export const rutasEntregas = ({ app, casos, guard }: ContextoRutas): void => {
       preHandler: guard('entregas:registrar'),
       schema: {
         tags: ['entregas'],
-        summary: 'Avisar desde la parada: llegué, entregué, está cerrado, espero, no se entregó o vuelvo más tarde (con la posición si hay)',
+        summary: 'Avisar desde la parada: llegué, entregué, está cerrado, espero, no se entregó o vuelvo más tarde (con la posición si hay). Con `sinPin` la entrega queda hecha sin usar la posición ni tocar el pin',
         security: SEGURIDAD,
         params: idParam,
         body: z.object({
@@ -22,6 +22,7 @@ export const rutasEntregas = ({ app, casos, guard }: ContextoRutas): void => {
           precisionM: z.number().min(0).max(100_000).optional(),
           motivo: z.enum(['cerrado', 'no_recibe', 'direccion', 'otro']).optional(),
           minutos: z.number().int().min(1).max(240).optional(),
+          sinPin: z.boolean().optional(),
         }),
         response: { 200: z.object({ estado: z.enum(['pendiente', 'entregada', 'no_entregada', 'anulada']), pinFijado: z.boolean() }), ...RESPUESTAS_ERROR },
       },

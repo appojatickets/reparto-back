@@ -1,5 +1,8 @@
+import type { crearVerTrazado } from '../../../application/use-cases/trazado.js';
 import type { HealthReport } from '../../../application/use-cases/check-health.js';
 import type { crearActualizarLocal } from '../../../application/use-cases/actualizar-local.js';
+import type { crearVerContribuyentes } from '../../../application/use-cases/contribuyentes-local.js';
+import type { crearObtenerUrlFotoUsuario, crearQuitarFotoPerfil, crearRegistrarFotoPerfil, crearSolicitarUrlSubidaPerfil } from '../../../application/use-cases/foto-perfil.js';
 import type { crearObtenerUrlFoto, crearQuitarFotoLocal, crearRegistrarFotoLocal, crearSolicitarUrlSubida } from '../../../application/use-cases/archivos.js';
 import type { crearActualizarCamion, crearCrearCamion, crearListarCamiones } from '../../../application/use-cases/camiones.js';
 import type { crearExportarLocales } from '../../../application/use-cases/exportar-locales.js';
@@ -19,6 +22,8 @@ import type { crearRevisarPines } from '../../../application/use-cases/revisar-p
 import type { RegistrarPosiciones } from '../../../application/use-cases/seguimiento.js';
 import type { crearIniciarJornada, crearMiJornada, crearTerminarJornada } from '../../../application/use-cases/jornada.js';
 import type { crearRegistrarEvento } from '../../../application/use-cases/entregas.js';
+import type { crearVerFichaAprendida } from '../../../application/use-cases/ficha-aprendida.js';
+import type { crearListarEmergencias, crearRegistrarEmergencia } from '../../../application/use-cases/emergencias.js';
 import type { crearAutenticarUsuario } from '../../../application/use-cases/autenticar-usuario.js';
 import type { crearBuscarClientes } from '../../../application/use-cases/buscar-clientes.js';
 import type { crearCrearClienteNuevo } from '../../../application/use-cases/crear-cliente-nuevo.js';
@@ -44,6 +49,11 @@ export type CasosDeUso = {
   readonly resetearPin: ReturnType<typeof crearResetearPin>;
   readonly cambiarEstadoUsuario: ReturnType<typeof crearCambiarEstadoUsuario>;
   readonly cambiarEditorUsuario: ReturnType<typeof crearCambiarEditorUsuario>;
+  readonly solicitarUrlSubidaPerfil: ReturnType<typeof crearSolicitarUrlSubidaPerfil>;
+  readonly registrarFotoPerfil: ReturnType<typeof crearRegistrarFotoPerfil>;
+  readonly quitarFotoPerfil: ReturnType<typeof crearQuitarFotoPerfil>;
+  readonly obtenerUrlFotoUsuario: ReturnType<typeof crearObtenerUrlFotoUsuario>;
+  readonly verContribuyentes: ReturnType<typeof crearVerContribuyentes>;
   readonly buscarClientes: ReturnType<typeof crearBuscarClientes>;
   readonly crearClienteNuevo: ReturnType<typeof crearCrearClienteNuevo>;
   readonly importarClientes: ReturnType<typeof crearImportarClientes>;
@@ -83,13 +93,18 @@ export type CasosDeUso = {
   readonly registrarFactura: ReturnType<typeof crearRegistrarFactura>;
   readonly listarFacturas: ReturnType<typeof crearListarFacturas>;
   readonly actualizarFactura: ReturnType<typeof crearActualizarFactura>;
+  readonly verTrazado: ReturnType<typeof crearVerTrazado>;
   readonly verRuta: ReturnType<typeof crearServiciosDeRuta>['ver'];
+  readonly marcaDeRuta: ReturnType<typeof crearServiciosDeRuta>['marca'];
   readonly planificarRuta: ReturnType<typeof crearServiciosDeRuta>['planificar'];
   readonly operarRuta: ReturnType<typeof crearServiciosDeRuta>['operar'];
   readonly miJornada: ReturnType<typeof crearMiJornada>;
   readonly iniciarJornada: ReturnType<typeof crearIniciarJornada>;
   readonly terminarJornada: ReturnType<typeof crearTerminarJornada>;
   readonly registrarEvento: ReturnType<typeof crearRegistrarEvento>;
+  readonly verFichaAprendida: ReturnType<typeof crearVerFichaAprendida>;
+  readonly registrarEmergencia: ReturnType<typeof crearRegistrarEmergencia>;
+  readonly listarEmergencias: ReturnType<typeof crearListarEmergencias>;
   readonly registrarPosiciones: RegistrarPosiciones;
   readonly verAnalitica: VerAnalitica;
   readonly ejecutarAnalisis: AnalizarAprendizaje;

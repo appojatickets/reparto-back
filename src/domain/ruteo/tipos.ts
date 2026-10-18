@@ -1,3 +1,4 @@
+import type { FranjaCierreProbable } from '../aprendizaje/ficha-aprendida.js';
 import type { VentanaHoraria } from '../valor/ventana-horaria.js';
 import type { ParametrosRuteo } from './parametros.js';
 import type { TiemposViaje } from './tiempos.js';
@@ -14,6 +15,11 @@ export type ParadaRuta = {
   readonly ordenCarga?: number;
   /** Distancia en línea recta al depósito (km): sirve para partir por lo más lejano o por lo más cercano. */
   readonly distanciaDepositoKm?: number;
+  /**
+   * Franjas del día en que ese local suele estar cerrado según lo aprendido (ADR 0050). Es una pista blanda: llegar en esa franja cuesta algo, nunca
+   * saca la parada de la ruta. Solo trae franjas con evidencia suficiente y probabilidad alta; si no, viene vacía o no viene.
+   */
+  readonly cierreProbable?: readonly FranjaCierreProbable[];
 };
 
 /**
@@ -37,6 +43,7 @@ export type Motivo =
   | 'CERCANIA_COMUNA'
   | 'COLACION'
   | 'FIJADA_POR_CHOFER'
+  | 'CIERRE_PROBABLE'
   | 'MENOR_DESVIO';
 
 export type Sugerencia = {

@@ -95,3 +95,10 @@ describe('crearFactorHorario · tiempos por calles en hora punta', () => {
     expect(conCalles.tiempo('a', 'b', 18 * 60)).toBeCloseTo(20 * (30 / 22), 9);
   });
 });
+
+it('aplica el ritmo aprendido solo al respaldo, sin alterar tramos por calles', () => {
+  const respaldo = crearTiemposHaversine(new Map([['A', { lat: -33.5, lng: -70.6 }], ['B', { lat: -33.6, lng: -70.7 }], ['C', { lat: -33.7, lng: -70.8 }]]));
+  const mixtos = crearTiemposConViajes(respaldo, (a, b) => a === 'A' && b === 'B' ? 10 : undefined, () => 1, 1.5);
+  expect(mixtos.tiempo('A', 'B', 600)).toBe(10);
+  expect(mixtos.tiempo('A', 'C', 600)).toBeCloseTo(respaldo.tiempo('A', 'C', 600) * 1.5);
+});

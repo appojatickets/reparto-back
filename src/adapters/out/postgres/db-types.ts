@@ -6,7 +6,7 @@ type Fecha = ColumnType<Date, Date | string | undefined, Date | string>;
 
 export type Tabla = {
   empresa: { id: Generated<string>; nombre: string; config: ColumnType<unknown, string | undefined, string>; config_version: Generated<number>; creado_en: Generated<Date> };
-  usuario: { id: string; empresa_id: string; rol: 'admin' | 'despachador' | 'chofer' | 'ayudante'; username: string; nombre: string; activo: Generated<boolean>; editor: Generated<boolean>; creado_en: Generated<Date> };
+  usuario: { id: string; empresa_id: string; rol: 'admin' | 'despachador' | 'chofer' | 'ayudante'; username: string; nombre: string; activo: Generated<boolean>; editor: Generated<boolean>; foto_path: string | null; foto_en: Date | null; creado_en: Generated<Date> };
   cliente: {
     id: Generated<string>;
     empresa_id: string;
@@ -143,6 +143,18 @@ export type Tabla = {
     actualizado_en: Generated<Date>;
   };
   parada_ruta: { ruta_id: string; factura_id: string; orden: number; fijada: Generated<boolean> };
+  parada_emergencia: {
+    id: Generated<string>;
+    empresa_id: string;
+    camion_id: string;
+    usuario_id: string | null;
+    tipo: 'mecanico' | 'vulcanizacion' | 'otro';
+    texto: string | null;
+    lat: number | null;
+    lng: number | null;
+    precision_m: number | null;
+    creado_en: Generated<Date>;
+  };
   entrega_evento: {
     id: Generated<string>;
     empresa_id: string;
@@ -167,7 +179,7 @@ export type Tabla = {
     camion_id: string;
     fecha_reparto: string;
     usuario_id: string | null;
-    tipo: 'planificar' | 'subir' | 'bajar' | 'primero' | 'despues' | 'mover' | 'quitar' | 'ordenar' | 'insertar' | 'salida';
+    tipo: 'planificar' | 'subir' | 'bajar' | 'primero' | 'despues' | 'mover' | 'quitar' | 'ordenar' | 'insertar' | 'fijar' | 'salida';
     factura_id: string | null;
     modo: 'sugerida' | 'manual' | 'carga';
     version: number;
@@ -201,6 +213,12 @@ export type Tabla = {
     dist_sugerida_m: number | null;
     dist_real_m: number | null;
     inversiones: number | null;
+    origen_orden: 'sistema' | 'chofer' | null;
+    cambios_manuales: number | null;
+    orden_sugerido: string[] | null;
+    orden_salida: string[] | null;
+    orden_entregado: string[] | null;
+    inversiones_salida: number | null;
     analizado_en: Date | null;
     creado_en: Generated<Date>;
   };

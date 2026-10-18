@@ -14,9 +14,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "secretos": "node scripts/revisar-secretos.mjs",
     "arch": "depcruise src --config .dependency-cruiser.cjs",
     "openapi": "tsx scripts/generate-openapi.ts",
-    "check": "npm run lint && npm run typecheck && npm run test && npm run arch",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run arch && npm run secretos",
     "test:integracion": "vitest run --config vitest.integracion.config.ts",
     "migrate": "node-pg-migrate up --migrations-dir migrations"
   },

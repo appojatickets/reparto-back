@@ -37,6 +37,8 @@ jobs:
       - run: npm run test:coverage
       - run: npm run test:integracion
       - run: npm run arch
+      - name: Sin secretos ni datos personales en el repo
+        run: npm run secretos
       - run: npm run build
       - name: openapi.json está al día
         run: |

@@ -17,7 +17,7 @@ const localConPin = (extra: Partial<LocalDetalle> = {}): LocalDetalle => ({ id: 
 const montar = (factura = facturaDe({ camion: { id: 'cam-1', patente: 'ABCD12' }, local: { id: 'l-1', razonSocial: 'Rabelo', direccion: 'Av. Colón 765', comuna: 'San Bernardo', tienePin: false } }), jornada = JORNADA, locales: LocalDetalle[] = [localConPin()]) => {
   const facturas = fakeFacturas();
   facturas.obtener.mockResolvedValue(factura);
-  const entregas = { registrar: vi.fn<EntregaRepository['registrar']>(() => Promise.resolve()), visitasConGps: vi.fn<EntregaRepository['visitasConGps']>(() => Promise.resolve([])), visitasConGpsDeLocales: vi.fn<EntregaRepository['visitasConGpsDeLocales']>(() => Promise.resolve(new Map())), ultimaPosicion: vi.fn<EntregaRepository['ultimaPosicion']>(() => Promise.resolve(undefined)), conLlegada: vi.fn<EntregaRepository['conLlegada']>(() => Promise.resolve(new Set<string>())), posicionesDeEntrega: vi.fn<EntregaRepository['posicionesDeEntrega']>(() => Promise.resolve([])) };
+  const entregas = { registrar: vi.fn<EntregaRepository['registrar']>(() => Promise.resolve()), eventosDeLocal: vi.fn<EntregaRepository['eventosDeLocal']>(() => Promise.resolve([])), eventosDeLocales: vi.fn<EntregaRepository['eventosDeLocales']>(() => Promise.resolve(new Map())), visitasConGps: vi.fn<EntregaRepository['visitasConGps']>(() => Promise.resolve([])), visitasConGpsDeLocales: vi.fn<EntregaRepository['visitasConGpsDeLocales']>(() => Promise.resolve(new Map())), ultimaPosicion: vi.fn<EntregaRepository['ultimaPosicion']>(() => Promise.resolve(undefined)), conLlegada: vi.fn<EntregaRepository['conLlegada']>(() => Promise.resolve(new Set<string>())), posicionesDeEntrega: vi.fn<EntregaRepository['posicionesDeEntrega']>(() => Promise.resolve([])) };
   const clientes = fakeClientes(locales);
   const rutas = fakeRutas();
   const reordenarTrasVisita = vi.fn<(actor: Usuario, camionId: string, fecha: string, facturaId: string) => Promise<boolean>>(() => Promise.resolve(true));
@@ -99,6 +99,28 @@ describe('registrar evento de entrega', () => {
     const r = await sinPin.registrar(chofer, 'f-1', { tipo: 'entregado', lat: -33.45, lng: -70.66, precisionM: 80 });
     expect(r.ok && r.value.pinFijado).toBe(true);
     expect(sinPin.clientes.fijarPinSiFalta).toHaveBeenCalledWith('empresa-1', 'l-1', -33.45, -70.66);
+  });
+
+  it('ENTREGADO SIN PIN: la entrega queda hecha y la ruta se reordena, pero no se guarda la posición ni se toca el pin', async () => {
+    const t = montar(facturaDe({ camion: { id: 'cam-1', patente: 'ABCD12' } })); // el local ya tiene pin sin verificar
+    t.entregas.posicionesDeEntrega.mockResolvedValue([{ lat: -33.45, lng: -70.66, precisionM: 10 }]);
+    const r = await t.registrar(chofer, 'f-1', { tipo: 'entregado', sinPin: true, ...pos });
+    expect(r).toEqual({ ok: true, value: { estado: 'entregada', pinFijado: false } });
+    const guardado = t.entregas.registrar.mock.calls[0]?.[1];
+    expect(guardado).toMatchObject({ tipo: 'entregado', facturaId: 'f-1', nuevoEstado: 'entregada' });
+    expect(guardado).not.toHaveProperty('lat');
+    expect(guardado).not.toHaveProperty('sinPin');
+    expect(t.clientes.ajustarPinPorEntrega).not.toHaveBeenCalled();
+    expect(t.clientes.verificarPinPorEntregas).not.toHaveBeenCalled();
+    expect(t.clientes.fijarPinSiFalta).not.toHaveBeenCalled();
+    expect(t.reordenarTrasVisita).toHaveBeenCalledWith(chofer, 'cam-1', expect.any(String), 'f-1');
+  });
+
+  it('ENTREGADO SIN PIN en un local sin pin no lo crea con la posición del chofer', async () => {
+    const t = montar();
+    const r = await t.registrar(chofer, 'f-1', { tipo: 'entregado', sinPin: true, ...pos });
+    expect(r.ok && r.value.pinFijado).toBe(false);
+    expect(t.clientes.fijarPinSiFalta).not.toHaveBeenCalled();
   });
 
   it('una posición imprecisa no fija el pin, pero el aviso se guarda', async () => {

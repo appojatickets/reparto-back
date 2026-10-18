@@ -25,10 +25,10 @@ describe('explicarCambio (mensaje corto para el chofer)', () => {
     expect(explicarCambio(s, s)).not.toContain('riesgo');
   });
 
-  it('menciona las paradas que ya cerraron y el regreso tardío', () => {
+  it('una parada que ya cerró sigue en la ruta y se avisa como riesgo; también el regreso tardío', () => {
     const p = problemaPlano([parada('A', { servicioMin: 40 }), parada('D', { nombre: 'Kiosko D', ventanas: [v(480, 490)] })], { salida: 1230 });
     const msg = explicarCambio(undefined, optimizar(p));
-    expect(msg).toContain('Kiosko D ya cerró.');
+    expect(msg).toContain('Kiosko D queda en riesgo: cierra 08:10.');
     expect(msg).toContain('Regresarías al depósito a las');
   });
 });

@@ -11,6 +11,7 @@ describe('checkHealth', () => {
     const db: DatabaseHealth = { ping: () => Promise.resolve(ok(undefined)) };
     const report = await checkHealth({ db, clock });
     expect(report).toEqual({ status: 'ok', database: 'ok', timestamp: '2026-10-05T12:00:00.000Z' });
+    expect(await checkHealth({ db, clock, version: 'abc1234' })).toMatchObject({ version: 'abc1234' });
   });
 
   it('informa degradado cuando la base falla, sin exponer el detalle', async () => {

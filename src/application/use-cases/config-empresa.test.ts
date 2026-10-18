@@ -31,6 +31,17 @@ describe('configuración de la empresa', () => {
     expect(empresas.guardarConfig).toHaveBeenCalledTimes(1);
   });
 
+  it('guarda el interruptor de lo aprendido sobre cierres; si el cliente no lo manda (pantalla vieja) conserva el que había', async () => {
+    const empresas = fake();
+    empresas.obtenerConfig.mockResolvedValue({ salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260, usarCierresAprendidos: false });
+    const guardar = crearGuardarConfigEmpresa({ empresas });
+    const conservado = await guardar(admin, { salidaPorDefectoMin: 450, horaLimiteRegresoMin: 1230 });
+    expect(conservado.ok && conservado.value.usarCierresAprendidos).toBe(false);
+    const encendido = await guardar(admin, { salidaPorDefectoMin: 450, horaLimiteRegresoMin: 1230, usarCierresAprendidos: true });
+    expect(encendido.ok && encendido.value.usarCierresAprendidos).toBe(true);
+    expect(empresas.guardarConfig).toHaveBeenLastCalledWith('empresa-1', { salidaPorDefectoMin: 450, horaLimiteRegresoMin: 1230, usarCierresAprendidos: true });
+  });
+
   it('guarda el orden de inicio; si el cliente no lo manda (pantalla vieja) conserva el que había', async () => {
     const empresas = fake();
     empresas.obtenerConfig.mockResolvedValue({ salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260, ordenInicio: 'lejano' });

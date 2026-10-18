@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { err } from '../../domain/shared/result.js';
 import { crearReloj, usuarioDe } from './fakes.test-util.js';
-import { fakeJornadas, fakeRegistro, resolverDePrueba } from './fakes-facturas.test-util.js';
+import { facturaDe, fakeJornadas, fakeRegistro, resolverDePrueba } from './fakes-facturas.test-util.js';
 import { CAMION_ID, CONFIG, FECHA, fakeCamionesRuta, fakeEmpresas, fakeEntregasRuta, fakeFacturasRuta, fakeRutas, paradaDe } from './fakes-rutas.test-util.js';
 import { crearServiciosDeRuta } from './rutas.js';
 
@@ -11,8 +11,9 @@ const montar = (opciones: { pendientes?: ReturnType<typeof paradaDe>[]; config?:
   const rutas = fakeRutas(opciones.pendientes ?? [paradaDe('A'), paradaDe('B'), paradaDe('C'), paradaDe('D')]);
   const empresas = fakeEmpresas(opciones.config);
   const facturas = fakeFacturasRuta();
-  const servicios = crearServiciosDeRuta({ rutas: rutas.repo, empresas, camiones: fakeCamionesRuta(), facturas, entregas: fakeEntregasRuta(), jornadas: opciones.jornadas ?? fakeJornadas(), registro: opciones.registro ?? fakeRegistro(), clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba() });
-  return { ...servicios, rutas, facturas, empresas };
+  const entregas = fakeEntregasRuta();
+  const servicios = crearServiciosDeRuta({ rutas: rutas.repo, empresas, camiones: fakeCamionesRuta(), facturas, entregas, jornadas: opciones.jornadas ?? fakeJornadas(), registro: opciones.registro ?? fakeRegistro(), clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba() });
+  return { ...servicios, rutas, facturas, empresas, entregas };
 };
 const entrada = { camionId: CAMION_ID, fecha: FECHA };
 const ids = (r: { paradas: readonly { facturaId: string }[] }) => r.paradas.map((p) => p.facturaId);
@@ -39,6 +40,68 @@ describe('ver ruta', () => {
     expect(!camion.ok && camion.error.codigo).toBe('NO_ENCONTRADO');
     const fecha = await montar().ver(despachador, { camionId: CAMION_ID, fecha: '2026-13-40' });
     expect(!fecha.ok && fecha.error.codigo).toBe('VALIDACION');
+  });
+});
+
+describe('marca de la ruta (para que dos personas del mismo camión se vean al instante)', () => {
+  it('cambia cuando la ruta se mueve o cuando se entrega algo, sin calcular horas', async () => {
+    const s = montar();
+    const antes = await s.marca(despachador, entrada);
+    expect(antes.ok && antes.value.marca).toBe('v0.e0.n0.p0.a0');
+    await s.planificar(despachador, entrada);
+    s.facturas.listar.mockClear();
+    s.facturas.listar.mockResolvedValueOnce([
+      facturaDe({ id: 'f-A', estado: 'entregada' }),
+      facturaDe({ id: 'f-B', estado: 'pendiente' }),
+    ]);
+    const despues = await s.marca(despachador, entrada);
+    expect(despues.ok && despues.value.marca).toBe('v1.e1.n0.p1.a0');
+  });
+
+  it('exige una fecha válida y respeta el camión del chofer', async () => {
+    const fecha = await montar().marca(despachador, { camionId: CAMION_ID, fecha: '2026-13-40' });
+    expect(!fecha.ok && fecha.error.codigo).toBe('VALIDACION');
+  });
+});
+
+describe('la ruta usa lo aprendido sobre cierres (ADR 0050)', () => {
+  /** 08:30 en Chile (UTC-3 en octubre) de los días 1, 2 y 3. */
+  const cierres = (tipos: string[]) => new Map([['l-A', tipos.map((tipo, i) => ({ tipo, creadoEn: new Date(Date.UTC(2026, 9, 1 + i, 11, 30)) }))]]);
+
+  it('un local que suele estar cerrado a esa hora (3 de 3 visitas) sale marcado como cierre probable; el chofer puede ignorarlo', async () => {
+    const s = montar({ pendientes: [paradaDe('A')] });
+    s.entregas.eventosDeLocales.mockResolvedValue(cierres(['cerrado', 'cerrado', 'cerrado']));
+    const r = await s.planificar(despachador, entrada);
+    expect(r.ok && r.value.paradas[0]?.motivos).toContain('CIERRE_PROBABLE');
+    expect(r.ok && r.value.paradas.map((p) => p.facturaId)).toEqual(['f-A']);
+  });
+
+  it('si el admin apaga lo aprendido en CONFIGURACIÓN, ni siquiera se leen los avisos y la ruta no marca cierres probables', async () => {
+    const s = montar({ pendientes: [paradaDe('A')], config: { salidaPorDefectoMin: 480, horaLimiteRegresoMin: 1260, deposito: { lat: -33.45, lng: -70.65 }, usarCierresAprendidos: false } });
+    s.entregas.eventosDeLocales.mockResolvedValue(cierres(['cerrado', 'cerrado', 'cerrado']));
+    const r = await s.planificar(despachador, entrada);
+    expect(r.ok && r.value.paradas[0]?.motivos).not.toContain('CIERRE_PROBABLE');
+    expect(s.entregas.eventosDeLocales).not.toHaveBeenCalled();
+  });
+
+  it('con pocas visitas, o si casi siempre estaba abierto, no se considera', async () => {
+    const poco = montar({ pendientes: [paradaDe('A')] });
+    poco.entregas.eventosDeLocales.mockResolvedValue(cierres(['cerrado', 'cerrado']));
+    await poco.planificar(despachador, entrada);
+    const rp = await poco.ver(despachador, entrada);
+    expect(rp.ok && rp.value.paradas[0]?.motivos).not.toContain('CIERRE_PROBABLE');
+    const abierto = montar({ pendientes: [paradaDe('A')] });
+    abierto.entregas.eventosDeLocales.mockResolvedValue(cierres(['cerrado', 'entregado', 'entregado']));
+    await abierto.planificar(despachador, entrada);
+    const ra = await abierto.ver(despachador, entrada);
+    expect(ra.ok && ra.value.paradas[0]?.motivos).not.toContain('CIERRE_PROBABLE');
+  });
+
+  it('si no se pueden leer los avisos, la ruta se arma igual (lo aprendido nunca la bloquea)', async () => {
+    const s = montar({ pendientes: [paradaDe('A'), paradaDe('B')] });
+    s.entregas.eventosDeLocales.mockRejectedValue(new Error('sin base'));
+    const r = await s.planificar(despachador, entrada);
+    expect(r.ok && r.value.paradas.length).toBe(2);
   });
 });
 
@@ -99,12 +162,13 @@ describe('planificar', () => {
     expect(r.ok && r.value.sinPin.map((x) => x.facturaId)).toEqual(['f-Z']);
   });
 
-  it('un local cerrado ese día queda «no atendido» con su explicación y el «antes de» muestra riesgo', async () => {
+  it('un local que según su horario no atiende ese día NO se saca de la ruta: va al final, marcado en riesgo con su explicación', async () => {
     const cerrado = paradaDe('X', { horarios: [{ dias: [1], tramos: [], fuente: 'confirmado', confianza: 1 }] }); // cerrado los lunes (la fecha es lunes)
     const s = montar({ pendientes: [paradaDe('A'), cerrado] });
     const r = await s.planificar(despachador, entrada);
-    expect(r.ok && r.value.noAtendidas.map((n) => n.facturaId)).toEqual(['f-X']);
-    expect(r.ok && ids(r.value)).toEqual(['f-A']);
+    expect(r.ok && r.value.noAtendidas).toEqual([]);
+    expect(r.ok && ids(r.value)).toEqual(['f-A', 'f-X']);
+    expect(r.ok && r.value.enRiesgo.find((x) => x.facturaId === 'f-X')?.conflictos).toEqual(['Según su horario hoy no atiende.']);
   });
 
   it('la hora de salida pedida se guarda y rechaza valores imposibles', async () => {
@@ -586,6 +650,39 @@ describe('«las agrego en orden»: la ruta es el orden en que el chofer cargó l
     const reordenada = await s.reordenarTrasVisita(despachador, CAMION_ID, FECHA, 'f-C');
     expect(reordenada).toBe(false);
     expect(s.rutas.guardadaActual()?.orden).toEqual(antes);
+  });
+
+  it('PASAR A MANUAL («fijar») congela el orden que se ve: desde ahí nada se reordena solo, aunque la ruta fuera calculada o acomodada a mano', async () => {
+    const calculada = montar({ pendientes: cargadas() });
+    const p = await calculada.planificar(despachador, entrada);
+    if (!p.ok) throw new Error('no se planificó');
+    const antes = ids(p.value);
+    const f = await calculada.operar(despachador, { ...entrada, version: p.value.version ?? 0, operacion: { tipo: 'fijar' } });
+    expect(f.ok && ids(f.value)).toEqual(antes);
+    expect(f.ok && f.value.modo).toBe('carga');
+    // ya en manual: lo que se mueve queda donde se deja
+    const m = await calculada.operar(despachador, { ...entrada, version: f.ok ? (f.value.version ?? 0) : 0, operacion: { tipo: 'primero', facturaId: antes[3] ?? '' } });
+    expect(m.ok && ids(m.value)).toEqual([antes[3], antes[0], antes[1], antes[2]]);
+    expect(m.ok && m.value.modo).toBe('carga');
+  });
+
+  it('PASAR A MANUAL desde una ruta acomodada a mano conserva lo acomodado y se anota para aprender', async () => {
+    const registro = fakeRegistro();
+    const s = montar({ pendientes: cargadas(), registro });
+    const p = await s.planificar(despachador, entrada);
+    if (!p.ok) throw new Error('no se planificó');
+    const m = await s.operar(despachador, { ...entrada, version: p.value.version ?? 0, operacion: { tipo: 'mover', facturaId: 'f-B', posicion: 0 } });
+    if (!m.ok) throw new Error('no se movió');
+    const acomodado = ids(m.value);
+    const f = await s.operar(despachador, { ...entrada, version: m.value.version ?? 0, operacion: { tipo: 'fijar' } });
+    expect(f.ok && ids(f.value)).toEqual(acomodado);
+    expect(registro.registrarOperacion).toHaveBeenLastCalledWith('empresa-1', expect.objectContaining({ tipo: 'fijar', modo: 'carga', orden: acomodado }));
+  });
+
+  it('VOLVER A AUTOMÁTICO desde manual: el sistema ordena lo que queda («ordenar»)', async () => {
+    const { s, version } = await enOrden();
+    const f = await s.operar(despachador, { ...entrada, version, operacion: { tipo: 'ordenar' } });
+    expect(f.ok && f.value.modo).toBe('sugerida');
   });
 
   it('volver a planificar sin indicar el orden reemplaza la ruta por una calculada', async () => {

@@ -6,17 +6,19 @@ import { evaluar } from './evaluacion.js';
  * la parada y la posición que menos encarecen la ruta. Una parada sin posición factible igual se inserta donde
  * menos duele (queda en riesgo); nunca se descarta.
  */
-export const construir = (c: Compilado, base: readonly number[], restantes: readonly number[], protegidas: number): number[] => {
+export const construir = (c: Compilado, base: readonly number[], restantes: readonly number[], protegidas: number, agotado: () => boolean = () => false): number[] => {
   const orden = [...base];
   const pendientes = [...restantes];
   const candidata = new Array<number>(orden.length + pendientes.length + 1).fill(0);
 
   while (pendientes.length > 0) {
+    if (agotado()) return [...orden, ...pendientes];
     let mejorCosto = Infinity;
     let mejorParada = -1;
     let mejorPosicion = protegidas;
     for (const p of pendientes) {
       for (let pos = protegidas; pos <= orden.length; pos++) {
+        if (agotado()) return [...orden, ...pendientes];
         for (let k = 0; k < pos; k++) candidata[k] = orden[k] ?? 0;
         candidata[pos] = p;
         for (let k = pos; k < orden.length; k++) candidata[k + 1] = orden[k] ?? 0;

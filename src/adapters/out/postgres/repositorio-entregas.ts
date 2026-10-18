@@ -75,6 +75,35 @@ export class PostgresEntregaRepository implements EntregaRepository {
     return salida;
   }
 
+  async eventosDeLocal(empresaId: string, localId: string, desde: Date): Promise<readonly { readonly tipo: string; readonly motivo?: string; readonly creadoEn: Date }[]> {
+    const filas = await this.db
+      .selectFrom('entrega_evento')
+      .select(['tipo', 'motivo', 'creado_en'])
+      .where('empresa_id', '=', empresaId)
+      .where('local_id', '=', localId)
+      .where('tipo', 'in', ['entregado', 'cerrado', 'no_entregado'])
+      .where('creado_en', '>=', desde)
+      .orderBy('creado_en')
+      .execute();
+    return filas.map((f) => ({ tipo: f.tipo, creadoEn: f.creado_en, ...(f.motivo !== null ? { motivo: f.motivo } : {}) }));
+  }
+
+  async eventosDeLocales(empresaId: string, localIds: readonly string[], desde: Date): Promise<ReadonlyMap<string, readonly { readonly tipo: string; readonly motivo?: string; readonly creadoEn: Date }[]>> {
+    const salida = new Map<string, { tipo: string; motivo?: string; creadoEn: Date }[]>();
+    if (localIds.length === 0) return salida;
+    const filas = await this.db
+      .selectFrom('entrega_evento')
+      .select(['local_id', 'tipo', 'motivo', 'creado_en'])
+      .where('empresa_id', '=', empresaId)
+      .where('local_id', 'in', [...localIds])
+      .where('tipo', 'in', ['entregado', 'cerrado', 'no_entregado'])
+      .where('creado_en', '>=', desde)
+      .orderBy('creado_en')
+      .execute();
+    for (const f of filas) salida.set(f.local_id, [...(salida.get(f.local_id) ?? []), { tipo: f.tipo, creadoEn: f.creado_en, ...(f.motivo !== null ? { motivo: f.motivo } : {}) }]);
+    return salida;
+  }
+
   async visitasConGps(empresaId: string, localId: string, limite: number): Promise<readonly VisitaConGps[]> {
     const filas = await this.db
       .selectFrom('entrega_evento')

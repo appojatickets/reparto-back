@@ -3,7 +3,9 @@
 Lista viva de lo que el agente **no puede** hacer (paneles, claves, decisiones de negocio, pruebas con personas).
 Marca cada casilla al terminar. Nunca pegues claves secretas en el chat: cárgalas directo en el panel.
 
-Última actualización: 2026-10-07 (aprendizaje en segundo plano, pines por verificar/verificados, ruta que prefiere lo cercano).
+Última actualización: 2026-10-10 (distancias por calles activas, pines que se verifican solos, planilla del día, «las agrego en orden» y por dónde parte la ruta).
+
+Estado en vivo (2026-10-10): `main` desplegado en Vercel (READY); 817 locales, 116 con pin verificado (114 por las entregas), 532 sin pin; la caché de calles (`viaje_par`) ya tiene 1.055 viajes, o sea que OpenRouteService está consultando.
 
 ---
 
@@ -14,7 +16,7 @@ Lo más importante primero. Marca cada casilla al terminar; el detalle de cada u
 1. [ ] **Cargar los horarios de atención** (hoy hay 0): Importar clientes → **REVISAR LAS NOTAS CON HORARIOS** → **APLICAR**. Es lo más barato y hace que la ruta respete a quién le sirve cada hora.
 2. [ ] **Buscar los pines que faltan:** 588 de 766 locales no tienen pin. Importar clientes → **BUSCAR LOS PINES POR DIRECCIÓN** y deja la pantalla abierta ~15 minutos. Es lo que más mejora la ruta: con los pines la siguiente parada coincide con la del chofer el 72 % de las veces; sin ellos, mucho menos. El buscador gratis encuentra ~1 de cada 3 direcciones; las demás se fijan solas con la primera entrega.
 3. [ ] **Contarme 3 paradas que moviste a mano y por qué** (cierra pronto, sentido de la calle, queda de paso, pedido del cliente…). Con eso afino cómo ordena la ruta.
-4. [ ] **Decidir las distancias por calles** (hoy la ruta mide en línea recta): ver A19-6. Recomendado: OpenRouteService, gratis.
+4. [x] **Distancias por calles:** hecho, OpenRouteService activo (ver A19-6).
 5. [ ] **Pegar el enlace que no funcionó** (`maps.app.goo.gl/tQsDTWhhRh9eyaTC8`) en un local con **PEGAR UBICACIÓN** y contarme el mensaje que sale.
 6. [ ] **Verificar pines** que ya sepas que están bien (ficha del local → **VERIFICAR PIN**): quedan fijos y las entregas dejan de moverlos.
 7. [ ] **Pedir a los choferes** que trabajen con la app abierta y la pantalla encendida: el recorrido y la llegada automática solo funcionan así.
@@ -71,7 +73,7 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar.
 - [ ] Probar SUBIR / BAJAR, «MÁS» → IR PRIMERO / DEJAR PARA DESPUÉS / QUITAR DEL CAMIÓN, y agregar una factura nueva al camión y usar **INSERTAR NUEVAS**.
 - [ ] Anotar qué ruta te parece mala (qué camión, qué día y por qué): con eso calibro el motor (las velocidades hoy son estimadas, spike S1).
 - [ ] Abrir un cliente (BUSCAR CLIENTE → tocar el cliente): ahí está **Ubicación del local (pin)** (pegar las coordenadas de Google Maps) y **Horario de atención**.
-- [ ] Probar el horario con botones: elegir días (LUN A VIE), «Abre a las 10:00», «Cierra a las 18:00», colación 13 a 14, domingo CERRADO, o OTRO HORARIO; luego GUARDAR HORARIO. Después calcular la ruta de un camión con ese cliente: un local cerrado ese día sale en «No se pueden atender».
+- [ ] Probar el horario con botones: elegir días (LUN A VIE), «Abre a las 10:00», «Cierra a las 18:00», colación 13 a 14, domingo CERRADO, o OTRO HORARIO; luego GUARDAR HORARIO. Después calcular la ruta de un camión con ese cliente: un local cerrado ese día va al final de la ruta, marcado «POSIBLEMENTE CERRADO» (ya no sale de la ruta, ADR 0042).
 - [ ] Un día sin dato no tiene restricción (el sistema no inventa cierres); «cerrado» solo existe si tú lo marcas.
 
 ### A8. Probar la app del chofer (Fase 4a) — en un celular
@@ -158,8 +160,8 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 
 ### A19-6. Distancias por calles (decisión tuya)
 La ruta hoy mide en línea recta × 1,35. Es óptima en esa medida, pero no ve sentidos de calle, líneas de tren ni la Panamericana.
-- [ ] **Opción recomendada, gratis: OpenRouteService** (datos de OpenStreetMap). Crea la cuenta en `account.heigit.org`, genera una clave API y cárgala en Render → `reparto-back` → **Environment** como `ORS_API_KEY` (nunca la pegues en el chat). Plan gratis: 500 consultas de matriz al día. **Si te pide tarjeta, detente y avísame.** Ya está implementado (ADR 0026): cuando la cargues, la ruta usa calles sola (no hay que hacer nada más); con caché y vuelve a línea recta si algo falla.
-- [ ] Cuando la hayas cargado, avísame «listo» (sin la clave): compruebo en los registros que ya consulta (la tabla de caché ya está creada en tu base).
+- [x] **Opción elegida, gratis: OpenRouteService** (clave cargada, verificada el 2026-10-10) (datos de OpenStreetMap). Crea la cuenta en `account.heigit.org`, genera una clave API y cárgala en Render → `reparto-back` → **Environment** como `ORS_API_KEY` (nunca la pegues en el chat). Plan gratis: 500 consultas de matriz al día. **Si te pide tarjeta, detente y avísame.** Ya está implementado (ADR 0026): cuando la cargues, la ruta usa calles sola (no hay que hacer nada más); con caché y vuelve a línea recta si algo falla.
+- [x] Verificado el 2026-10-10: la tabla de caché tiene 1.055 viajes guardados, la ruta ya usa calles.
 - [x] **Google Maps: descartado por ti (2026-10-07).** Habría costado con tarjeta (≈ US$95 al mes con 3 camiones de 20 paradas, más con rutas largas) y no permite guardar los tiempos. No se usa.
 - [ ] **Alternativa propia (más adelante):** servidor de rutas propio con datos de OpenStreetMap. Necesita un plan de Render más grande que el Starter (costo extra): no lo haré sin tu autorización.
 
@@ -227,10 +229,49 @@ Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos ve
 - [ ] Como admin, **CONFIGURACIÓN** → «Por dónde parte la ruta»: elige **MÁS LEJANO DEL DEPÓSITO** y guarda. Calcula una ruta de un camión con varias comunas: debe partir por lo más lejano y volver acercándose. Prueba también **MÁS CERCANO** y **AUTOMÁTICO** (como antes).
 - [ ] Un local que cierra temprano debe atenderse antes aunque esté cerca: el horario manda sobre esta preferencia.
 
+### A28. Foto de perfil (ADR 0039 del back, ADR 0026 del front)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. La migración ya está aplicada en Supabase.
+- [ ] Al entrar a la app, bajo el saludo aparece un círculo con tus iniciales y **PONER MI FOTO**. También lo ves chico junto a tu nombre en la cabecera (tócalo para ir a tu perfil).
+- [ ] **Mi perfil:** toca **SUBIR MI FOTO**, elige una foto (galería o cámara). Se recorta en cuadrado y aparece al tiro en el perfil, la cabecera y el saludo. Pruébalo en el celular.
+- [ ] **CAMBIAR MI FOTO** la reemplaza; **QUITAR MI FOTO** pide confirmar y vuelven las iniciales.
+- [ ] **ADMIN → USUARIOS:** cada persona muestra su foto chica (o sus iniciales).
+- [ ] Dime si el tamaño del círculo en la cabecera y en el saludo te parece bien o lo ajusto.
+
+### A29. Orden manual con un toque, aprendizaje del chofer y «entregado sin pin» (ADR 0040 del back, ADR 0027 del front)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. Las migraciones ya están aplicadas en Supabase.
+- [ ] **Interruptor ORDEN DE LA RUTA** (en RUTAS y MI RUTA, bajo el resumen): **AUTOMÁTICO** (el sistema ordena lo que queda) y **MANUAL** (nada se mueve solo). Toca **MANUAL** con una ruta ya calculada: queda *igual* que la ves y desde ahí solo se mueve lo que tú muevas (la etiqueta pasa a **ORDEN MANUAL**).
+- [ ] En manual: arrastra una parada con **↕ MOVER** y comprueba que nada más se reordena; carga otra factura y entra al final; en un local cerrado, **VOLVER MÁS TARDE** lo baja de lugar.
+- [ ] Toca **AUTOMÁTICO**: pide confirmar y el sistema ordena lo que queda. **VOLVER AL ORDEN EN QUE CARGUÉ** (solo en manual) rehace la ruta en el orden de carga.
+- [ ] Al armar la ruta por primera vez, **LAS AGREGO EN ORDEN** = ruta manual (el orden en que cargas las facturas es el orden de la ruta).
+- [ ] **ENTREGADO, SIN FIJAR EL PIN** (al abrir una parada): queda entregada en su lugar y en «Hechas hoy», pero no se guarda tu posición ni se mueve el pin. Úsalo cuando ya te alejaste de la puerta.
+- [ ] **ANALÍTICA → «Días en orden manual: la experiencia del chofer»**: aparece el día que un chofer ordenó solo, con los km que manejó frente a los que habría sugerido el sistema y cuántas paradas movió a mano. Se llena después del próximo análisis (ANALIZAR AHORA).
+
+### A30. Quiénes aportaron a un local (ADR 0041 del back, ADR 0028 del front)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. No hay migración.
+- [ ] Abre un local que tenga **foto, pin y más de una entrega (o el pin verificado)**, desde la ficha (BUSCAR CLIENTE) o desde una parada de la ruta. Debajo de las insignias aparece una fila chica: **«Aportaron: Juan Pérez y 2 más»** con sus fotos de perfil.
+- [ ] Tócala: se despliega cada persona con su foto y lo que aportó (**Subió la foto · Verificó el pin · N entregas**). Vuelve a tocarla y se esconde.
+- [ ] Un local sin foto, sin pin o con una sola entrega sin verificar **no** muestra la fila.
+- [ ] Dime si la fila te parece discreta, o si prefieres verla también en LOCALES POR COMUNA.
+
+### A31. El horario ya no saca paradas de la ruta (ADR 0042 del back)
+Esperar ~2 min a que Render y Vercel terminen de desplegar y abrir la app dos veces. No hay migración.
+- [ ] Carga un horario en un local con factura (ficha del local → Horario). Marca un día **CERRADO** que sea el de hoy y calcula la ruta: el local **sigue en la ruta, al final**, con la marca **POSIBLEMENTE CERRADO**; al abrirlo dice «Según su horario hoy no atiende. Sigue en tu ruta, al final: si está abierto, entrégalo igual.»
+- [ ] Pon un horario que cierre antes de la hora actual: pasa lo mismo («Según su horario cerró a las HH:MM…»).
+- [ ] Pon un horario normal (abre 9, cierra 18): el local se atiende en su lugar, sin marca.
+- [ ] Si algo de un horario te parece mal medido, cuéntame el local, el horario que pusiste y la hora a la que calculaste la ruta.
+
+### A32. Horas estimadas con botón (ADR 0031 del front)
+Esperar ~2 min a que Vercel termine de desplegar y abrir la app dos veces. Solo cambia el front.
+- [ ] En **MI RUTA** o **RUTAS**, bajo el resumen aparece **VER HORAS ESTIMADAS**. Tócalo: cada parada muestra **«~10:10»** a la derecha y **VOLVER A IBIZA** muestra **«Llegada aproximada 11:40»**. **OCULTAR HORAS ESTIMADAS** las esconde. Queda recordado en tu teléfono.
+- [ ] Haz una ruta real con las horas encendidas y anota, en 3 o 4 paradas, a qué hora llegaste de verdad frente a lo que decía la app. Con eso calibro el cálculo (ver abajo).
+
 ## B. Antes de usar el sistema con choferes reales
 
 ### B1. Respaldos
-Supabase Free **no** incluye respaldos automáticos (a verificar en la fecha). Fase 7 los resuelve; mientras tanto no cargues datos que no puedas volver a importar.
+Supabase Free **no** incluye respaldos automáticos. Ya hay un workflow diario cifrado (ADR 0044, `docs/respaldo.md`); falta que tú crees los secretos:
+- [ ] GitHub → `reparto-back` → Settings → Secrets and variables → Actions: crear `BACKUP_DATABASE_URL` (cadena del **Session pooler** de Supabase, con tu clave) y `BACKUP_PASSPHRASE` (frase larga inventada por ti; guárdala fuera de GitHub). No los pegues en el chat.
+- [ ] Actions → **Respaldo diario** → Run workflow, y comprobar que aparece el artefacto `respaldo-AAAA-MM-DD`.
+- [ ] (Una vez) probar la restauración en un proyecto Supabase vacío siguiendo `docs/respaldo.md`.
 
 ### B2. Subir Render a Starter (~US$7/mes) — DESPUÉS de la semana de pruebas
 Con esto el servidor deja de dormirse (ver `docs/adr/0006-render-starter-pagado.md`). Decisión tuya: se activa cuando el sistema esté terminado y lleve ~1 semana de uso de prueba en plan gratis. Mientras tanto, el primer toque tras 15 min de inactividad espera hasta 1 minuto (con aviso en pantalla). Es la única excepción a «todo gratis».
@@ -266,6 +307,12 @@ La ley rige desde el 1-dic-2026 (hay un proyecto para aplazarla, aún en trámit
 - [x] **O-06:** el chofer recibe su montón de facturas impresas de la oficina y las carga él mismo por voz o texto (ADR 0012). Pendiente: ¿la oficina decide qué facturas lleva cada camión, o el chofer saca las que le tocan de un montón común?
 
 ---
+
+## C2. Pospuesto por decisión del dueño (2026-10-11)
+
+- ~~Respaldo diario con GitHub Actions: no, por ahora.~~ **Retomado el 11-oct (ADR 0044)**, ver B1. Antecedente: la cuota de Actions se agota rápido en otros proyectos de la cuenta. Nota (11-oct): estos dos repos son **públicos**, y en repos públicos Actions es gratis e ilimitado; la cuota la gastan los proyectos **privados** de la misma cuenta. Se puede retomar cuando lo decidas. Mientras tanto, los respaldos son manuales (Supabase → Database → Backups no está en el plan gratis; exportar los datos importantes desde EXPORTAR DATOS o con una exportación de Supabase cuando quieras).
+- **Monitoreo y errores (Sentry/UptimeRobot) y observabilidad de producto: más adelante.**
+- Sigue pendiente de la revisión de arquitectura (para cuando se decida): trabajos pendientes que sobrevivan reinicios, migraciones automáticas en el despliegue, pruebas de carga, escaneo de seguridad y un runbook de operación.
 
 ## D. Hecho por el agente (para que sepas qué no necesitas tocar)
 

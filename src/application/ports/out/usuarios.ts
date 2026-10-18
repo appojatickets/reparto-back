@@ -11,6 +11,8 @@ export interface UsuarioRepository {
   cambiarActivo(empresaId: string, id: string, activo: boolean): Promise<boolean>;
   /** Da o quita el permiso de editor. Devuelve false si el usuario no existe en esa empresa. */
   cambiarEditor(empresaId: string, id: string, editor: boolean): Promise<boolean>;
+  /** Pone la foto de perfil (o la quita con `undefined`). Devuelve false si el usuario no existe en esa empresa. */
+  cambiarFoto(empresaId: string, id: string, foto: { readonly path: string; readonly en: Date } | undefined): Promise<boolean>;
 }
 
 export type EstadoIntentos = { readonly intentos: number; readonly bloqueadoHasta?: Date };

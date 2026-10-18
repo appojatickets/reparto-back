@@ -37,7 +37,7 @@ export const crearViajesPorCalle = ({ proveedor, cache }: { readonly proveedor: 
 
     const conocidos = new Map<string, number>();
     const recordar = (v: ViajeGuardado): void => { conocidos.set(`${v.desde}|${v.hasta}`, v.segundos / 60); };
-    (await cache.leer(fuentes.map((f) => f.clave), destinos.map((d) => d.clave))).forEach(recordar);
+    (await cache.leer(fuentes.map((f) => f.clave), destinos.map((d) => d.clave)).catch((): readonly ViajeGuardado[] => [])).forEach(recordar);
 
     const faltan = (de: { clave: string }[], hacia: { clave: string }[]): boolean => de.some((d) => hacia.some((h) => d.clave !== h.clave && !conocidos.has(`${d.clave}|${h.clave}`)));
     const consultar = async (puntos: { clave: string; lat: number; lng: number }[], desde: number[], hacia: number[]): Promise<void> => {
@@ -50,7 +50,7 @@ export const crearViajesPorCalle = ({ proveedor, cache }: { readonly proveedor: 
           const a = puntos[j];
           const segundos = m.segundos[fila]?.[col];
           const metros = m.metros[fila]?.[col];
-          if (!de || !a || de.clave === a.clave || segundos === undefined || metros === undefined || !Number.isFinite(segundos) || !Number.isFinite(metros) || segundos < 0) return;
+          if (!de || !a || de.clave === a.clave || segundos === undefined || metros === undefined || !Number.isFinite(segundos) || !Number.isFinite(metros) || segundos < 0 || metros < 0) return;
           nuevos.push({ desde: de.clave, hasta: a.clave, segundos, metros });
         });
       });
@@ -58,21 +58,33 @@ export const crearViajesPorCalle = ({ proveedor, cache }: { readonly proveedor: 
       if (nuevos.length > 0) await cache.guardar(nuevos).catch(() => undefined);
     };
 
-    const pedidos: Promise<void>[] = [];
-    // Entre paradas (y hacia el depósito): solo cambia cuando cambia el conjunto de paradas.
+    // Bloques acotados, secuenciales: nunca superar 3.500 pares ni disparar ráfagas.
+    const porBloques = async (puntos: { clave: string; lat: number; lng: number }[], desde: number[], hacia: number[]): Promise<void> => {
+      const ancho = Math.min(hacia.length, 50);
+      if (ancho === 0) return;
+      const alto = Math.max(1, Math.floor(3500 / ancho));
+      for (let i = 0; i < desde.length; i += alto) {
+        for (let j = 0; j < hacia.length; j += ancho) {
+          const filas = desde.slice(i, i + alto);
+          const columnas = hacia.slice(j, j + ancho);
+          if (!filas.some((f) => columnas.some((h) => {
+            const de = puntos[f]; const a = puntos[h];
+            return de && a && de.clave !== a.clave && !conocidos.has(`${de.clave}|${a.clave}`);
+          }))) continue;
+          await consultar(puntos, filas, columnas).catch(() => undefined);
+        }
+      }
+    };
     if (paradas.length > 0 && faltan(paradas, destinos)) {
-      pedidos.push(consultar(destinos, paradas.map((p) => destinos.findIndex((d) => d.clave === p.clave)), destinos.map((_, i) => i)));
+      await porBloques(destinos, paradas.map((p) => destinos.findIndex((d) => d.clave === p.clave)), destinos.map((_, i) => i));
     }
-    // Desde donde está el camión: cambia con cada entrega, por eso se pide solo esa fila.
     const soloOrigen = origen.filter((o) => !paradas.some((p) => p.clave === o.clave));
     if (soloOrigen.length > 0 && faltan(soloOrigen, destinos)) {
-      const puntos = [...soloOrigen, ...destinos];
-      pedidos.push(consultar(puntos, soloOrigen.map((_, i) => i), destinos.map((_, i) => soloOrigen.length + i)));
+      await porBloques([...soloOrigen, ...destinos], soloOrigen.map((_, i) => i), destinos.map((_, i) => soloOrigen.length + i));
     }
-    await Promise.all(pedidos.map((p) => p.catch(() => undefined)));
 
     return {
-      conCalles: true,
+      conCalles: conocidos.size > 0,
       minutos: (desde, hasta) => {
         const a = claveDe.get(desde);
         const b = claveDe.get(hasta);

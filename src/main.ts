@@ -1,5 +1,9 @@
+import { crearVerTrazado } from './application/use-cases/trazado.js';
+import { crearTrazadoOrs } from './adapters/out/red/ors-trazado.js';
 import { checkHealth } from './application/use-cases/check-health.js';
 import { crearActualizarLocal } from './application/use-cases/actualizar-local.js';
+import { crearVerContribuyentes } from './application/use-cases/contribuyentes-local.js';
+import { crearObtenerUrlFotoUsuario, crearQuitarFotoPerfil, crearRegistrarFotoPerfil, crearSolicitarUrlSubidaPerfil } from './application/use-cases/foto-perfil.js';
 import { crearObtenerUrlFoto, crearQuitarFotoLocal, crearRegistrarFotoLocal, crearSolicitarUrlSubida } from './application/use-cases/archivos.js';
 import { crearActualizarCamion, crearCrearCamion, crearListarCamiones } from './application/use-cases/camiones.js';
 import { crearActualizarFactura, crearListarFacturas, crearRegistrarFactura } from './application/use-cases/facturas.js';
@@ -9,9 +13,13 @@ import { crearGuardarHorario, crearObtenerHorario } from './application/use-case
 import { crearIniciarJornada, crearMiJornada, crearResolverCamion, crearTerminarJornada } from './application/use-cases/jornada.js';
 import { crearReportarLocal, crearResolverReporteLocal, crearVerReportes } from './application/use-cases/reportes-local.js';
 import { PostgresReporteLocalRepository } from './adapters/out/postgres/repositorio-reportes-local.js';
+import { PostgresContribucionesRepository } from './adapters/out/postgres/repositorio-contribuciones.js';
 import { crearVerificarPin } from './application/use-cases/pin-verificado.js';
 import { crearRevisarPines } from './application/use-cases/revisar-pines.js';
 import { crearVerAnalitica } from './application/use-cases/analitica.js';
+import { crearVerFichaAprendida } from './application/use-cases/ficha-aprendida.js';
+import { crearListarEmergencias, crearRegistrarEmergencia } from './application/use-cases/emergencias.js';
+import { crearVerificarPinesRespaldados } from './application/use-cases/verificar-pines-respaldados.js';
 import { crearAnalizarAprendizaje } from './application/use-cases/analizar-aprendizaje.js';
 import { crearRegistrarPosiciones } from './application/use-cases/seguimiento.js';
 import { crearRegistrarEvento } from './application/use-cases/entregas.js';
@@ -40,6 +48,7 @@ import { PostgresAprendizajeRepository } from './adapters/out/postgres/repositor
 import { PostgresRegistroAprendizajeRepository } from './adapters/out/postgres/repositorio-registro-aprendizaje.js';
 import { PostgresRutaRepository } from './adapters/out/postgres/repositorio-rutas.js';
 import { PostgresHorarioRepository } from './adapters/out/postgres/repositorio-horarios.js';
+import { PostgresEmergenciaRepository } from './adapters/out/postgres/repositorio-emergencias.js';
 import { PostgresJornadaRepository } from './adapters/out/postgres/repositorio-jornadas.js';
 import { PostgresEntregaRepository } from './adapters/out/postgres/repositorio-entregas.js';
 import { crearFotosParaRevision, crearReportarFoto, crearResolverReporteFoto, crearVerificarFoto } from './application/use-cases/fotos-revision.js';
@@ -79,12 +88,14 @@ const vendedores = new PostgresVendedorRepository(db);
 const planillas = new PostgresPlanillaRepository(db);
 const reportesFoto = new PostgresFotoReporteRepository(db);
 const reportesLocal = new PostgresReporteLocalRepository(db);
+const contribuciones = new PostgresContribucionesRepository(db);
 const facturas = new PostgresFacturaRepository(db);
 const empresas = new PostgresEmpresaRepository(db);
 const rutas = new PostgresRutaRepository(db);
 const horarios = new PostgresHorarioRepository(db);
 const jornadas = new PostgresJornadaRepository(db);
 const entregas = new PostgresEntregaRepository(db);
+const emergencias = new PostgresEmergenciaRepository(db);
 const registro = new PostgresRegistroAprendizajeRepository(db);
 const identidad = new IdentidadSupabase({ urlBase: env.SUPABASE_URL, claveServicio: env.SUPABASE_SERVICE_ROLE_KEY, clavePublica: env.SUPABASE_ANON_KEY });
 const almacen = new AlmacenSupabase({ urlBase: env.SUPABASE_URL, claveServicio: env.SUPABASE_SERVICE_ROLE_KEY });
@@ -102,9 +113,15 @@ const programarPines = (empresaId: string, localIds: readonly string[]): void =>
 const aprendizaje = new PostgresAprendizajeRepository(db);
 const analitica = new PostgresAnaliticaRepository(db);
 // Tiempos por calles: solo si hay clave de OpenRouteService; sin ella la ruta mide en línea recta.
-const viajes = crearViajesPorCalle({ proveedor: env.ORS_API_KEY ? crearProveedorOrs(env.ORS_API_KEY) : undefined, cache: new PostgresCacheDeViajes(db) });
+const viajes = crearViajesPorCalle({ proveedor: env.ORS_API_KEY ? crearProveedorOrs(env.ORS_API_KEY, fetch, env.ORS_PROFILE) : undefined, cache: new PostgresCacheDeViajes(db, env.ORS_PROFILE) });
 const serviciosDeRuta = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas, jornadas, registro, aprendizaje, viajes, clock, resolverCamion, programarPines });
-const analizarAprendizaje = crearAnalizarAprendizaje({ aprendizaje, empresas, pines, clock });
+const analizarSoloAprendizaje = crearAnalizarAprendizaje({ aprendizaje, empresas, pines, clock });
+const verificarRespaldados = crearVerificarPinesRespaldados({ clientes, entregas, clock });
+// Antes de analizar se verifican solos los pines que dos entregas parecidas ya respaldan; si eso falla, el análisis sigue igual.
+const analizarAprendizaje: typeof analizarSoloAprendizaje = async (empresaId) => {
+  await verificarRespaldados(empresaId).catch((e: unknown) => { console.error('No se pudieron verificar los pines respaldados', e); });
+  return analizarSoloAprendizaje(empresaId);
+};
 
 // El analizador corre en segundo plano: poco después de terminar una ruta (con calma, juntando varias) y cada pocas horas. Nunca bloquea una petición.
 const CADA_HORAS = 3;
@@ -128,7 +145,7 @@ const analizarPronto = (): void => {
 };
 const terminarJornada = crearTerminarJornada({ jornadas, facturas, rutas, registro, clock });
 const casos: CasosDeUso = {
-  checkHealth: () => checkHealth({ db: dbHealth, clock }),
+  checkHealth: () => checkHealth({ db: dbHealth, clock, ...(env.RENDER_GIT_COMMIT ? { version: env.RENDER_GIT_COMMIT.slice(0, 7) } : {}) }),
   autenticar: crearAutenticarUsuario({ identidad, usuarios, clock }),
   iniciarSesion: crearIniciarSesion({ identidad, usuarios, intentos, clock, dominioCorreo: env.AUTH_EMAIL_DOMAIN }),
   refrescarSesion: crearRefrescarSesion({ identidad }),
@@ -137,6 +154,11 @@ const casos: CasosDeUso = {
   resetearPin: crearResetearPin({ identidad, usuarios, intentos }),
   cambiarEstadoUsuario: crearCambiarEstadoUsuario({ usuarios }),
   cambiarEditorUsuario: crearCambiarEditorUsuario({ usuarios }),
+  solicitarUrlSubidaPerfil: crearSolicitarUrlSubidaPerfil({ almacen, ids: generadorDeIds }),
+  registrarFotoPerfil: crearRegistrarFotoPerfil({ usuarios, almacen, clock }),
+  quitarFotoPerfil: crearQuitarFotoPerfil({ usuarios, almacen }),
+  obtenerUrlFotoUsuario: crearObtenerUrlFotoUsuario({ usuarios, almacen }),
+  verContribuyentes: crearVerContribuyentes({ contribuciones, usuarios }),
   buscarClientes: crearBuscarClientes({ clientes }),
   crearClienteNuevo: crearCrearClienteNuevo({ clientes }),
   importarClientes: crearImportarClientes({ clientes }),
@@ -176,7 +198,9 @@ const casos: CasosDeUso = {
   estadoBusquedaPines: crearEstadoBusquedaPines({ clientes, cola: colaDePines }),
   listarFacturas: crearListarFacturas({ facturas, clock, resolverCamion }),
   actualizarFactura: crearActualizarFactura({ facturas, resolverCamion }),
+  verTrazado: crearVerTrazado({ ver: serviciosDeRuta.ver, proveedor: crearTrazadoOrs(env.ORS_API_KEY, env.ORS_PROFILE, () => clock.now().getTime()) }),
   verRuta: serviciosDeRuta.ver,
+  marcaDeRuta: serviciosDeRuta.marca,
   planificarRuta: serviciosDeRuta.planificar,
   operarRuta: serviciosDeRuta.operar,
   miJornada: crearMiJornada({ jornadas, clock, planillas }),
@@ -189,6 +213,9 @@ const casos: CasosDeUso = {
   verAnalitica: crearVerAnalitica({ analitica, aprendizaje, camiones, clientes, clock }),
   ejecutarAnalisis: analizarAprendizaje,
   registrarPosiciones: crearRegistrarPosiciones({ registro, rutas, entregas, resolverCamion, clock }),
+  verFichaAprendida: crearVerFichaAprendida({ clientes, entregas, clock }),
+  registrarEmergencia: crearRegistrarEmergencia({ emergencias, resolverCamion }),
+  listarEmergencias: crearListarEmergencias({ emergencias, resolverCamion }),
   registrarEvento: crearRegistrarEvento({ facturas, entregas, clientes, rutas, resolverCamion, reloj: clock, reordenarTrasVisita: serviciosDeRuta.reordenarTrasVisita }),
   obtenerHorario: crearObtenerHorario({ horarios }),
   guardarHorario: crearGuardarHorario({ horarios }),

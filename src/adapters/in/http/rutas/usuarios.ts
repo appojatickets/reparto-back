@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { actor } from '../auth.js';
 import { enviarError, RESPUESTAS_ERROR } from '../errores.js';
-import { idParam, SEGURIDAD, tipada, usuarioPublico, type ContextoRutas } from './comunes.js';
+import { aUsuarioPublico, idParam, SEGURIDAD, tipada, usuarioPublico, type ContextoRutas } from './comunes.js';
 
 const rol = z.enum(['admin', 'despachador', 'chofer', 'ayudante']);
 
@@ -14,7 +14,7 @@ export const rutasUsuarios = ({ app, casos, guard }: ContextoRutas): void => {
     { preHandler: admin, schema: { tags: ['usuarios'], summary: 'Listar usuarios', security: SEGURIDAD, response: { 200: z.object({ usuarios: z.array(usuarioPublico) }), ...RESPUESTAS_ERROR } } },
     async (req, reply) => {
       const lista = await casos.listarUsuarios(actor(req));
-      return reply.send({ usuarios: lista.map((u) => ({ id: u.id, username: u.username, nombre: u.nombre, rol: u.rol, activo: u.activo, editor: u.editor })) });
+      return reply.send({ usuarios: lista.map(aUsuarioPublico) });
     },
   );
 
@@ -40,7 +40,7 @@ export const rutasUsuarios = ({ app, casos, guard }: ContextoRutas): void => {
       const r = await casos.crearUsuario(actor(req), req.body);
       if (!r.ok) return enviarError(reply, r.error);
       const u = r.value;
-      return reply.code(201).send({ id: u.id, username: u.username, nombre: u.nombre, rol: u.rol, activo: u.activo, editor: u.editor });
+      return reply.code(201).send(aUsuarioPublico(u));
     },
   );
 

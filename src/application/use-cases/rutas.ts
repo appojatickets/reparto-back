@@ -15,6 +15,7 @@ import type { Clock } from '../ports/out/clock.js';
 import type { EmpresaRepository } from '../ports/out/empresa.js';
 import type { EntregaRepository } from '../ports/out/entregas.js';
 import type { FacturaRepository } from '../ports/out/facturas.js';
+import { aObservaciones, cierreProbableDe, fichaAprendida, type FranjaCierreProbable } from '../../domain/aprendizaje/ficha-aprendida.js';
 import type { JornadaRepository } from '../ports/out/jornadas.js';
 import type { ViajesDeLaRuta, ViajesPorCalle } from './viajes-por-calle.js';
 import { aprendidoParaRuta, SIN_APRENDIZAJE, type AprendidoParaRuta } from '../../domain/aprendizaje/uso.js';
@@ -92,6 +93,8 @@ export type Operacion =
   /** Arrastrar y soltar: la parada queda en la posición `posicion` (0 = la primera) de la lista de paradas en orden. */
   | { readonly tipo: 'mover'; readonly facturaId: string; readonly posicion: number }
   | { readonly tipo: 'ordenar' | 'insertar' }
+  /** PASAR A MANUAL: se congela el orden que se ve y desde ahí nada se reordena solo (modo «carga»). */
+  | { readonly tipo: 'fijar' }
   | { readonly tipo: 'salida'; readonly salidaMin: number };
 
 type Dependencias = {
@@ -128,7 +131,12 @@ type Contexto = {
   readonly ordenCarga: ReadonlyMap<string, number>;
   /** Ubicación aproximada de las pendientes sin pin, según las vecinas de carga con ubicación conocida. */
   readonly estimadas: ReadonlyMap<string, Coordenada>;
+  /** Franjas en que cada local suele estar cerrado según lo aprendido (solo las de evidencia suficiente y probabilidad alta; ADR 0050). */
+  readonly cierres: ReadonlyMap<string, readonly FranjaCierreProbable[]>;
 };
+
+/** Solo se mira lo reciente: lo viejo ya no representa cómo atiende el local hoy. */
+const DIAS_PARA_CIERRES = 180;
 
 /**
  * El orden en que el chofer cargó las facturas del día (las pendientes y las ya hechas) y, para las pendientes sin pin, dónde están
@@ -170,7 +178,7 @@ const itemDe = (f: FacturaParaRuta): ItemVista => ({
   ...(f.nota !== undefined ? { nota: f.nota } : {}),
 });
 
-const entradaDe = (f: FacturaParaRuta, servicioMin?: number, estimada?: Coordenada, ordenCarga?: number): EntradaParada => {
+const entradaDe = (f: FacturaParaRuta, servicioMin?: number, estimada?: Coordenada, ordenCarga?: number, cierreProbable?: readonly FranjaCierreProbable[]): EntradaParada => {
   // Sin pin la ruta no se detiene: se ubica entre sus vecinas de carga o, si no hay, por el centro de la comuna, hasta que haya un pin.
   const coordenada = f.lat !== undefined && f.lng !== undefined ? { lat: f.lat, lng: f.lng } : (estimada ?? centroDeComuna(f.comuna));
   return {
@@ -183,7 +191,19 @@ const entradaDe = (f: FacturaParaRuta, servicioMin?: number, estimada?: Coordena
     urgente: f.urgente,
     ...(servicioMin !== undefined ? { servicioMin } : {}),
     ...(ordenCarga !== undefined ? { ordenCarga } : {}),
+    ...(cierreProbable !== undefined && cierreProbable.length > 0 ? { cierreProbable } : {}),
   };
+};
+
+/** Para cada local, las franjas del día en que suele estar cerrado con evidencia suficiente (ver `cierreProbableDe`). */
+const cierresAprendidos = async (entregas: Pick<EntregaRepository, 'eventosDeLocales'>, empresaId: string, localIds: readonly string[], ahora: Date): Promise<ReadonlyMap<string, readonly FranjaCierreProbable[]>> => {
+  const salida = new Map<string, readonly FranjaCierreProbable[]>();
+  const eventos = await entregas.eventosDeLocales(empresaId, localIds, new Date(ahora.getTime() - DIAS_PARA_CIERRES * 86_400_000)).catch((): ReadonlyMap<string, readonly { readonly tipo: string; readonly motivo?: string; readonly creadoEn: Date }[]> => new Map());
+  for (const [localId, evs] of eventos) {
+    const franjas = cierreProbableDe(fichaAprendida(aObservaciones(evs)));
+    if (franjas.length > 0) salida.set(localId, franjas);
+  }
+  return salida;
 };
 
 export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entregas, jornadas, registro, aprendizaje, viajes, clock, resolverCamion, programarPines }: Dependencias) => {
@@ -209,6 +229,9 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
       esHoy ? entregas.ultimaPosicion(actor.empresaId, camionId, fecha) : Promise.resolve(undefined),
       rutas.hechasConUbicacion(actor.empresaId, camionId, fecha).catch((): readonly HechaConUbicacion[] => []),
     ]);
+    // Lo aprendido de cuándo suele estar cerrado cada local: nunca bloquea la ruta; si no se puede leer, se arma como si no se supiera nada.
+    // El admin puede apagarlo (CONFIGURACIÓN): entonces la ruta se arma como si no supiera nada de los cierres.
+    const cierres = config.usarCierresAprendidos === false ? new Map<string, readonly FranjaCierreProbable[]>() : await cierresAprendidos(entregas, actor.empresaId, [...new Set(items.map((f) => f.localId))], clock.now());
     const sinPinIds = [...new Set(items.filter((f) => f.lat === undefined).map((f) => f.localId))];
     if (sinPinIds.length > 0) programarPines?.(actor.empresaId, sinPinIds);
     const hechas = todas.flatMap((f) =>
@@ -226,7 +249,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
         ]).catch((): ViajesDeLaRuta => ({ minutos: () => undefined, conCalles: false }))
       : { minutos: () => undefined, conCalles: false };
     return ok({
-      config, deposito: config.deposito, items, guardada, hechas, aprendido, viajes: viajesDeLaRuta, ...ordenYEstimadas(items, hechasUbicadas),
+      config, deposito: config.deposito, items, guardada, hechas, aprendido, viajes: viajesDeLaRuta, cierres, ...ordenYEstimadas(items, hechasUbicadas),
       ...(esHoy ? { ahoraMin: minutosEnChile(clock.now()) } : {}),
       ...(ultima ? { origen: { lat: ultima.lat, lng: ultima.lng } } : {}),
     });
@@ -241,9 +264,9 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
       salida: ctx.ahoraMin !== undefined ? Math.max(salida, ctx.ahoraMin) : salida,
       horaLimiteRegresoMin: ctx.config.horaLimiteRegresoMin,
       ...(ctx.config.ordenInicio ? { ordenInicio: ctx.config.ordenInicio } : {}),
-      entradas: ctx.items.map((f) => entradaDe(f, ctx.aprendido.servicioMin(f.localId), ctx.estimadas.get(f.facturaId), ctx.ordenCarga.get(f.facturaId))),
-      // Con tiempos por calles el ritmo aprendido (medido contra la línea recta) ya no aplica.
-      ritmo: ctx.viajes.conCalles ? 1 : ctx.aprendido.ritmo,
+      entradas: ctx.items.map((f) => entradaDe(f, ctx.aprendido.servicioMin(f.localId), ctx.estimadas.get(f.facturaId), ctx.ordenCarga.get(f.facturaId), ctx.cierres.get(f.localId))),
+      // El ritmo aprendido solo afecta los tramos de respaldo; armarProblema separa ambas fuentes.
+      ritmo: ctx.aprendido.ritmo,
       viajeMin: ctx.viajes.minutos,
       fijas,
     });
@@ -414,6 +437,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
         case 'quitar':
         case 'ordenar':
         case 'insertar':
+        case 'fijar':
         case 'salida':
           return ok({ ...ordenarPorCarga(estado, ctx2.ordenCarga), modo: 'carga' });
       }
@@ -441,6 +465,9 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
           return ok({ problema, solucion: manualSinFijas ? evaluarOrden(problema, orden) : optimizar(problema, { ...opciones, ordenInicial: orden }), modo: guardada.modo });
         case 'ordenar':
           return ok({ ...ordenarPendientes(estado, opciones), modo: 'sugerida' });
+        case 'fijar':
+          // Lo que se ve queda tal cual (nada se reordena) y la ruta pasa a manual: las facturas nuevas entrarán al final.
+          return ok({ ...ordenarPorCarga(estado, ctx2.ordenCarga), modo: 'carga' });
         case 'insertar':
           // Las nuevas entran debajo de lo que la persona fijó y lo de abajo se ordena con ellas.
           return ok({ ...(problema.fijas.length === 0 ? insertarNuevas(estado) : ordenarPendientes(estado, opciones)), modo: guardada.modo });
@@ -476,5 +503,21 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
     return r.ok;
   };
 
-  return { ver, planificar, operar, reordenarTrasVisita };
+  /**
+   * Una «marca» barata del estado de la ruta del camión (sin calcular horas ni pedir tiempos por calles): cambia cuando alguien mueve la ruta,
+   * carga una factura o avisa una entrega. Las personas que comparten el camión la consultan seguido y recargan la ruta solo cuando cambió (ADR 0045).
+   */
+  const marca = async (actor: Usuario, entrada: { camionId: string; fecha: string }): Promise<Result<{ readonly marca: string }, ErrorApp>> => {
+    if (!esFechaValida(entrada.fecha)) return err(errorApp('VALIDACION', 'La fecha no es válida.'));
+    const propio = await resolverCamion(actor, entrada.camionId);
+    if (!propio.ok) return propio;
+    const [guardada, todas] = await Promise.all([
+      rutas.obtener(actor.empresaId, entrada.camionId, entrada.fecha),
+      facturas.listar(actor.empresaId, { fecha: entrada.fecha, camionId: entrada.camionId, incluirHechas: true }),
+    ]);
+    const cuenta = (estado: string): number => todas.filter((f) => f.estado === estado).length;
+    return ok({ marca: `v${guardada?.version ?? 0}.e${cuenta('entregada')}.n${cuenta('no_entregada')}.p${cuenta('pendiente')}.a${cuenta('anulada')}` });
+  };
+
+  return { ver, marca, planificar, operar, reordenarTrasVisita };
 };

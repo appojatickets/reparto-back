@@ -1,9 +1,10 @@
+import type { FranjaCierreProbable } from '../aprendizaje/ficha-aprendida.js';
 import { resolverHorario, ventanasParaRuta, type HorarioLocal } from '../entidades/horario.js';
 import type { Fecha } from '../shared/fechas.js';
 import { diaDeSemana } from '../shared/fechas.js';
 import type { OrdenInicio } from '../entidades/config-empresa.js';
 import { distanciaKm, type Coordenada } from '../valor/coordenada.js';
-import { EPS_LLEGADA_CALIBRADO, PARAMETROS_POR_DEFECTO, PESO_ORDEN_CARGA_CALIBRADO, PESO_ORDEN_INICIO, SERVICIO_POR_DEFECTO_MIN } from './parametros.js';
+import { EPS_LLEGADA_CALIBRADO, PARAMETROS_POR_DEFECTO, PESO_CIERRE_APRENDIDO, PESO_ORDEN_CARGA_CALIBRADO, PESO_ORDEN_INICIO, SERVICIO_POR_DEFECTO_MIN } from './parametros.js';
 import { crearFactorHorario, crearTiemposConViajes, crearTiemposHaversine, DEPOSITO, ORIGEN } from './tiempos.js';
 import type { ParadaRuta, ProblemaRuta } from './tipos.js';
 
@@ -20,6 +21,8 @@ export type EntradaParada = {
   readonly servicioMin?: number;
   /** En qué orden se cargó la factura ese día (0 = la primera). */
   readonly ordenCarga?: number;
+  /** Franjas en que el local suele estar cerrado según lo aprendido (solo las de evidencia suficiente y probabilidad alta). */
+  readonly cierreProbable?: readonly FranjaCierreProbable[];
 };
 
 export type DatosProblema = {
@@ -65,6 +68,7 @@ export const armarProblema = (d: DatosProblema): { readonly problema: ProblemaRu
       prioridad: e.urgente,
       ...(e.ordenCarga !== undefined ? { ordenCarga: e.ordenCarga } : {}),
       distanciaDepositoKm: distanciaKm(d.deposito, e.coordenada),
+      ...(e.cierreProbable !== undefined && e.cierreProbable.length > 0 ? { cierreProbable: e.cierreProbable } : {}),
     });
   }
 
@@ -75,12 +79,13 @@ export const armarProblema = (d: DatosProblema): { readonly problema: ProblemaRu
       salida: d.salida,
       paradas,
       fijas: (d.fijas ?? []).filter((id) => ids.has(id)),
-      tiempos: d.viajeMin ? crearTiemposConViajes(crearTiemposHaversine(coordenadas), d.viajeMin, crearFactorHorario()) : crearTiemposHaversine(coordenadas),
-      ritmo: d.ritmo ?? 1,
+      tiempos: d.viajeMin ? crearTiemposConViajes(crearTiemposHaversine(coordenadas), d.viajeMin, crearFactorHorario(), d.ritmo ?? 1) : crearTiemposHaversine(coordenadas),
+      ritmo: d.viajeMin ? 1 : (d.ritmo ?? 1),
       parametros: {
         ...PARAMETROS_POR_DEFECTO,
         epsLlegada: EPS_LLEGADA_CALIBRADO,
         pesoOrdenCarga: PESO_ORDEN_CARGA_CALIBRADO,
+        pesoCierreAprendido: PESO_CIERRE_APRENDIDO,
         ...(d.ordenInicio !== undefined && d.ordenInicio !== 'automatico' ? { ordenInicio: d.ordenInicio, pesoOrdenInicio: PESO_ORDEN_INICIO } : {}),
         ...(d.ordenInicio === 'lejano' ? { epsLlegada: 0 } : {}),
         horaLimiteRegresoMin: d.horaLimiteRegresoMin,

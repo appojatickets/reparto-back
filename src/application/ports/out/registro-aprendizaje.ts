@@ -1,6 +1,6 @@
 import type { Jornada } from './jornadas.js';
 
-export type TipoOperacionRuta = 'planificar' | 'subir' | 'bajar' | 'primero' | 'despues' | 'mover' | 'quitar' | 'ordenar' | 'insertar' | 'salida';
+export type TipoOperacionRuta = 'planificar' | 'subir' | 'bajar' | 'primero' | 'despues' | 'mover' | 'quitar' | 'ordenar' | 'insertar' | 'fijar' | 'salida';
 
 /** Cada cálculo o movimiento de la ruta, con el orden que quedó: es lo que permite comparar lo que sugirió el sistema con lo que se hizo. */
 export type OperacionRuta = {

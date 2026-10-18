@@ -200,3 +200,10 @@ describe('actualizarLocal', () => {
     expect(!r.ok && r.error.codigo).toBe('NO_ENCONTRADO');
   });
 });
+
+it('separa comuna de la dirección combinada sin perder el número', async () => {
+  const clientes = fakeClientes();
+  const buscar = crearBuscarClientes({ clientes });
+  await buscar(despachador, { q: 'Colón 765 San Bernardo' });
+  expect(clientes.buscar).toHaveBeenLastCalledWith('empresa-1', { texto: 'colon 765', comuna: 'San Bernardo', limite: 8 });
+});

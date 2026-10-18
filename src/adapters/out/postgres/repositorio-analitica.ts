@@ -1,5 +1,5 @@
 import { sql } from 'kysely';
-import type { AnaliticaRepository, CalidadDeRuta, Cobertura, DiaDeTrabajo, EtiquetaLocal } from '../../../application/ports/out/analitica.js';
+import type { AnaliticaRepository, CalidadDeRuta, Cobertura, CoberturaGpsDia, DiaDeTrabajo, EtiquetaLocal } from '../../../application/ports/out/analitica.js';
 import type { Db } from './client.js';
 
 const n = (x: unknown): number => Number(x ?? 0);
@@ -43,14 +43,30 @@ export class PostgresAnaliticaRepository implements AnaliticaRepository {
   async calidad(empresaId: string, desde: Date, limite: number): Promise<readonly CalidadDeRuta[]> {
     const filas = await this.db
       .selectFrom('jornada_resumen')
-      .select([sql<string>`to_char(fecha_reparto, 'YYYY-MM-DD')`.as('fecha'), 'camion_id', 'dist_sugerida_m', 'dist_real_m', 'inversiones'])
+      .select([sql<string>`to_char(fecha_reparto, 'YYYY-MM-DD')`.as('fecha'), 'camion_id', 'dist_sugerida_m', 'dist_real_m', 'inversiones', 'origen_orden', 'cambios_manuales', 'orden_sugerido', 'orden_salida', 'orden_entregado', 'inversiones_salida'])
       .where('empresa_id', '=', empresaId)
       .where('creado_en', '>=', desde)
       .where('dist_sugerida_m', 'is not', null)
       .orderBy('fecha_reparto', 'desc')
       .limit(limite)
       .execute();
-    return filas.flatMap((f) => (f.dist_sugerida_m !== null && f.dist_real_m !== null && f.inversiones !== null ? [{ fecha: f.fecha, camionId: f.camion_id, distSugeridaM: f.dist_sugerida_m, distRealM: f.dist_real_m, inversiones: f.inversiones }] : []));
+    return filas.flatMap((f) => (f.dist_sugerida_m !== null && f.dist_real_m !== null && f.inversiones !== null ? [{ fecha: f.fecha, camionId: f.camion_id, distSugeridaM: f.dist_sugerida_m, distRealM: f.dist_real_m, inversiones: f.inversiones, origen: f.origen_orden ?? 'sistema', cambios: f.cambios_manuales ?? 0, ...(f.orden_entregado !== null && f.inversiones_salida !== null ? { entregadas: f.orden_entregado.length, inversionesSalida: f.inversiones_salida } : {}), ...(f.orden_sugerido !== null && f.orden_salida !== null ? { salioComoSugeria: f.orden_salida.length === f.orden_sugerido.length && f.orden_salida.every((id, i) => id === f.orden_sugerido?.[i]) } : {}) }] : []));
+  }
+
+  async coberturaGps(empresaId: string, desde: Date, limite: number): Promise<readonly CoberturaGpsDia[]> {
+    const r = await sql<{ fecha: string; camion_id: string; con_gps: string; en_ruta: string }>`
+      with dias as (
+        select (creado_en at time zone 'America/Santiago')::date as dia, camion_id, min(creado_en) as desde, max(creado_en) as hasta
+        from entrega_evento
+        where empresa_id = ${empresaId} and creado_en >= ${desde} and tipo = 'entregado' and camion_id is not null
+        group by 1, 2 having count(*) >= 5
+      )
+      select to_char(d.dia, 'YYYY-MM-DD') as fecha, d.camion_id,
+        (select count(distinct date_trunc('minute', p.tomado_en)) from posicion_camion p
+          where p.empresa_id = ${empresaId} and p.camion_id = d.camion_id and p.tomado_en between d.desde and d.hasta) as con_gps,
+        greatest(1, round(extract(epoch from (d.hasta - d.desde)) / 60)) as en_ruta
+      from dias d order by d.dia desc limit ${limite}`.execute(this.db);
+    return r.rows.map((f) => ({ fecha: f.fecha, camionId: f.camion_id, minutosConGps: n(f.con_gps), minutosEnRuta: n(f.en_ruta) }));
   }
 
   async etiquetasDeLocales(empresaId: string, ids: readonly string[]): Promise<ReadonlyMap<string, EtiquetaLocal>> {

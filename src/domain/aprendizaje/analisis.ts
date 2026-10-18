@@ -1,6 +1,8 @@
 import { fechaEnChile, minutosEnChile } from '../shared/fechas.js';
 import { distanciaKm, type Coordenada } from '../valor/coordenada.js';
 import { SERVICIO_POR_DEFECTO_MIN } from '../ruteo/parametros.js';
+import { armarProblema } from '../ruteo/armar-problema.js';
+import { optimizar } from '../ruteo/optimizador.js';
 import { crearTiemposHaversine } from '../ruteo/tiempos.js';
 import { N_CONFIABLE, ritmoChofer, ritmoObservado, servicioNuevo, confianzaHorario, type TramoObservado } from './ritmo.js';
 
@@ -37,7 +39,7 @@ export type EventoObs = {
 export type LocalObs = { readonly id: string; readonly comuna: string; readonly lat?: number; readonly lng?: number; readonly pinFuente?: string; readonly pinVerificado?: boolean };
 
 /** Un punto del recorrido del camión. */
-export type PosicionObs = { readonly camionId: string; readonly lat: number; readonly lng: number; readonly precisionM?: number; readonly tomadoEn: Date };
+export type PosicionObs = { readonly camionId: string; readonly lat: number; readonly lng: number; readonly precisionM?: number; readonly velocidadMs?: number; readonly tomadoEn: Date };
 
 export type OperacionObs = {
   readonly camionId: string;
@@ -239,6 +241,50 @@ export type CalidadJornada = {
   readonly distRealM: number;
   /** Pares de paradas que se hicieron en distinto orden que el sugerido. */
   readonly inversiones: number;
+  /**
+   * `sistema`: el orden lo calculó el sistema y se compara con lo que se manejó. `chofer`: el día se armó en orden manual («las agrego en orden»),
+   * así que el orden es la experiencia del chofer y se compara con lo que el sistema habría sugerido con las mismas paradas.
+   */
+  readonly origen: 'sistema' | 'chofer';
+  /** Cuántas veces una persona movió paradas a mano ese día (subir, bajar, arrastrar, ir primero). 0 = nadie corrigió nada. */
+  readonly cambios: number;
+  /**
+   * Las tres rutas del día (ADR 0045): la que sugirió el sistema, la que quedó al salir (con lo que la persona acomodó a mano, si lo hizo) y la
+   * que de verdad se entregó, en el orden en que se avisó cada ENTREGADO. Se guardan completas para analizar después cuánto se aparta lo
+   * entregado de lo ordenado, sea automático o manual.
+   */
+  readonly ordenSugerido: readonly string[];
+  readonly ordenSalida: readonly string[];
+  readonly ordenEntregado: readonly string[];
+  /** Pares de paradas que se entregaron en distinto orden que el que había al salir. */
+  readonly inversionesSalida: number;
+};
+
+/**
+ * El camión es dueño de la ruta y varias personas pueden trabajarlo a la vez: la jornada que queda con el resumen es la de quien cerró último, pero lo hecho
+ * en el día es del equipo. A cada jornada se le adelanta el inicio al de los compañeros que coincidieron con ella en el mismo camión y día.
+ */
+export const jornadasDelEquipo = (jornadas: readonly JornadaObs[]): readonly JornadaObs[] =>
+  jornadas.map((j) => {
+    const fin = (x: JornadaObs): number => (x.hasta ? ms(x.hasta) : Infinity);
+    const coinciden = jornadas.filter((o) => o.camionId === j.camionId && o.fecha === j.fecha && ms(o.desde) <= fin(j) && fin(o) >= ms(j.desde));
+    const desde = new Date(Math.min(ms(j.desde), ...coinciden.map((o) => ms(o.desde))));
+    return { ...j, desde };
+  });
+
+const MOVIMIENTOS_A_MANO = new Set(['subir', 'bajar', 'mover', 'primero']);
+const LIMITE_REGRESO_ESTIMADO_MIN = 23 * 60 + 59;
+
+/** Lo que el sistema habría sugerido con estas paradas (solo por distancia: sin horarios ni facturas urgentes, que aquí no se conocen). */
+const ordenQueSugeriaElSistema = (ids: readonly string[], coord: ReadonlyMap<string, Coordenada>, fecha: string, deposito: Coordenada, salidaMs: number): readonly string[] => {
+  const { problema } = armarProblema({
+    fecha,
+    deposito,
+    salida: minutosEnChile(new Date(salidaMs)),
+    horaLimiteRegresoMin: LIMITE_REGRESO_ESTIMADO_MIN,
+    entradas: ids.map((id) => ({ id, nombre: id, ...(coord.get(id) ? { coordenada: coord.get(id) as Coordenada } : {}), horarios: [], urgente: false })),
+  });
+  return optimizar(problema).orden;
 };
 
 const largoM = (orden: readonly string[], coord: ReadonlyMap<string, Coordenada>, deposito: Coordenada): number => {
@@ -268,8 +314,8 @@ export const calidadDeJornada = (j: JornadaObs, eventos: readonly EventoObs[], o
   const ops = operaciones.filter((o) => o.camionId === j.camionId && o.fecha === j.fecha).sort((a, b) => ms(a.creadoEn) - ms(b.creadoEn));
   const calculos = ops.filter((o) => (o.tipo === 'planificar' || o.tipo === 'ordenar' || (o.tipo === 'primero' && o.modo === 'sugerida')) && ms(o.creadoEn) <= salida);
   const sugerida = calculos[calculos.length - 1] ?? ops[0];
-  // Un día en que el chofer cargó en el orden en que iba a entregar no tiene una ruta sugerida contra la cual medirse.
-  if (!sugerida || sugerida.modo === 'carga') return undefined;
+  if (!sugerida) return undefined;
+  const cambios = ops.filter((o) => MOVIMIENTOS_A_MANO.has(o.tipo)).length;
 
   const coord = new Map<string, Coordenada>();
   for (const [facturaId, localId] of localDe) {
@@ -279,7 +325,10 @@ export const calidadDeJornada = (j: JornadaObs, eventos: readonly EventoObs[], o
   const manejado = [...primeros.entries()].sort((a, b) => a[1] - b[1]).map(([id]) => id).filter((id) => coord.has(id));
   const comunes = new Set(manejado.filter((id) => sugerida.orden.includes(id)));
   if (comunes.size < 3) return undefined;
-  const ordenS = sugerida.orden.filter((id) => comunes.has(id));
+  // Un día en orden manual no tiene ruta sugerida contra la cual medirse: la experiencia del chofer se mide con lo que el sistema habría hecho.
+  const delChofer = sugerida.modo === 'carga';
+  const base = delChofer ? ordenQueSugeriaElSistema(sugerida.orden.filter((id) => coord.has(id)), coord, j.fecha, deposito, salida) : sugerida.orden;
+  const ordenS = base.filter((id) => comunes.has(id));
   const ordenD = manejado.filter((id) => comunes.has(id));
   const rangoD = new Map(ordenD.map((id, i) => [id, i]));
   let inversiones = 0;
@@ -288,7 +337,24 @@ export const calidadDeJornada = (j: JornadaObs, eventos: readonly EventoObs[], o
       if ((rangoD.get(ordenS[a] ?? '') ?? 0) > (rangoD.get(ordenS[b] ?? '') ?? 0)) inversiones += 1;
     }
   }
-  return { jornadaId: j.id, comparadas: comunes.size, distSugeridaM: largoM(ordenS, coord, deposito), distRealM: largoM(ordenD, coord, deposito), inversiones };
+  // Lo entregado de verdad (no cerrado ni «vuelvo más tarde») frente a la lista que había al salir.
+  const entregados = new Map<string, number>();
+  for (const e of evs) if (e.tipo === 'entregado') entregados.set(e.facturaId, Math.min(entregados.get(e.facturaId) ?? Infinity, ms(e.creadoEn)));
+  const ordenEntregado = [...entregados.entries()].sort((a, b) => a[1] - b[1]).map(([id]) => id);
+  const alSalir = [...ops].reverse().find((o) => ms(o.creadoEn) <= salida) ?? sugerida;
+  const ordenSalida = alSalir.orden;
+  const rangoE = new Map(ordenEntregado.map((id, i) => [id, i]));
+  const deLaSalida = ordenSalida.filter((id) => rangoE.has(id));
+  let inversionesSalida = 0;
+  for (let a = 0; a < deLaSalida.length; a += 1) {
+    for (let b = a + 1; b < deLaSalida.length; b += 1) {
+      if ((rangoE.get(deLaSalida[a] ?? '') ?? 0) > (rangoE.get(deLaSalida[b] ?? '') ?? 0)) inversionesSalida += 1;
+    }
+  }
+  return {
+    jornadaId: j.id, comparadas: comunes.size, distSugeridaM: largoM(ordenS, coord, deposito), distRealM: largoM(ordenD, coord, deposito), inversiones, origen: delChofer ? 'chofer' : 'sistema', cambios,
+    ordenSugerido: base, ordenSalida, ordenEntregado, inversionesSalida,
+  };
 };
 
 // ---------------------------------------------------------------- pines corregidos por las visitas
