@@ -1,3 +1,7 @@
+import { crearVisitasPendientes } from './application/use-cases/visitas-pendientes.js';
+import { asegurarEsquemaCajas } from './adapters/out/postgres/esquema-cajas.js';
+import { crearControlCajas } from './application/use-cases/cajas.js';
+import { PostgresCajasRepository } from './adapters/out/postgres/repositorio-cajas.js';
 import { crearVerTrazado } from './application/use-cases/trazado.js';
 import { crearTrazadoOrs } from './adapters/out/red/ors-trazado.js';
 import { checkHealth } from './application/use-cases/check-health.js';
@@ -93,6 +97,7 @@ const facturas = new PostgresFacturaRepository(db);
 const empresas = new PostgresEmpresaRepository(db);
 const rutas = new PostgresRutaRepository(db);
 const horarios = new PostgresHorarioRepository(db);
+await asegurarEsquemaCajas(db);
 const jornadas = new PostgresJornadaRepository(db);
 const entregas = new PostgresEntregaRepository(db);
 const emergencias = new PostgresEmergenciaRepository(db);
@@ -145,6 +150,8 @@ const analizarPronto = (): void => {
 };
 const terminarJornada = crearTerminarJornada({ jornadas, facturas, rutas, registro, clock });
 const casos: CasosDeUso = {
+  visitasPendientes: crearVisitasPendientes({ registro, rutas, clock, resolverCamion }),
+  cajas: crearControlCajas({ cajas: new PostgresCajasRepository(db), jornadas, clock }),
   checkHealth: () => checkHealth({ db: dbHealth, clock, ...(env.RENDER_GIT_COMMIT ? { version: env.RENDER_GIT_COMMIT.slice(0, 7) } : {}) }),
   autenticar: crearAutenticarUsuario({ identidad, usuarios, clock }),
   iniciarSesion: crearIniciarSesion({ identidad, usuarios, intentos, clock, dominioCorreo: env.AUTH_EMAIL_DOMAIN }),

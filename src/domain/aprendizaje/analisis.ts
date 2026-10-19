@@ -50,7 +50,7 @@ export type OperacionObs = {
   readonly creadoEn: Date;
 };
 
-export type JornadaObs = { readonly id: string; readonly camionId: string; readonly fecha: string; readonly desde: Date; readonly hasta?: Date };
+export type JornadaObs = { readonly usuarioId?: string; readonly id: string; readonly camionId: string; readonly fecha: string; readonly desde: Date; readonly hasta?: Date };
 
 const ms = (d: Date): number => d.getTime();
 const redondear = (x: number, decimales = 3): number => Math.round(x * 10 ** decimales) / 10 ** decimales;

@@ -24,6 +24,7 @@ const jornadaGps = z.object({
   entregadas: z.number(), visitasCerrado: z.number(), visitasSinResultado: z.number(), jornadaCerrada: z.boolean(),
 });
 const resumenAnalisis = z.object({
+  patronesRecorrido: z.array(z.object({etiquetas:z.array(z.string()).optional(),tipo:z.enum(['local','comuna','inicio_comuna']),antes:z.array(z.string()),despues:z.string(),ambito:z.string(),dia:z.number().nullable(),dias:z.number(),frecuencia:z.number()})).optional(),
   jornadasGps: z.array(jornadaGps).optional(),
   eventos: z.number(), jornadas: z.number(), parametros: z.number(), jornadasComparadas: z.number(), pinesSugeridos: z.number(), pinesProponidos: z.number(), llegadasDeducidas: z.number(),
   seguimientoRuta: z.object({ entregas: z.number(), primeraDeLaLista: z.number(), conRutaDelSistema: z.number(), primeraDeLaRutaDelSistema: z.number() }),
@@ -33,7 +34,7 @@ const resumenAnalisis = z.object({
   fichas: fichas.optional(),
 });
 
-const resumenAJson = (r: ResumenAnalisis) => ({ ...(r.jornadasGps ? { jornadasGps: [...r.jornadasGps] } : {}), eventos: r.eventos, jornadas: r.jornadas, parametros: r.parametros, jornadasComparadas: r.jornadasComparadas, pinesSugeridos: r.pinesSugeridos, pinesProponidos: r.pinesProponidos, llegadasDeducidas: r.llegadasDeducidas, seguimientoRuta: r.seguimientoRuta, cierresFrecuentes: r.cierresFrecuentes.map((c) => ({ ...c, horasCerrado: [...c.horasCerrado] })), ...(r.cierresGps ? { cierresGps: { ...r.cierresGps, casos: [...r.cierresGps.casos] } } : {}), ...(r.bancoFicha ? { bancoFicha: r.bancoFicha } : {}), ...(r.fichas ? { fichas: r.fichas } : {}) });
+const resumenAJson = (r: ResumenAnalisis) => ({ ...(r.patronesRecorrido ? { patronesRecorrido:r.patronesRecorrido.map(({etiquetas,...p})=>({...p,antes:[...p.antes],...(etiquetas?{etiquetas:[...etiquetas]}:{})})) } : {}), ...(r.jornadasGps ? { jornadasGps: [...r.jornadasGps] } : {}), eventos: r.eventos, jornadas: r.jornadas, parametros: r.parametros, jornadasComparadas: r.jornadasComparadas, pinesSugeridos: r.pinesSugeridos, pinesProponidos: r.pinesProponidos, llegadasDeducidas: r.llegadasDeducidas, seguimientoRuta: r.seguimientoRuta, cierresFrecuentes: r.cierresFrecuentes.map((c) => ({ ...c, horasCerrado: [...c.horasCerrado] })), ...(r.cierresGps ? { cierresGps: { ...r.cierresGps, casos: [...r.cierresGps.casos] } } : {}), ...(r.bancoFicha ? { bancoFicha: r.bancoFicha } : {}), ...(r.fichas ? { fichas: r.fichas } : {}) });
 
 export const rutasAnalitica = ({ app, casos, guard }: ContextoRutas): void => {
   const a = tipada(app);

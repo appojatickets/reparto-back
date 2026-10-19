@@ -1,3 +1,4 @@
+import { rutasCajas } from './rutas/cajas.js';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
@@ -102,6 +103,7 @@ export const buildServer = async (deps: HttpDeps): Promise<FastifyInstance> => {
   rutasDelDia(contexto);
   rutasHorarios(contexto);
   rutasJornada(contexto);
+  rutasCajas(contexto);
   rutasAnalitica(contexto);
   rutasEntregas(contexto);
   rutasEmergencias(contexto);

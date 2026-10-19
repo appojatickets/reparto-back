@@ -11,6 +11,7 @@ import { DEPOSITO, ORIGEN, periodoDelMinuto, viajeConCambioDePeriodo } from './t
  */
 export type Compilado = {
   readonly problema: ProblemaRuta;
+  readonly preferencias: readonly { readonly antes:number; readonly despues:number; readonly peso:number }[];
   readonly n: number;
   readonly paradas: readonly ParadaRuta[];
   readonly indice: ReadonlyMap<string, number>;
@@ -70,7 +71,10 @@ export const compilar = (problema: ProblemaRuta): Compilado => {
       .forEach((x, rango) => { rangoInicio[x.i] = rango; });
   }
 
+  const indice = new Map(problema.paradas.map((p,i)=>[p.id,i]));
+  const preferencias=(problema.preferenciasRecorrido??[]).slice(0,100).flatMap(p=>{const antes=indice.get(p.antes),despues=indice.get(p.despues);return antes!==undefined&&despues!==undefined?[{antes,despues,peso:Math.max(0,Math.min(1.5,p.peso))}]:[];});
   return {
+    preferencias,
     problema,
     n,
     paradas: problema.paradas,

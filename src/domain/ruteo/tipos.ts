@@ -27,6 +27,7 @@ export type ParadaRuta = {
  * decidió hacer primero y que el motor no mueve.
  */
 export type ProblemaRuta = {
+  readonly preferenciasRecorrido?: readonly { readonly antes: string; readonly despues: string; readonly peso: number }[];
   /** Hora de salida del depósito o, al reoptimizar, la hora actual (minutos del día). */
   readonly salida: number;
   readonly paradas: readonly ParadaRuta[];

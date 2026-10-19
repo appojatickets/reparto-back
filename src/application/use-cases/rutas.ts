@@ -1,3 +1,4 @@
+import { preferenciasRecorrido, type PatronRecorrido } from '../../domain/aprendizaje/patrones-recorrido.js';
 import type { ConfigEmpresa, Deposito } from '../../domain/entidades/config-empresa.js';
 import type { Usuario } from '../../domain/entidades/usuario.js';
 import { esFechaValida, fechaEnChile, minutosEnChile } from '../../domain/shared/fechas.js';
@@ -107,7 +108,7 @@ type Dependencias = {
   /** Cada cálculo o movimiento de la ruta queda guardado (el sistema aprende de lo que sugirió y de lo que la gente corrigió). */
   readonly registro: RegistroAprendizajeRepository;
   /** Lo que el analizador aprendió (ritmo del camión, tiempo de atención por local). Sin esto la ruta usa sus valores de respaldo. */
-  readonly aprendizaje?: Pick<AprendizajeRepository, 'parametros'>;
+  readonly aprendizaje?: Pick<AprendizajeRepository, 'parametros'> & Partial<Pick<AprendizajeRepository, 'ultimaEjecucion'>>;
   /** Tiempos de manejar por calles (si hay servicio de rutas configurado); sin esto, o si falla, la ruta mide en línea recta. */
   readonly viajes?: ViajesPorCalle;
   readonly clock: Clock;
@@ -117,6 +118,9 @@ type Dependencias = {
 };
 
 type Contexto = {
+  readonly patrones: readonly PatronRecorrido[];
+  readonly camionId: string;
+  readonly usuarioId: string;
   readonly config: ConfigEmpresa;
   readonly deposito: Deposito;
   readonly items: readonly FacturaParaRuta[];
@@ -249,6 +253,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
         ]).catch((): ViajesDeLaRuta => ({ minutos: () => undefined, conCalles: false }))
       : { minutos: () => undefined, conCalles: false };
     return ok({
+      patrones: aprendizaje?.ultimaEjecucion ? (await aprendizaje.ultimaEjecucion(actor.empresaId).catch(() => undefined))?.resumen.patronesRecorrido ?? [] : [], camionId, usuarioId:actor.id,
       config, deposito: config.deposito, items, guardada, hechas, aprendido, viajes: viajesDeLaRuta, cierres, ...ordenYEstimadas(items, hechasUbicadas),
       ...(esHoy ? { ahoraMin: minutosEnChile(clock.now()) } : {}),
       ...(ultima ? { origen: { lat: ultima.lat, lng: ultima.lng } } : {}),
@@ -256,8 +261,8 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
   };
 
   /** `salida` es la planificada; el cálculo de hoy no puede empezar antes de «ahora» y parte de donde está el camión. */
-  const problemaDe = (ctx: Contexto, fecha: string, salida: number, fijas: readonly string[]) =>
-    armarProblema({
+  const problemaDe = (ctx: Contexto, fecha: string, salida: number, fijas: readonly string[]) => {
+    const armado = armarProblema({
       fecha,
       deposito: ctx.deposito,
       ...(ctx.origen ? { origen: ctx.origen } : {}),
@@ -270,6 +275,8 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
       viajeMin: ctx.viajes.minutos,
       fijas,
     });
+    return {...armado,problema:{...armado.problema,preferenciasRecorrido:preferenciasRecorrido(ctx.patrones,ctx.items,ctx.camionId,ctx.usuarioId,fecha)}};
+  };
 
   const vistaDe = (
     ctx: Contexto,

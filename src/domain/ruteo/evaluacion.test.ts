@@ -77,4 +77,12 @@ describe('evaluación de una ruta', () => {
     const p = compilar(problemaPlano([parada('A', { prioridad: true }), parada('B')]));
     expect(evaluar(p, [0, 1], 2)).toBeLessThan(evaluar(p, [1, 0], 2));
   });
+  it('las secuencias aprendidas solo añaden una pista acotada, sin vencer una ventana dura',()=>{
+    const p=problemaPlano([parada('A'),parada('B',{ventanas:[v(480,500)]})],{preferenciasRecorrido:[{antes:'A',despues:'B',peso:1000}]});
+    const c=compilar(p);
+    expect(evaluar(c,[1,0],2)).toBeLessThan(evaluar(c,[0,1],2));
+    const sin=compilar({...p,preferenciasRecorrido:[]});
+    expect(evaluar(c,[1,0],2)-evaluar(sin,[1,0],2)).toBe(1.5);
+  });
+
 });

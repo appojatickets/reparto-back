@@ -1,3 +1,4 @@
+import { patronesRecorrido } from '../../domain/aprendizaje/patrones-recorrido.js';
 import { servicioGpsAprendido } from '../../domain/aprendizaje/servicio-gps.js';
 import { jornadasObservadas } from '../../domain/seguimiento/jornada-observada.js';
 import {
@@ -89,6 +90,7 @@ export const crearAnalizarAprendizaje = ({ aprendizaje, empresas, pines, clock }
     for (const [usuarioId, propuestas] of porProponente) pinesProponidos += await pines.crearLote(empresaId, usuarioId, propuestas);
 
     const resumen: ResumenAnalisis = {
+      patronesRecorrido: patronesRecorrido(datos.eventos,locales,datos.jornadas).map(p=>({...p,etiquetas:[...p.antes,p.despues].map(id=>p.tipo==='local'?datos.locales.find(l=>l.id===id)?.direccion??'Local sin dirección':id)})),
       jornadasGps: gps.slice(0, 60),
       eventos: datos.eventos.length, jornadas: datos.jornadas.length, parametros: parametros.length, jornadasComparadas: calidad.length,
       pinesSugeridos: sugeridos.length, pinesProponidos, seguimientoRuta: seguimientoDeLaRuta(datos.eventos, datos.operaciones), llegadasDeducidas: visitas.llegadasDeducidas,

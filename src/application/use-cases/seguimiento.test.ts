@@ -8,7 +8,7 @@ const chofer = usuarioDe({ id: 'u-chofer', rol: 'chofer' });
 const { clock } = crearReloj('2026-10-05T12:00:00Z');
 const AHORA = new Date('2026-10-05T12:00:00Z').getTime();
 const PIN = { lat: -33.5, lng: -70.7 };
-const punto = (segAntes: number, extra: Record<string, unknown> = {}) => ({ lat: PIN.lat + 0.0002, lng: PIN.lng, tomadoEn: new Date(AHORA - segAntes * 1000), ...extra });
+const punto = (segAntes: number, extra: Record<string, unknown> = {}) => ({ lat: PIN.lat + 0.0002, lng: PIN.lng, tomadoEn: new Date(AHORA - segAntes * 1000), precisionM: 10, ...extra });
 
 const montar = (opciones: { yaLlego?: string[]; sinJornada?: boolean } = {}) => {
   const registro = fakeRegistro();

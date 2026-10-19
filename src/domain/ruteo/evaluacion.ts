@@ -63,6 +63,13 @@ export const evaluar = (c: Compilado, orden: ArrayLike<number>, largo: number, c
     t = inicio + (c.servicio[j] ?? 0);
     previo = j;
   }
+  if(c.preferencias.length>0){
+    const posiciones=new Int32Array(c.n).fill(-1);
+    for(let k=0;k<largo;k++){const j=orden[k];if(j!==undefined)posiciones[j]=k;}
+    let penalizacion=0;
+    for(const p of c.preferencias){const a=posiciones[p.antes]??-1,b=posiciones[p.despues]??-1;if(a>=0&&b>=0&&a>b)penalizacion+=p.peso;if(penalizacion>=5)break;}
+    costo+=Math.min(5,penalizacion);
+  }
   costo += c.viaje(previo, c.deposito, t);
   return costo >= corte ? Infinity : costo;
 };
