@@ -21,8 +21,13 @@ describe('cajas por persona y carga física compartida',()=>{
   expect(await cajas.cerrar(empresa,a.value,{porCerrado:0.5,rebajes:3.5,rebajesCamion:4,ultimo:false},desde)).toBe(true);
   expect(await cajas.cerrar(empresa,b.value,{porCerrado:0.5,rebajes:3.5,rebajesCamion:4,ultimo:false},desde)).toBe(true);
   expect(await cajas.cerrar(empresa,a.value,{porCerrado:0.5,rebajes:3.5,rebajesCamion:4,ultimo:false},desde)).toBe(true);
+  await db.insertInto('posicion_camion').values([u1,u2].flatMap((usuario_id,i)=>[
+   {empresa_id:empresa,camion_id:camion.value.id,usuario_id,lat:-33.5,lng:-70.7,precision_m:10+i*10,velocidad_ms:null,tomado_en:desde},
+   {empresa_id:empresa,camion_id:camion.value.id,usuario_id,lat:-33.501,lng:-70.7,precision_m:10+i*10,velocidad_ms:null,tomado_en:new Date('2026-10-19T12:01:00Z')},
+  ])).execute();
   const historial=await cajas.historial(empresa,'2026-10');expect(historial).toHaveLength(2);
   expect(new Set(historial.map(f=>f.cargaId)).size).toBe(1);
+  expect(historial[0]?.km).toBeCloseTo(0.111,2);expect(historial[0]?.kmCamion).toBeCloseTo(0.11,2);expect(historial[1]?.kmCamion).toBe(historial[0]?.kmCamion);
   expect(historial[0]).toMatchObject({cargadas:100.5,porCerrado:0.5,rebajes:3.5,cargadasCamion:100.5,rebajesCamion:4,tarifa:15});
   expect(await cajas.historial(empresa,'2026-10',u1)).toHaveLength(1);expect(await cajas.historial(otra,'2026-10')).toEqual([]);
   expect((await sql<{n:number}>`select count(*)::int n from caja_carga where empresa_id=${empresa}::uuid`.execute(db)).rows[0]?.n).toBe(1);
