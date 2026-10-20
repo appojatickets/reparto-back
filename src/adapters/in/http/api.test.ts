@@ -382,6 +382,17 @@ describe('camiones y facturas', () => {
 });
 
 describe('terminar la ruta', () => {
+  it('permite terminar con cajas pendientes sin confirmar montos ni consultar cajas', async () => {
+    const cajas = { ...casosVacios().cajas, actual: vi.fn().mockRejectedValue(new Error('Cajas no disponible')) };
+    const terminarJornada = vi.fn().mockResolvedValue(undefined);
+    const app = await construir({ cajas, terminarJornada });
+    const respuesta = await app.inject({ method: 'POST', url: '/v1/jornada/terminar', headers: { authorization: `Bearer ${ROLES.chofer}` } });
+    expect(respuesta.statusCode).toBe(200);
+    expect(terminarJornada).toHaveBeenCalledTimes(1);
+    expect(cajas.actual).not.toHaveBeenCalled();
+    await app.close();
+  });
+
   it('acepta el POST vacío de Android con cabecera form sin aceptar formularios con datos', async () => {
     const terminarJornada = vi.fn(() => Promise.resolve(undefined));
     const app = await construir({ terminarJornada });

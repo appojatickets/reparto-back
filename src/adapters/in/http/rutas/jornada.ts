@@ -71,8 +71,7 @@ export const rutasJornada = ({ app, casos, guard }: ContextoRutas): void => {
       },
     },
     async (req, reply) => {
-      const cajas = await casos.cajas.actual(actor(req));
-      if (cajas?.registrada && !cajas.cerrada) return reply.code(409).send({ codigo: 'CONFLICTO', mensaje: 'Confirma los rebajes de cajas antes de terminar la ruta.' });
+      // El control de cajas es opcional; sin confirmar no genera una ganancia confirmada.
       const r = await casos.terminarJornada(actor(req));
       return reply.send({ resumen: r ? { ...r, desde: r.desde.toISOString(), hasta: r.hasta.toISOString() } : null });
     },
