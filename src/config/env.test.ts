@@ -39,3 +39,11 @@ it('interpreta la bandera de Gemini sin activar por error el texto false', () =>
   expect(loadEnv({ ...valid, GEMINI_ENABLED: 'true' }).GEMINI_ENABLED).toBe(true);
   expect(() => loadEnv({ ...valid, GEMINI_ENABLED: 'si' })).toThrow(InvalidEnvError);
 });
+
+it('configura Gemini como ayuda opcional sin impedir que arranque la app sin clave', () => {
+  expect(loadEnv(valid).GEMINI_MODEL).toBe('gemini-3.5-flash-lite');
+  expect(loadEnv(valid).GEMINI_DAILY_LIMIT).toBe(50);
+  expect(loadEnv({ ...valid, GEMINI_API_KEY: '  ' }).GEMINI_API_KEY).toBeUndefined();
+  expect(loadEnv({ ...valid, GEMINI_API_KEY: ' valor-prueba ', GEMINI_ENABLED: 'true' }).GEMINI_API_KEY).toBe('valor-prueba');
+  expect(() => loadEnv({ ...valid, GEMINI_DAILY_LIMIT: '0' })).toThrow(InvalidEnvError);
+});

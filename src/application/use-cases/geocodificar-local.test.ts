@@ -110,3 +110,35 @@ describe('buscar el pin de un local por su dirección', () => {
     });
   });
 });
+
+describe('asistencia de direcciones tras fallar los mapas', () => {
+  const montarIa = (conPin = false) => {
+    const clientes = fakeClientes([localDe({ direccion: 'OHigins 955', comuna: 'San Bernardo', ...(conPin ? { lat: -33.59, lng: -70.71 } : {}) })]);
+    const buscar = vi.fn<Geocodificador['buscar']>().mockResolvedValue(err('SIN_RESULTADO'));
+    const esperar = vi.fn<((ms: number) => Promise<void>)>().mockResolvedValue(undefined);
+    const normalizar = vi.fn().mockResolvedValue("O'Higgins 955");
+    return { clientes, buscar, normalizar, esperar, caso: crearGeocodificarLocal({ clientes, geocodificadores: [{ buscar }], normalizador: { normalizar }, esperar, clock }) };
+  };
+  it('solo usa coordenadas del mapa y deja aproximada la propuesta de IA', async () => {
+    const s = montarIa();
+    s.buscar.mockResolvedValueOnce(err('SIN_RESULTADO')).mockResolvedValueOnce(ok({ lat: -33.59, lng: -70.71, precision: 'exacta', comuna: 'San Bernardo' }));
+    expect(await s.caso('empresa-1', 'l-1')).toBe('fijado');
+    expect(s.normalizar).toHaveBeenCalledWith('OHigins 955', 'San Bernardo');
+    expect(s.esperar).toHaveBeenCalledWith(1000);
+    expect(s.buscar).toHaveBeenLastCalledWith("O'Higgins 955, San Bernardo, Región Metropolitana, Chile");
+    expect(s.clientes.fijarPinGeocodificado).toHaveBeenCalledWith('empresa-1', 'l-1', -33.59, -70.71, 0.6);
+  });
+  it('no consume IA si ya hay pin, el mapa acierta o existe una caída de mapas', async () => {
+    const conPin = montarIa(true); expect(await conPin.caso('empresa-1', 'l-1')).toBe('ya_tiene_pin'); expect(conPin.normalizar).not.toHaveBeenCalled();
+    const directo = montarIa(); directo.buscar.mockResolvedValue(ok({ lat: -33.59, lng: -70.71, precision: 'exacta', comuna: 'San Bernardo' }));
+    expect(await directo.caso('empresa-1', 'l-1')).toBe('fijado'); expect(directo.normalizar).not.toHaveBeenCalled();
+    const caido = montarIa(); caido.buscar.mockResolvedValue(err('LIMITE'));
+    expect(await caido.caso('empresa-1', 'l-1')).toBe('detener'); expect(caido.normalizar).not.toHaveBeenCalled();
+  });
+  it('un fallo de IA conserva el funcionamiento normal y rechaza coordenadas en otra comuna', async () => {
+    const s = montarIa(); s.normalizar.mockRejectedValue(new Error('sin cuota'));
+    expect(await s.caso('empresa-1', 'l-1')).toBe('sin_resultado'); expect(s.clientes.fijarPinGeocodificado).not.toHaveBeenCalled();
+    const otra = montarIa(); otra.buscar.mockResolvedValueOnce(err('SIN_RESULTADO')).mockResolvedValueOnce(ok({ lat: -33.59, lng: -70.71, precision: 'exacta', comuna: 'Buin' }));
+    expect(await otra.caso('empresa-1', 'l-1')).toBe('sin_resultado'); expect(otra.clientes.fijarPinGeocodificado).not.toHaveBeenCalled();
+  });
+});
