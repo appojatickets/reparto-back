@@ -60,6 +60,7 @@ import { crearColaGeocodificacion } from './application/use-cases/cola-geocodifi
 import { crearGeocodificarLocal } from './application/use-cases/geocodificar-local.js';
 import { crearNominatimGeocodificador } from './adapters/out/red/nominatim-geocodificador.js';
 import { crearOrsGeocodificador } from './adapters/out/red/ors-geocodificador.js';
+import { crearGeminiNormalizador } from './adapters/out/red/gemini-normalizador.js';
 import { crearFijarPinDesdeEnlace } from './application/use-cases/pin-desde-enlace.js';
 import { crearResolvedorEnlacesHttp } from './adapters/out/red/resolvedor-enlaces-http.js';
 import { PostgresFotoReporteRepository } from './adapters/out/postgres/repositorio-fotos.js';
@@ -105,9 +106,12 @@ const clock = relojDelSistema;
 // Casos de uso con sus puertos inyectados
 const resolverCamion = crearResolverCamion({ jornadas, clock });
 // Búsqueda del pin por la dirección: una cola en memoria, de a uno por segundo, que no hace esperar a nadie.
+const esperar = (ms: number): Promise<void> => new Promise((resolver) => { setTimeout(resolver, ms); });
+// Gemini (gratis, opcional) solo ordena las direcciones que ningún buscador encontró; puede fallar y entonces todo queda como antes.
+const normalizador = env.GEMINI_API_KEY ? crearGeminiNormalizador({ clave: env.GEMINI_API_KEY, modelo: env.GEMINI_MODEL, esperar, ahora: () => clock.now().getTime() }) : undefined;
 const colaDePines = crearColaGeocodificacion({
-  geocodificar: crearGeocodificarLocal({ clientes, geocodificadores: [crearNominatimGeocodificador(env.GEOCODER_USER_AGENT), ...(env.ORS_API_KEY ? [crearOrsGeocodificador(env.ORS_API_KEY)] : [])], clock }),
-  esperar: (ms) => new Promise((resolver) => { setTimeout(resolver, ms); }),
+  geocodificar: crearGeocodificarLocal({ clientes, geocodificadores: [crearNominatimGeocodificador(env.GEOCODER_USER_AGENT), ...(env.ORS_API_KEY ? [crearOrsGeocodificador(env.ORS_API_KEY)] : [])], clock, ...(normalizador ? { normalizador } : {}) }),
+  esperar,
 });
 const programarPines = (empresaId: string, localIds: readonly string[]): void => { colaDePines.encolar(empresaId, localIds); };
 const aprendizaje = new PostgresAprendizajeRepository(db);

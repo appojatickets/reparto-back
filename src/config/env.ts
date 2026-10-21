@@ -17,6 +17,9 @@ const schema = z.object({
   /** Clave de OpenRouteService (plan gratuito): con ella la ruta usa tiempos de manejar por calles. Si falta, la ruta mide en línea recta. */
   ORS_PROFILE: z.enum(['driving-car', 'driving-hgv']).default('driving-car'),
   ORS_API_KEY: z.string().min(10).optional(),
+  /** Clave de Gemini (plan gratuito): ordena las direcciones que ningún buscador encuentra. Opcional; sin ella (o si falla) todo sigue igual. */
+  GEMINI_API_KEY: z.string().min(10).optional(),
+  GEMINI_MODEL: z.string().min(3).regex(/^[a-z0-9.-]+$/).default('gemini-flash-lite-latest'),
   /** Lo pone Render solo: el commit que está corriendo. Se muestra en el estado del sistema. */
   RENDER_GIT_COMMIT: z.string().optional(),
   GEOCODER_USER_AGENT: z.string().min(8).default('reparto-api/1.0 (+https://reparto-front.vercel.app)'),
