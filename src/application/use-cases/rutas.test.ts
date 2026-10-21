@@ -162,13 +162,23 @@ describe('planificar', () => {
     expect(r.ok && r.value.sinPin.map((x) => x.facturaId)).toEqual(['f-Z']);
   });
 
-  it('un local que según su horario no atiende ese día NO se saca de la ruta: va al final, marcado en riesgo con su explicación', async () => {
+  it('un local que según su horario no atiende ese día NO se saca de la ruta: queda donde le toca por cercanía, marcado en riesgo con su explicación', async () => {
     const cerrado = paradaDe('X', { horarios: [{ dias: [1], tramos: [], fuente: 'confirmado', confianza: 1 }] }); // cerrado los lunes (la fecha es lunes)
     const s = montar({ pendientes: [paradaDe('A'), cerrado] });
     const r = await s.planificar(despachador, entrada);
     expect(r.ok && r.value.noAtendidas).toEqual([]);
-    expect(r.ok && ids(r.value)).toEqual(['f-A', 'f-X']);
+    expect(r.ok && ids(r.value)).toHaveLength(2);
     expect(r.ok && r.value.enRiesgo.find((x) => x.facturaId === 'f-X')?.conflictos).toEqual(['Según su horario hoy no atiende.']);
+  });
+
+  it('el horario no cambia el orden por cercanía: la ruta es la misma con o sin horarios, y solo se avisa lo que llegaría tarde', async () => {
+    const letras = ['A', 'B', 'C', 'D', 'E', 'F'];
+    const sin = montar({ pendientes: letras.map((n) => paradaDe(n)) });
+    const con = montar({ pendientes: letras.map((n, i) => paradaDe(n, { horarios: i % 2 === 0 ? [{ dias: [1], tramos: [{ apertura: 480 + i * 5, cierre: 490 + i * 5 }], fuente: 'confirmado', confianza: 1 }] : [] })) });
+    const a = await sin.planificar(despachador, entrada);
+    const b = await con.planificar(despachador, entrada);
+    expect(b.ok && ids(b.value)).toEqual(a.ok ? ids(a.value) : []);
+    expect(b.ok && b.value.enRiesgo.length).toBeGreaterThan(0);
   });
 
   it('la hora de salida pedida se guarda y rechaza valores imposibles', async () => {

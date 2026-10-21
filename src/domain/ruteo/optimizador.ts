@@ -18,6 +18,8 @@ const indicesDe = (c: Compilado, ids: readonly string[]): number[] =>
  * No se sacan de la ruta: el optimizador las deja fuera de la búsqueda (para que no la distorsionen) y van al final, marcadas en riesgo. Las fijadas por el chofer nunca se tratan así.
  */
 const detectarVencidas = (c: Compilado, fijas: readonly number[]): number[] => {
+  // Con la cercanía mandando, el horario no manda al final a nadie: se ordena por cercanía y el horario solo avisa.
+  if (!c.problema.parametros.horariosGobiernan) return [];
   const protegidas = new Set(fijas);
   const vencidas: number[] = [];
   for (let i = 0; i < c.n; i++) {

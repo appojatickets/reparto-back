@@ -58,6 +58,14 @@ describe('armarProblema', () => {
     expect(parametros.pesoOrdenCargaPin).toBe(0);
   });
 
+  it('en la aplicación los horarios no gobiernan el orden: no cuestan nada al ordenar y ninguna parada se manda al final por su horario', () => {
+    const { parametros } = armarProblema({ ...base, entradas: [e('A')] }).problema;
+    expect(parametros).toMatchObject({ horariosGobiernan: false, penalizacionRiesgo: 0, mu: 0, omega: 0 });
+    expect(parametros.pesoCierreAprendido).toBeLessThan(0.01);
+    const gobiernan = armarProblema({ ...base, horariosGobiernan: true, entradas: [e('A')] }).problema.parametros;
+    expect(gobiernan).toMatchObject({ horariosGobiernan: true, penalizacionRiesgo: 10_000, mu: 5 });
+  });
+
   it('pasa la calle y si la ubicación es incierta a la parada', () => {
     const r = armarProblema({ ...base, entradas: [e('A', { calle: 'San Bernardo|colon', ubicacionIncierta: true }), e('B')] });
     expect(r.problema.paradas[0]).toMatchObject({ calle: 'San Bernardo|colon', ubicacionIncierta: true });

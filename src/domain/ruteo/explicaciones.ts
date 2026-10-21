@@ -87,7 +87,7 @@ export const armarSolucion = (c: Compilado, orden: readonly number[], alFinal: r
     const atraso = it.atraso[k] ?? 0;
     if (atraso > EPS) {
       const cierre = cierreFinal(c, j) ?? 0;
-      const conflicto = cerradas.has(j)
+      const conflicto = cerradas.has(j) || cierre === 0
         ? cierre === 0
           ? 'Según su horario hoy no atiende.'
           : `Según su horario cerró a las ${formatearMinutos(cierre)} y ya no se alcanza a llegar a tiempo.`

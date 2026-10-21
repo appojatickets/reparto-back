@@ -4,7 +4,7 @@ import type { Fecha } from '../shared/fechas.js';
 import { diaDeSemana } from '../shared/fechas.js';
 import type { OrdenInicio } from '../entidades/config-empresa.js';
 import { distanciaKm, type Coordenada } from '../valor/coordenada.js';
-import { EPS_LLEGADA_DESEMPATE, PARAMETROS_POR_DEFECTO, PESO_CALLE, PESO_CIERRE_APRENDIDO, PESO_ORDEN_CARGA_CALIBRADO, PESO_ORDEN_CARGA_CON_PIN, PESO_ORDEN_INICIO, SERVICIO_POR_DEFECTO_MIN } from './parametros.js';
+import { EPS_LLEGADA_DESEMPATE, HORARIOS_GOBIERNAN_EL_ORDEN, PARAMETROS_HORARIOS_SOLO_AVISAN, PARAMETROS_POR_DEFECTO, PESO_CALLE, PESO_CIERRE_APRENDIDO, PESO_ORDEN_CARGA_CALIBRADO, PESO_ORDEN_CARGA_CON_PIN, PESO_ORDEN_INICIO, SERVICIO_POR_DEFECTO_MIN } from './parametros.js';
 import { crearFactorHorario, crearTiemposConViajes, crearTiemposHaversine, DEPOSITO, ORIGEN } from './tiempos.js';
 import type { ParadaRuta, ProblemaRuta } from './tipos.js';
 
@@ -38,6 +38,8 @@ export type DatosProblema = {
   readonly horaLimiteRegresoMin: number;
   /** Por dónde parte la ruta (config de la empresa); sin indicar, el sistema decide. */
   readonly ordenInicio?: OrdenInicio;
+  /** Si los horarios mandan el orden o solo avisan; sin indicar, lo que decide la aplicación (`HORARIOS_GOBIERNAN_EL_ORDEN`). */
+  readonly horariosGobiernan?: boolean;
   readonly entradas: readonly EntradaParada[];
   readonly fijas?: readonly string[];
   /** Cuánto demora este camión frente a lo calculado (lo aprendido de sus rutas reales); 1 si no se sabe. */
@@ -94,6 +96,7 @@ export const armarProblema = (d: DatosProblema): { readonly problema: ProblemaRu
         pesoOrdenCargaPin: PESO_ORDEN_CARGA_CON_PIN,
         pesoCalle: PESO_CALLE,
         pesoCierreAprendido: PESO_CIERRE_APRENDIDO,
+        ...((d.horariosGobiernan ?? HORARIOS_GOBIERNAN_EL_ORDEN) ? {} : PARAMETROS_HORARIOS_SOLO_AVISAN),
         ...(d.ordenInicio !== undefined && d.ordenInicio !== 'automatico' ? { ordenInicio: d.ordenInicio, pesoOrdenInicio: PESO_ORDEN_INICIO } : {}),
         ...(d.ordenInicio === 'lejano' ? { epsLlegada: 0 } : {}),
         horaLimiteRegresoMin: d.horaLimiteRegresoMin,

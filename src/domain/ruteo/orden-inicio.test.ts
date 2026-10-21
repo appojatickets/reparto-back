@@ -11,8 +11,8 @@ const MEDIO = { lat: -33.5, lng: -70.62 };
 const LEJOS = { lat: -33.5, lng: -70.54 };
 const e = (id: string, coordenada: { lat: number; lng: number }, extra: Partial<EntradaParada> = {}): EntradaParada => ({ id, nombre: `Local ${id}`, coordenada, horarios: [], urgente: false, ...extra });
 const base = { fecha: '2026-10-05', deposito: DEPOSITO, salida: 480, horaLimiteRegresoMin: 1260 };
-const orden = (ordenInicio: 'automatico' | 'lejano' | 'cercano' | undefined, entradas: EntradaParada[]): string[] => {
-  const { problema } = armarProblema({ ...base, entradas, ...(ordenInicio !== undefined ? { ordenInicio } : {}) });
+const orden = (ordenInicio: 'automatico' | 'lejano' | 'cercano' | undefined, entradas: EntradaParada[], horariosGobiernan?: boolean): string[] => {
+  const { problema } = armarProblema({ ...base, entradas, ...(ordenInicio !== undefined ? { ordenInicio } : {}), ...(horariosGobiernan !== undefined ? { horariosGobiernan } : {}) });
   const s = optimizar(problema);
   expect(verificarInvariantes(problema, s)).toEqual([]);
   return [...s.orden];
@@ -32,10 +32,14 @@ describe('orden de inicio de la ruta', () => {
     expect(orden('automatico', locales)).toEqual(orden(undefined, locales));
   });
 
-  it('un horario duro pesa más que la preferencia: lo que cierra temprano se atiende antes aunque esté cerca', () => {
+  it('si los horarios gobiernan el orden, un horario duro pesa más que la preferencia: lo que cierra temprano se atiende antes aunque esté cerca', () => {
     const cierraTemprano = e('C', CERCA, { horarios: [{ dias: [1], tramos: [v(480, 510)], fuente: 'confirmado', confianza: 1 }] });
-    const r = orden('lejano', [e('L', LEJOS), cierraTemprano]);
-    expect(r).toEqual(['C', 'L']);
+    expect(orden('lejano', [e('L', LEJOS), cierraTemprano], true)).toEqual(['C', 'L']);
+  });
+
+  it('en la aplicación la cercanía manda: «más lejano» se cumple aunque un local cierre temprano (el horario solo avisa)', () => {
+    const cierraTemprano = e('C', CERCA, { horarios: [{ dias: [1], tramos: [v(480, 510)], fuente: 'confirmado', confianza: 1 }] });
+    expect(orden('lejano', [e('L', LEJOS), cierraTemprano])).toEqual(['L', 'C']);
   });
 
   it('con una sola parada no hay nada que preferir', () => {
