@@ -4,7 +4,7 @@ import { esFechaValida, fechaEnChile, minutosEnChile } from '../../domain/shared
 import type { Coordenada } from '../../domain/valor/coordenada.js';
 import { err, ok, type Result } from '../../domain/shared/result.js';
 import { armarProblema, type EntradaParada } from '../../domain/ruteo/armar-problema.js';
-import { ubicarPorOrdenDeCarga, type AnclaDeCarga } from '../../domain/ruteo/ubicacion-por-carga.js';
+import { ubicarFacturas } from './ubicar-paradas.js';
 import { insertarNuevas, moverAlFrente, moverAPosicion, moverParada, ordenarDebajoDe, ordenarPendientes, ordenarPorCarga, posponer, type EstadoRuta, type ResultadoOperacion } from '../../domain/ruteo/operaciones.js';
 import { evaluarOrden, optimizar } from '../../domain/ruteo/optimizador.js';
 import type { Motivo, ProblemaRuta, Solucion, Sugerencia } from '../../domain/ruteo/tipos.js';
@@ -22,7 +22,7 @@ import { aprendidoParaRuta, SIN_APRENDIZAJE, type AprendidoParaRuta } from '../.
 import type { AprendizajeRepository } from '../ports/out/aprendizaje.js';
 import { DEPOSITO, ORIGEN } from '../../domain/ruteo/tiempos.js';
 import type { RegistroAprendizajeRepository, TipoOperacionRuta } from '../ports/out/registro-aprendizaje.js';
-import type { FacturaParaRuta, HechaConUbicacion, ModoRuta, RutaGuardada, RutaRepository } from '../ports/out/rutas.js';
+import type { FacturaParaRuta, HechaConUbicacion, ModoRuta, PinDeLocal, RutaGuardada, RutaRepository } from '../ports/out/rutas.js';
 import type { ResolverCamion } from './jornada.js';
 
 /** Tiempo máximo de cómputo del optimizador por pedido (válvula de seguridad; con ~50 paradas toma una fracción). */
@@ -129,38 +129,18 @@ type Contexto = {
   readonly hechas: readonly (ItemVista & { readonly estado: 'entregada' | 'no_entregada' })[];
   /** Lugar de cada factura pendiente en el orden en que se cargaron (0 = la primera). */
   readonly ordenCarga: ReadonlyMap<string, number>;
-  /** Ubicación aproximada de las pendientes sin pin, según las vecinas de carga con ubicación conocida. */
+  /** Ubicación aproximada de las pendientes sin pin exacto: por su calle y número o, si no, según las vecinas de carga con ubicación conocida. */
   readonly estimadas: ReadonlyMap<string, Coordenada>;
+  /** La calle de cada factura pendiente (con su comuna): la ruta termina una calle antes de dejarla. */
+  readonly calles: ReadonlyMap<string, string>;
+  /** Pendientes de las que solo se adivina dónde están (sin pin exacto y sin calle que las ubique): el orden de carga las guía. */
+  readonly inciertas: ReadonlySet<string>;
   /** Franjas en que cada local suele estar cerrado según lo aprendido (solo las de evidencia suficiente y probabilidad alta; ADR 0050). */
   readonly cierres: ReadonlyMap<string, readonly FranjaCierreProbable[]>;
 };
 
 /** Solo se mira lo reciente: lo viejo ya no representa cómo atiende el local hoy. */
 const DIAS_PARA_CIERRES = 180;
-
-/**
- * El orden en que el chofer cargó las facturas del día (las pendientes y las ya hechas) y, para las pendientes sin pin, dónde están
- * aproximadamente: entre las vecinas de carga con ubicación conocida (ver `ubicarPorOrdenDeCarga`).
- */
-const ordenYEstimadas = (items: readonly FacturaParaRuta[], hechas: readonly HechaConUbicacion[]) => {
-  const conTiempo = items.every((f) => f.cargadaEn !== undefined);
-  const claves = conTiempo
-    ? [...items.map((f) => ({ id: f.facturaId, t: f.cargadaEn ?? 0 })), ...hechas.map((h, i) => ({ id: `hecha:${String(i)}`, t: h.cargadaEn }))]
-    : items.map((f, i) => ({ id: f.facturaId, t: i }));
-  const rango = new Map([...claves].sort((a, b) => a.t - b.t || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)).map((x, i) => [x.id, i]));
-  const anclas: AnclaDeCarga[] = [
-    ...items.flatMap((f) => (f.lat !== undefined && f.lng !== undefined ? [{ orden: rango.get(f.facturaId) ?? 0, comuna: f.comuna, coordenada: { lat: f.lat, lng: f.lng } }] : [])),
-    ...(conTiempo ? hechas.map((h, i) => ({ orden: rango.get(`hecha:${String(i)}`) ?? 0, comuna: h.comuna, coordenada: { lat: h.lat, lng: h.lng } })) : []),
-  ];
-  const estimadas = new Map<string, Coordenada>();
-  for (const f of items) {
-    if (f.lat !== undefined && f.lng !== undefined) continue;
-    const u = ubicarPorOrdenDeCarga({ orden: rango.get(f.facturaId) ?? 0, comuna: f.comuna }, anclas);
-    if (u) estimadas.set(f.facturaId, u);
-  }
-  const ordenCarga = new Map(items.map((f) => [f.facturaId, rango.get(f.facturaId) ?? 0]));
-  return { ordenCarga, estimadas };
-};
 
 const itemDe = (f: FacturaParaRuta): ItemVista => ({
   facturaId: f.facturaId,
@@ -178,9 +158,11 @@ const itemDe = (f: FacturaParaRuta): ItemVista => ({
   ...(f.nota !== undefined ? { nota: f.nota } : {}),
 });
 
-const entradaDe = (f: FacturaParaRuta, servicioMin?: number, estimada?: Coordenada, ordenCarga?: number, cierreProbable?: readonly FranjaCierreProbable[]): EntradaParada => {
-  // Sin pin la ruta no se detiene: se ubica entre sus vecinas de carga o, si no hay, por el centro de la comuna, hasta que haya un pin.
-  const coordenada = f.lat !== undefined && f.lng !== undefined ? { lat: f.lat, lng: f.lng } : (estimada ?? centroDeComuna(f.comuna));
+const entradaDe = (f: FacturaParaRuta, servicioMin?: number, estimada?: Coordenada, ordenCarga?: number, cierreProbable?: readonly FranjaCierreProbable[], calle?: string, incierta = false): EntradaParada => {
+  // Sin pin exacto la ruta no se detiene: se ubica junto a las demás puertas de su calle, entre sus vecinas de carga o, si no hay, por el centro
+  // de la comuna, hasta que haya un pin. Un pin hallado solo hasta la calle cede ante lo estimado por su calle y número.
+  const exacto = f.lat !== undefined && f.lng !== undefined && f.pinAproximado !== true;
+  const coordenada = exacto ? { lat: f.lat ?? 0, lng: f.lng ?? 0 } : (estimada ?? (f.lat !== undefined && f.lng !== undefined ? { lat: f.lat, lng: f.lng } : centroDeComuna(f.comuna)));
   return {
     id: f.facturaId,
     nombre: f.razonSocial,
@@ -192,6 +174,8 @@ const entradaDe = (f: FacturaParaRuta, servicioMin?: number, estimada?: Coordena
     ...(servicioMin !== undefined ? { servicioMin } : {}),
     ...(ordenCarga !== undefined ? { ordenCarga } : {}),
     ...(cierreProbable !== undefined && cierreProbable.length > 0 ? { cierreProbable } : {}),
+    ...(calle !== undefined ? { calle } : {}),
+    ...(incierta ? { ubicacionIncierta: true } : {}),
   };
 };
 
@@ -229,6 +213,9 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
       esHoy ? entregas.ultimaPosicion(actor.empresaId, camionId, fecha) : Promise.resolve(undefined),
       rutas.hechasConUbicacion(actor.empresaId, camionId, fecha).catch((): readonly HechaConUbicacion[] => []),
     ]);
+    // Los pines de los demás locales de las mismas comunas ubican por su calle a los que todavía no tienen; si no se pueden leer, no estorba.
+    const sinPinExacto = items.filter((f) => f.lat === undefined || f.pinAproximado === true);
+    const pinesDeCalles = sinPinExacto.length === 0 ? [] : await rutas.pinesDeLocales(actor.empresaId, [...new Set(sinPinExacto.map((f) => f.comuna))]).catch((): readonly PinDeLocal[] => []);
     // Lo aprendido de cuándo suele estar cerrado cada local: nunca bloquea la ruta; si no se puede leer, se arma como si no se supiera nada.
     // El admin puede apagarlo (CONFIGURACIÓN): entonces la ruta se arma como si no supiera nada de los cierres.
     const cierres = config.usarCierresAprendidos === false ? new Map<string, readonly FranjaCierreProbable[]>() : await cierresAprendidos(entregas, actor.empresaId, [...new Set(items.map((f) => f.localId))], clock.now());
@@ -239,17 +226,19 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
         ? [{ facturaId: f.id, ...(f.folio !== undefined ? { folio: f.folio } : {}), localId: f.local.id, cliente: f.local.razonSocial, direccion: f.local.direccion, comuna: f.local.comuna, urgente: f.urgente, estado: f.estado }]
         : [],
     );
+    const ubicadas = ubicarFacturas(items, hechasUbicadas, pinesDeCalles);
     // Tiempos por calles entre el punto donde está el camión (o el depósito), las paradas con pin y el depósito; lo que falte queda en línea recta.
+    // Las paradas que la ruta ubica por otro lado (su calle, el orden de carga) no se consultan: su punto no es el de su pin.
     const origenReal = ultima ? { lat: ultima.lat, lng: ultima.lng } : config.deposito;
     const viajesDeLaRuta: ViajesDeLaRuta = viajes
       ? await viajes([
           { id: ORIGEN, lat: origenReal.lat, lng: origenReal.lng, rol: 'origen' },
           { id: DEPOSITO, lat: config.deposito.lat, lng: config.deposito.lng, rol: 'deposito' },
-          ...items.flatMap((f) => (f.lat !== undefined && f.lng !== undefined ? [{ id: f.facturaId, lat: f.lat, lng: f.lng, rol: 'parada' as const }] : [])),
+          ...items.flatMap((f) => (f.lat !== undefined && f.lng !== undefined && !ubicadas.estimadas.has(f.facturaId) ? [{ id: f.facturaId, lat: f.lat, lng: f.lng, rol: 'parada' as const }] : [])),
         ]).catch((): ViajesDeLaRuta => ({ minutos: () => undefined, conCalles: false }))
       : { minutos: () => undefined, conCalles: false };
     return ok({
-      config, deposito: config.deposito, items, guardada, hechas, aprendido, viajes: viajesDeLaRuta, cierres, ...ordenYEstimadas(items, hechasUbicadas),
+      config, deposito: config.deposito, items, guardada, hechas, aprendido, viajes: viajesDeLaRuta, cierres, ...ubicadas,
       ...(esHoy ? { ahoraMin: minutosEnChile(clock.now()) } : {}),
       ...(ultima ? { origen: { lat: ultima.lat, lng: ultima.lng } } : {}),
     });
@@ -264,7 +253,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
       salida: ctx.ahoraMin !== undefined ? Math.max(salida, ctx.ahoraMin) : salida,
       horaLimiteRegresoMin: ctx.config.horaLimiteRegresoMin,
       ...(ctx.config.ordenInicio ? { ordenInicio: ctx.config.ordenInicio } : {}),
-      entradas: ctx.items.map((f) => entradaDe(f, ctx.aprendido.servicioMin(f.localId), ctx.estimadas.get(f.facturaId), ctx.ordenCarga.get(f.facturaId), ctx.cierres.get(f.localId))),
+      entradas: ctx.items.map((f) => entradaDe(f, ctx.aprendido.servicioMin(f.localId), ctx.estimadas.get(f.facturaId), ctx.ordenCarga.get(f.facturaId), ctx.cierres.get(f.localId), ctx.calles.get(f.facturaId), ctx.inciertas.has(f.facturaId))),
       // El ritmo aprendido solo afecta los tramos de respaldo; armarProblema separa ambas fuentes.
       ritmo: ctx.aprendido.ritmo,
       viajeMin: ctx.viajes.minutos,

@@ -20,6 +20,13 @@ export type ParadaRuta = {
    * saca la parada de la ruta. Solo trae franjas con evidencia suficiente y probabilidad alta; si no, viene vacía o no viene.
    */
   readonly cierreProbable?: readonly FranjaCierreProbable[];
+  /** La calle (escrita siempre igual, con la comuna) en que está: la ruta prefiere terminar una calle antes de dejarla y volver. */
+  readonly calle?: string;
+  /**
+   * No se sabe bien dónde está (sin pin exacto y sin una calle que la ubique): solo la adivinanza por el orden de carga o el centro de la comuna.
+   * El orden de carga la guía; a las que sí se ubican por su pin o su calle y número las guía la geometría.
+   */
+  readonly ubicacionIncierta?: boolean;
 };
 
 /**

@@ -15,10 +15,14 @@ export const franjaDeCierre = (c: Compilado, j: number, minuto: number): FranjaC
  * Todos los términos son ≥ 0, así que se puede cortar en cuanto se supera `corte` (poda para la búsqueda local).
  */
 export const evaluar = (c: Compilado, orden: ArrayLike<number>, largo: number, corte = Infinity): number => {
-  const { mu, omega, penalizacionRiesgo, epsPrioridad, epsLlegada, pesoOrdenCarga, pesoOrdenInicio, pesoCierreAprendido } = c.problema.parametros;
+  const { mu, omega, penalizacionRiesgo, epsPrioridad, epsLlegada, pesoOrdenCarga, pesoOrdenCargaPin, pesoOrdenInicio, pesoCierreAprendido, pesoCalle } = c.problema.parametros;
   let t = c.salida;
   let previo = c.origen;
   let costo = 0;
+  const conCarga = pesoOrdenCarga > 0 || (pesoOrdenCargaPin ?? 0) > 0;
+  // Calles ya visitadas en esta ruta: se marcan con el número de esta evaluación, así no hay que limpiar nada entre una y otra.
+  const evaluacion = (c.contadorDeEvaluaciones[0] = (c.contadorDeEvaluaciones[0] ?? 0) + 1);
+  let calleAnterior = -1;
 
   for (let k = 0; k < largo; k++) {
     const j = orden[k] ?? 0;
@@ -50,9 +54,18 @@ export const evaluar = (c: Compilado, orden: ArrayLike<number>, largo: number, c
     }
     if (c.prioridad[j] === 1) costo += epsPrioridad * (llegada - c.salida);
     if (epsLlegada > 0) costo += epsLlegada * (llegada - c.salida);
-    if (pesoOrdenCarga > 0) {
+    if (conCarga) {
       const r = c.rangoCarga[j] ?? -1;
-      if (r >= 0) costo += pesoOrdenCarga * Math.abs(k - r);
+      if (r >= 0) costo += (c.pesoCarga[j] ?? 0) * Math.abs(k - r);
+    }
+    if (pesoCalle > 0) {
+      const calle = c.calle[j] ?? -1;
+      if (calle >= 0 && calle !== calleAnterior) {
+        // Volver a una calle que ya se había dejado: sus números quedan partidos en dos visitas.
+        if (c.callesVistas[calle] === evaluacion) costo += pesoCalle;
+        c.callesVistas[calle] = evaluacion;
+      }
+      calleAnterior = calle;
     }
     if (pesoOrdenInicio > 0) {
       const r = c.rangoInicio[j] ?? -1;

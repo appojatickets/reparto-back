@@ -1,7 +1,7 @@
 import { sql } from 'kysely';
 import type { DiaSemana, HorarioLocal } from '../../../domain/entidades/horario.js';
 import { err, ok, type Result } from '../../../domain/shared/result.js';
-import type { FacturaParaRuta, GuardarRuta, RutaGuardada, RutaRepository, HechaConUbicacion } from '../../../application/ports/out/rutas.js';
+import type { FacturaParaRuta, GuardarRuta, RutaGuardada, RutaRepository, HechaConUbicacion, PinDeLocal } from '../../../application/ports/out/rutas.js';
 import type { Db } from './client.js';
 
 /** '08:30:00' → 510 */
@@ -89,7 +89,7 @@ export class PostgresRutaRepository implements RutaRepository {
     const filas = await this.db
       .selectFrom('factura as f')
       .innerJoin('local as l', 'l.id', 'f.local_id')
-      .select(['f.creado_en', 'l.comuna', 'l.lat', 'l.lng'])
+      .select(['f.creado_en', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng'])
       .where('f.empresa_id', '=', empresaId)
       .where('f.camion_id', '=', camionId)
       .where('f.fecha_reparto', '=', fecha)
@@ -97,7 +97,22 @@ export class PostgresRutaRepository implements RutaRepository {
       .where('l.lat', 'is not', null)
       .where('l.lng', 'is not', null)
       .execute();
-    return filas.flatMap((f) => (f.lat !== null && f.lng !== null ? [{ cargadaEn: f.creado_en.getTime(), comuna: f.comuna, lat: f.lat, lng: f.lng }] : []));
+    return filas.flatMap((f) => (f.lat !== null && f.lng !== null ? [{ cargadaEn: f.creado_en.getTime(), direccion: f.direccion, comuna: f.comuna, lat: f.lat, lng: f.lng }] : []));
+  }
+
+  async pinesDeLocales(empresaId: string, comunas: readonly string[]): Promise<readonly PinDeLocal[]> {
+    if (comunas.length === 0) return [];
+    const filas = await this.db
+      .selectFrom('local as l')
+      .select(['l.id', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng'])
+      .where('l.empresa_id', '=', empresaId)
+      .where('l.comuna', 'in', comunas)
+      .where('l.lat', 'is not', null)
+      .where('l.lng', 'is not', null)
+      // Un pin hallado por el buscador solo hasta la calle (confianza baja) no dice dónde está esa puerta.
+      .where((eb) => eb.or([eb('l.pin_fuente', 'is distinct from', 'geocodificador'), eb('l.pin_confianza', '>=', 0.7)]))
+      .execute();
+    return filas.flatMap((f) => (f.lat !== null && f.lng !== null ? [{ localId: f.id, direccion: f.direccion, comuna: f.comuna, lat: f.lat, lng: f.lng }] : []));
   }
 
   async guardar(empresaId: string, d: GuardarRuta): Promise<Result<RutaGuardada, 'VERSION_DESACTUALIZADA'>> {

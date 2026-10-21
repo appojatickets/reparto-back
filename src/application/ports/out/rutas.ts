@@ -48,7 +48,10 @@ export type FacturaParaRuta = {
 };
 
 /** Una factura del camión ese día que ya se entregó (o no se pudo), con su ubicación conocida: ayuda a ubicar las que no tienen pin. */
-export type HechaConUbicacion = { readonly cargadaEn: number; readonly comuna: string; readonly lat: number; readonly lng: number };
+export type HechaConUbicacion = { readonly cargadaEn: number; readonly direccion: string; readonly comuna: string; readonly lat: number; readonly lng: number };
+
+/** Un local de la empresa con pin confiable (no el hallado por el buscador con poca precisión): sirve para ubicar otras puertas de su misma calle. */
+export type PinDeLocal = { readonly localId: string; readonly direccion: string; readonly comuna: string; readonly lat: number; readonly lng: number };
 
 export type GuardarRuta = {
   readonly camionId: string;
@@ -68,6 +71,8 @@ export interface RutaRepository {
   facturasPendientes(empresaId: string, camionId: string, fecha: string): Promise<readonly FacturaParaRuta[]>;
   /** Facturas del camión ese día ya entregadas o no entregadas cuyo local tiene ubicación (el pin queda donde se entregó). */
   hechasConUbicacion(empresaId: string, camionId: string, fecha: string): Promise<readonly HechaConUbicacion[]>;
+  /** Locales de esas comunas con pin confiable, para ubicar por su calle a los que todavía no tienen. */
+  pinesDeLocales(empresaId: string, comunas: readonly string[]): Promise<readonly PinDeLocal[]>;
   guardar(empresaId: string, datos: GuardarRuta): Promise<Result<RutaGuardada, 'VERSION_DESACTUALIZADA'>>;
   /** La ruta se arma cada día: borra la guardada de ese camión y día (no sirve guardar rutas, nunca se repiten). */
   borrar(empresaId: string, camionId: string, fecha: string): Promise<void>;

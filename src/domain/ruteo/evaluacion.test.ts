@@ -34,6 +34,41 @@ describe('evaluación de una ruta', () => {
     expect(evaluar(conEps, [0, 1], 2) - evaluar(sinEps, [0, 1], 2)).toBeCloseTo(17.5, 9);
   });
 
+  it('volver a una calle que ya se había dejado cuesta pesoCalle, una sola vez por cada vuelta; seguir en ella no cuesta', () => {
+    const ps = [parada('A1', { calle: 'x|colon' }), parada('B', { calle: 'x|freire' }), parada('A2', { calle: 'x|colon' })];
+    const base = problemaPlano(ps);
+    const sin = compilar(base);
+    const con = compilar({ ...base, parametros: { ...base.parametros, pesoCalle: 7 } });
+    // [A1, A2, B]: nunca vuelve a una calle
+    expect(evaluar(con, [0, 2, 1], 3)).toBeCloseTo(evaluar(sin, [0, 2, 1], 3), 9);
+    // [A1, B, A2]: vuelve a Colón una vez
+    expect(evaluar(con, [0, 1, 2], 3) - evaluar(sin, [0, 1, 2], 3)).toBeCloseTo(7, 9);
+  });
+
+  it('una parada sin calle conocida en medio también parte la calle, y evaluar puede repetirse sin arrastrar lo anterior', () => {
+    const ps = [parada('A1', { calle: 'x|colon' }), parada('U'), parada('A2', { calle: 'x|colon' })];
+    const base = problemaPlano(ps);
+    const con = compilar({ ...base, parametros: { ...base.parametros, pesoCalle: 7 } });
+    const sin = compilar(base);
+    for (let i = 0; i < 3; i++) expect(evaluar(con, [0, 1, 2], 3) - evaluar(sin, [0, 1, 2], 3)).toBeCloseTo(7, 9);
+  });
+
+  it('el peso del orden de carga depende de si la ubicación es conocida: sin pesoOrdenCargaPin vale el mismo para todas', () => {
+    const ps = [parada('A', { ordenCarga: 0 }), parada('B', { ordenCarga: 1, ubicacionIncierta: true })];
+    const base = problemaPlano(ps);
+    const iguales = compilar({ ...base, parametros: { ...base.parametros, pesoOrdenCarga: 2 } });
+    const distintos = compilar({ ...base, parametros: { ...base.parametros, pesoOrdenCarga: 2, pesoOrdenCargaPin: 0 } });
+    const sin = compilar(base);
+    // [B, A]: cada una está a un lugar de donde le toca
+    expect(evaluar(iguales, [1, 0], 2) - evaluar(sin, [1, 0], 2)).toBeCloseTo(4, 9);
+    expect(evaluar(distintos, [1, 0], 2) - evaluar(sin, [1, 0], 2)).toBeCloseTo(2, 9);
+  });
+
+  it('las paradas que comparten lugar de carga comparten rango: el orden de carga no prefiere ninguna entre ellas', () => {
+    const base = problemaPlano([parada('A', { ordenCarga: 3 }), parada('B', { ordenCarga: 3 }), parada('C', { ordenCarga: 9 })]);
+    expect(Array.from(compilar(base).rangoCarga)).toEqual([0, 0, 2]);
+  });
+
   it('detallar y evaluar coinciden', () => {
     expect(detallar(c, [1, 0]).costo).toBe(evaluar(c, [1, 0], 2));
   });

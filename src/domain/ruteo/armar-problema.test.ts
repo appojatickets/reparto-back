@@ -50,6 +50,21 @@ describe('armarProblema', () => {
     expect(r.problema.fijas).toEqual(['B']);
   });
 
+  it('la ruta de la aplicación solo desempata por llegar antes, castiga volver a una calle y deja el orden de carga solo para lo que no se sabe dónde está', () => {
+    const { parametros } = armarProblema({ ...base, entradas: [e('A')] }).problema;
+    expect(parametros.epsLlegada).toBeLessThanOrEqual(0.01);
+    expect(parametros.pesoCalle).toBeGreaterThan(0);
+    expect(parametros.pesoOrdenCarga).toBeGreaterThan(0);
+    expect(parametros.pesoOrdenCargaPin).toBe(0);
+  });
+
+  it('pasa la calle y si la ubicación es incierta a la parada', () => {
+    const r = armarProblema({ ...base, entradas: [e('A', { calle: 'San Bernardo|colon', ubicacionIncierta: true }), e('B')] });
+    expect(r.problema.paradas[0]).toMatchObject({ calle: 'San Bernardo|colon', ubicacionIncierta: true });
+    expect(r.problema.paradas[1]).not.toHaveProperty('calle');
+    expect(r.problema.paradas[1]).not.toHaveProperty('ubicacionIncierta');
+  });
+
   it('el problema armado se puede optimizar y cumple las invariantes', () => {
     const r = armarProblema({
       ...base,

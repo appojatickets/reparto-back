@@ -34,6 +34,7 @@ export const fakeRutas = (pendientes: FacturaParaRuta[] = [], hechas: HechaConUb
     obtener: vi.fn<RutaRepository['obtener']>(() => Promise.resolve(guardada)),
     facturasPendientes: vi.fn<RutaRepository['facturasPendientes']>(() => Promise.resolve(estado.pendientes)),
     hechasConUbicacion: vi.fn<RutaRepository['hechasConUbicacion']>(() => Promise.resolve(estado.hechas)),
+    pinesDeLocales: vi.fn<RutaRepository['pinesDeLocales']>(() => Promise.resolve([])),
     guardar: vi.fn<RutaRepository['guardar']>((_e, d: GuardarRuta) => {
       if (d.versionEsperada !== undefined && d.versionEsperada !== guardada?.version) return Promise.resolve(err('VERSION_DESACTUALIZADA' as const));
       guardada = { id: 'r-1', camionId: d.camionId, fecha: d.fecha, salidaMin: d.salidaMin, modo: d.modo, version: (guardada?.version ?? 0) + 1, orden: d.orden, fijas: d.fijas };

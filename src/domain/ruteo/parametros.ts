@@ -33,6 +33,17 @@ export type ParametrosRuteo = {
    * parece al de entrega (correlación 0,8–0,9 en las rutas reales), así que es una pista de lo que el chofer piensa hacer.
    */
   readonly pesoOrdenCarga: number;
+  /**
+   * Lo mismo para las paradas cuya ubicación sí se conoce (pin exacto, o ubicadas por su calle y número). Si no se indica, vale `pesoOrdenCarga`.
+   * Ahí la geometría ya dice qué queda cerca de qué: seguir el orden de carga contra ella es lo que hace ir y volver por las mismas calles, así
+   * que la aplicación lo deja en 0. `pesoOrdenCarga` queda para las que no se sabe dónde están.
+   */
+  readonly pesoOrdenCargaPin?: number;
+  /**
+   * Costo (minutos) de volver a una calle que la ruta ya había dejado: cada calle se visita de una vez, con todos sus números juntos. Es un
+   * castigo blando; un horario duro puede obligar a partirla.
+   */
+  readonly pesoCalle: number;
   /** Por dónde parte la ruta: `lejano` / `cercano` prefieren las paradas ordenadas por su distancia al depósito (ver `pesoOrdenInicio`). */
   readonly ordenInicio: OrdenInicio;
   /** Costo por cada lugar que una parada se aleja del que le tocaría según su distancia al depósito (0 = no se considera). */
@@ -59,6 +70,7 @@ export const PARAMETROS_POR_DEFECTO: ParametrosRuteo = Object.freeze({
   epsPrioridad: 0.1,
   epsLlegada: 0,
   pesoOrdenCarga: 0,
+  pesoCalle: 0,
   ordenInicio: 'automatico',
   pesoOrdenInicio: 0,
   pesoCierreAprendido: 0,
@@ -72,11 +84,13 @@ export const PARAMETROS_POR_DEFECTO: ParametrosRuteo = Object.freeze({
 export const SERVICIO_POR_DEFECTO_MIN = 10;
 
 /**
- * Estilo de ruta que usa la aplicación: prefiere visitar antes lo que queda cerca (terminar un sector antes de saltar a otro), como hacen los
- * choferes. Calibrado con 57 decisiones reales (4 rutas de 2 camiones): la siguiente parada que sugiere coincide con la que se hace el 61 %
- * de las veces en vez del 54 %, y el recorrido total crece 1,7 %. El motor puro (`PARAMETROS_POR_DEFECTO`) no lo incluye.
+ * Inclinación mínima por llegar antes a lo cercano que usa la aplicación: solo desempata entre dos recorridos igual de largos (cuál de los dos
+ * sentidos de un mismo circuito, empezando por lo cercano). Antes valía 0,5, pensando en terminar un sector antes de saltar a otro, y eso era
+ * justamente lo que cruzaba la ruta consigo misma: pagar medio minuto por cada minuto de llegada de CADA parada hace que acortar los primeros
+ * tramos valga más que el recorrido completo. En 20 rutas simuladas de 30 paradas con pin exacto, con 0,5 la ruta se cruzaba 1,25 veces y
+ * recorría 8 % más; con 0,005 no se cruza ninguna vez y recorre lo mismo que sin ninguna inclinación.
  */
-export const EPS_LLEGADA_CALIBRADO = 0.5;
+export const EPS_LLEGADA_DESEMPATE = 0.005;
 
 /**
  * Peso del orden de carga que usa la aplicación (minutos por lugar de diferencia). Calibrado con las mismas rutas reales (64 decisiones de
@@ -84,6 +98,19 @@ export const EPS_LLEGADA_CALIBRADO = 0.5;
  * 64 % (y está entre las 3 primeras el 86 % en vez del 77 %), con un recorrido que sigue siendo más corto que el manejado.
  */
 export const PESO_ORDEN_CARGA_CALIBRADO = 1;
+
+/**
+ * Peso del orden de carga para las paradas cuya ubicación se conoce (pin exacto, o ubicadas por su calle y número). Ahí la geometría sabe qué
+ * queda cerca de qué; seguir además el orden en que se cargaron las facturas (que no sigue las calles) la saca de ahí y la hace ir y volver por
+ * las mismas zonas. Solo guía a las que no se sabe dónde están, que es cuando de verdad ayuda.
+ */
+export const PESO_ORDEN_CARGA_CON_PIN = 0;
+
+/**
+ * Castigo (minutos) por volver a una calle que la ruta ya había dejado, en la ruta que arma la aplicación. Una calle se hace de una vez: 3, 7 y
+ * 12 de «Calle X» seguidas y no «3, otra calle, 12». Es blando para que un horario duro, que sí puede partir una calle, siga mandando.
+ */
+export const PESO_CALLE = 10;
 
 /**
  * Peso del orden de inicio que usa la aplicación cuando el dueño elige partir por lo más lejano o más cercano (minutos por lugar de diferencia).

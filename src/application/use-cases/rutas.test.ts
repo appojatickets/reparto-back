@@ -318,6 +318,53 @@ describe('el orden en que el chofer cargó las facturas', () => {
   });
 });
 
+describe('una calle se hace de una vez (ADR 0054)', () => {
+  const sinPin = (n: string, direccion: string, cargadaEn: number): ReturnType<typeof paradaDe> => {
+    const { facturaId, localId, razonSocial, comuna, urgente, horarios } = paradaDe(n);
+    return { facturaId, localId, razonSocial, direccion, comuna, urgente, horarios, cargadaEn };
+  };
+  const calleDe = (id: string, pendientes: readonly ReturnType<typeof paradaDe>[]): string => pendientes.find((p) => p.facturaId === id)?.direccion.split(' ')[0] ?? '';
+
+  it('las facturas sin pin de una misma calle quedan juntas y por número, aunque se hayan cargado mezcladas con las de otra calle', async () => {
+    const pendientes = [
+      sinPin('1', 'Colón 100', 1000), sinPin('2', 'Freire 200', 2000), sinPin('3', 'Colón 900', 3000), sinPin('4', 'Freire 800', 4000),
+      sinPin('5', 'Colón 500', 5000), sinPin('6', 'Freire 500', 6000), sinPin('7', 'Colón 1500', 7000), sinPin('8', 'Freire 1100', 8000),
+    ];
+    const r = await montar({ pendientes }).planificar(despachador, entrada);
+    const orden = r.ok ? ids(r.value) : [];
+    expect(orden).toHaveLength(8);
+    expect(orden.filter((id, i) => i > 0 && calleDe(id, pendientes) !== calleDe(orden[i - 1] ?? '', pendientes))).toHaveLength(1);
+    // Dentro de cada calle, de un extremo al otro sin ir y volver.
+    for (const calle of ['Colón', 'Freire']) {
+      const numeros = orden.filter((id) => calleDe(id, pendientes) === calle).map((id) => Number(pendientes.find((p) => p.facturaId === id)?.direccion.split(' ')[1]));
+      expect(numeros.every((x, i) => i === 0 || x >= (numeros[i - 1] ?? 0)) || numeros.every((x, i) => i === 0 || x <= (numeros[i - 1] ?? 0))).toBe(true);
+    }
+  });
+
+  it('pide los pines de las comunas de las que no tienen pin exacto; si no se pueden leer, la ruta se calcula igual', async () => {
+    const s = montar({ pendientes: [paradaDe('A'), sinPin('S', 'Colón 100', 2000)] });
+    s.rutas.repo.pinesDeLocales.mockRejectedValueOnce(new Error('caída'));
+    expect((await s.planificar(despachador, entrada)).ok).toBe(true);
+    expect(s.rutas.repo.pinesDeLocales).toHaveBeenCalledWith(expect.any(String), ['Santiago']);
+  });
+
+  it('con todas las paradas con pin exacto no consulta los pines de la empresa', async () => {
+    const s = montar();
+    await s.planificar(despachador, entrada);
+    expect(s.rutas.repo.pinesDeLocales).not.toHaveBeenCalled();
+  });
+
+  it('las paradas que la ruta ubica por su calle no se consultan al servicio de calles: su punto no es el de su pin', async () => {
+    const viajes = vi.fn(() => Promise.resolve({ minutos: () => undefined, conCalles: false }));
+    const aprox = paradaDe('B', { direccion: 'Colón 130', lat: -33.7, lng: -70.9, pinAproximado: true });
+    const rutas = fakeRutas([paradaDe('A', { direccion: 'Colón 100' }), aprox]);
+    const servicios = crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), entregas: fakeEntregasRuta(), jornadas: fakeJornadas(), registro: fakeRegistro(), viajes, clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba() });
+    await servicios.planificar(despachador, entrada);
+    const nodos = (viajes.mock.calls[0] as unknown as [readonly { id: string; rol: string }[]])[0];
+    expect(nodos.filter((n) => n.rol === 'parada').map((n) => n.id)).toEqual(['f-A']);
+  });
+});
+
 describe('la ruta con tiempos por calles', () => {
   it('pide los tiempos al servicio solo para el depósito, el origen y las paradas con pin, y usa lo que responde (sin el ritmo aprendido)', async () => {
     const viajes = vi.fn(() => Promise.resolve({ minutos: () => 100, conCalles: true }));

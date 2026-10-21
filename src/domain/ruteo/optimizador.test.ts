@@ -207,3 +207,43 @@ it('con presupuesto agotado conserva cada parada sin tocar el prefijo fijado', (
   expect(r.orden[0]).toBe('B');
   expect(new Set(r.orden)).toEqual(new Set(['A', 'B', 'C']));
 });
+
+describe('optimizar · una calle se hace de una vez', () => {
+  // Tramos todos iguales: sin la calle, volver a ella no cuesta nada más que ir a cualquier otro lado.
+  const paradas = [parada('A1', { calle: 'x|colon' }), parada('B1', { calle: 'x|freire' }), parada('A2', { calle: 'x|colon' }), parada('B2', { calle: 'x|freire' })];
+  const posicion = (orden: readonly string[], id: string): number => orden.indexOf(id);
+
+  it('deja juntas las paradas de una misma calle', () => {
+    const s = optimizar(problemaPlano(paradas, { parametros: { ...PARAMETROS_POR_DEFECTO, pesoCalle: 5 } }));
+    expect(Math.abs(posicion(s.orden, 'A1') - posicion(s.orden, 'A2'))).toBe(1);
+    expect(Math.abs(posicion(s.orden, 'B1') - posicion(s.orden, 'B2'))).toBe(1);
+  });
+
+  it('un horario duro puede partir una calle: manda sobre el castigo', () => {
+    const conVentana = [parada('A1', { calle: 'x|colon' }), parada('B1', { calle: 'x|freire', ventanas: [v(480, 490)] }), parada('A2', { calle: 'x|colon', ventanas: [v(480, 506)] }), parada('B2', { calle: 'x|freire' })];
+    const s = optimizar(problemaPlano(conVentana, { parametros: { ...PARAMETROS_POR_DEFECTO, pesoCalle: 5 } }));
+    expect(s.enRiesgo).toEqual([]);
+    expect(s.orden.slice(0, 2)).toEqual(['B1', 'A2']);
+  });
+
+  it('con peso 0 la calle no cuenta', () => {
+    const a = optimizar(problemaPlano(paradas));
+    const b = optimizar(problemaPlano(paradas.map((p) => ({ id: p.id, nombre: p.nombre, ventanas: p.ventanas, servicioMin: p.servicioMin, prioridad: p.prioridad }))));
+    expect(a.costo).toBe(b.costo);
+  });
+});
+
+describe('optimizar · el orden de carga solo guía lo que no se sabe dónde está', () => {
+  const parametros = { ...PARAMETROS_POR_DEFECTO, pesoOrdenCarga: 1, pesoOrdenCargaPin: 0 };
+
+  it('con la ubicación conocida no pesa: queda lo que decide la geometría (aquí, un empate que resuelve el orden de entrada)', () => {
+    const paradas = [parada('X', { ordenCarga: 2 }), parada('Y', { ordenCarga: 0 }), parada('Z', { ordenCarga: 1 })];
+    const sinCarga = optimizar(problemaPlano(paradas, { parametros: PARAMETROS_POR_DEFECTO }));
+    expect(optimizar(problemaPlano(paradas, { parametros })).orden).toEqual(sinCarga.orden);
+  });
+
+  it('si no se sabe dónde está (solo se adivina), sí guía', () => {
+    const paradas = [parada('X', { ordenCarga: 2, ubicacionIncierta: true }), parada('Y', { ordenCarga: 0, ubicacionIncierta: true }), parada('Z', { ordenCarga: 1, ubicacionIncierta: true })];
+    expect(optimizar(problemaPlano(paradas, { parametros })).orden).toEqual(['Y', 'Z', 'X']);
+  });
+});

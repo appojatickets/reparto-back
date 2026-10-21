@@ -4,7 +4,7 @@ import type { Fecha } from '../shared/fechas.js';
 import { diaDeSemana } from '../shared/fechas.js';
 import type { OrdenInicio } from '../entidades/config-empresa.js';
 import { distanciaKm, type Coordenada } from '../valor/coordenada.js';
-import { EPS_LLEGADA_CALIBRADO, PARAMETROS_POR_DEFECTO, PESO_CIERRE_APRENDIDO, PESO_ORDEN_CARGA_CALIBRADO, PESO_ORDEN_INICIO, SERVICIO_POR_DEFECTO_MIN } from './parametros.js';
+import { EPS_LLEGADA_DESEMPATE, PARAMETROS_POR_DEFECTO, PESO_CALLE, PESO_CIERRE_APRENDIDO, PESO_ORDEN_CARGA_CALIBRADO, PESO_ORDEN_CARGA_CON_PIN, PESO_ORDEN_INICIO, SERVICIO_POR_DEFECTO_MIN } from './parametros.js';
 import { crearFactorHorario, crearTiemposConViajes, crearTiemposHaversine, DEPOSITO, ORIGEN } from './tiempos.js';
 import type { ParadaRuta, ProblemaRuta } from './tipos.js';
 
@@ -23,6 +23,10 @@ export type EntradaParada = {
   readonly ordenCarga?: number;
   /** Franjas en que el local suele estar cerrado según lo aprendido (solo las de evidencia suficiente y probabilidad alta). */
   readonly cierreProbable?: readonly FranjaCierreProbable[];
+  /** Su calle, escrita siempre igual (ver `calleYNumero`): la ruta termina una calle antes de dejarla. */
+  readonly calle?: string;
+  /** `coordenada` es una adivinanza (orden de carga o centro de la comuna), no un pin ni una ubicación por su calle y número. */
+  readonly ubicacionIncierta?: boolean;
 };
 
 export type DatosProblema = {
@@ -69,6 +73,8 @@ export const armarProblema = (d: DatosProblema): { readonly problema: ProblemaRu
       ...(e.ordenCarga !== undefined ? { ordenCarga: e.ordenCarga } : {}),
       distanciaDepositoKm: distanciaKm(d.deposito, e.coordenada),
       ...(e.cierreProbable !== undefined && e.cierreProbable.length > 0 ? { cierreProbable: e.cierreProbable } : {}),
+      ...(e.calle !== undefined ? { calle: e.calle } : {}),
+      ...(e.ubicacionIncierta === true ? { ubicacionIncierta: true } : {}),
     });
   }
 
@@ -83,8 +89,10 @@ export const armarProblema = (d: DatosProblema): { readonly problema: ProblemaRu
       ritmo: d.viajeMin ? 1 : (d.ritmo ?? 1),
       parametros: {
         ...PARAMETROS_POR_DEFECTO,
-        epsLlegada: EPS_LLEGADA_CALIBRADO,
+        epsLlegada: EPS_LLEGADA_DESEMPATE,
         pesoOrdenCarga: PESO_ORDEN_CARGA_CALIBRADO,
+        pesoOrdenCargaPin: PESO_ORDEN_CARGA_CON_PIN,
+        pesoCalle: PESO_CALLE,
         pesoCierreAprendido: PESO_CIERRE_APRENDIDO,
         ...(d.ordenInicio !== undefined && d.ordenInicio !== 'automatico' ? { ordenInicio: d.ordenInicio, pesoOrdenInicio: PESO_ORDEN_INICIO } : {}),
         ...(d.ordenInicio === 'lejano' ? { epsLlegada: 0 } : {}),

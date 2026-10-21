@@ -16,8 +16,15 @@ export type Compilado = {
   readonly indice: ReadonlyMap<string, number>;
   readonly servicio: Float64Array;
   readonly prioridad: Uint8Array;
-  /** Lugar de cada parada en el orden de carga entre las de este problema (0..n-1), o -1 si no se sabe. */
+  /** Lugar de cada parada en el orden de carga entre las de este problema (0..n-1; las empatadas comparten el menor), o -1 si no se sabe. */
   readonly rangoCarga: Int32Array;
+  /** Cuánto pesa, para cada parada, alejarse de su lugar en el orden de carga (según tenga pin exacto o una ubicación estimada). */
+  readonly pesoCarga: Float64Array;
+  /** Número de la calle de cada parada (0..calles-1), o -1 si no se sabe. */
+  readonly calle: Int32Array;
+  /** Memoria de trabajo de `evaluar` para saber qué calles ya se visitaron en la ruta que evalúa (no es parte del problema). */
+  readonly callesVistas: Int32Array;
+  readonly contadorDeEvaluaciones: Int32Array;
   /** Lugar que le toca a cada parada según su distancia al depósito (0 = la primera); -1 si no se prefiere ningún orden. */
   readonly rangoInicio: Int32Array;
   /** Franjas en que cada parada suele estar cerrada (vacío = sin pista); solo se usa si `pesoCierreAprendido` > 0. */
@@ -58,7 +65,27 @@ export const compilar = (problema: ProblemaRuta): Compilado => {
 
   const rangoCarga = new Int32Array(n).fill(-1);
   const conCarga = problema.paradas.flatMap((p, i) => (p.ordenCarga !== undefined ? [{ i, orden: p.ordenCarga }] : [])).sort((a, b) => a.orden - b.orden || a.i - b.i);
-  conCarga.forEach((x, rango) => { rangoCarga[x.i] = rango; });
+  // Las que comparten lugar de carga comparten rango: entre ellas el orden de carga no prefiere ninguno.
+  let anterior: { readonly orden: number; readonly rango: number } | undefined;
+  conCarga.forEach((x, lugar) => {
+    const rango = anterior?.orden === x.orden ? anterior.rango : lugar;
+    rangoCarga[x.i] = rango;
+    anterior = { orden: x.orden, rango };
+  });
+
+  const { pesoOrdenCarga, pesoOrdenCargaPin = pesoOrdenCarga } = problema.parametros;
+  const pesoCarga = Float64Array.from(problema.paradas, (p) => (p.ubicacionIncierta === true ? pesoOrdenCarga : pesoOrdenCargaPin));
+
+  const numeroDeCalle = new Map<string, number>();
+  const calle = new Int32Array(n).fill(-1);
+  if (problema.parametros.pesoCalle > 0) {
+    problema.paradas.forEach((p, i) => {
+      if (p.calle === undefined) return;
+      const numero = numeroDeCalle.get(p.calle) ?? numeroDeCalle.size;
+      numeroDeCalle.set(p.calle, numero);
+      calle[i] = numero;
+    });
+  }
 
   const rangoInicio = new Int32Array(n).fill(-1);
   const { ordenInicio, pesoOrdenInicio } = problema.parametros;
@@ -78,6 +105,10 @@ export const compilar = (problema: ProblemaRuta): Compilado => {
     servicio: Float64Array.from(problema.paradas, (p) => p.servicioMin),
     prioridad: Uint8Array.from(problema.paradas, (p) => (p.prioridad ? 1 : 0)),
     rangoCarga,
+    pesoCarga,
+    calle,
+    callesVistas: new Int32Array(numeroDeCalle.size),
+    contadorDeEvaluaciones: new Int32Array(1),
     rangoInicio,
     franjasCierre: problema.parametros.pesoCierreAprendido > 0 ? problema.paradas.map((p) => p.cierreProbable ?? []) : problema.paradas.map(() => []),
     origen: n,
