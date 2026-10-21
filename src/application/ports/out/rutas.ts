@@ -38,6 +38,8 @@ export type FacturaParaRuta = {
   readonly tieneFoto?: boolean;
   /** Alguien verificó el pin del local y el admin dio por buena su foto: se muestran como insignias ✓. */
   readonly pinVerificado?: boolean;
+  readonly pinFuente?: string;
+  readonly pinVerificacion?: 'persona' | 'entregas';
   readonly fotoVerificada?: boolean;
   readonly antesDeMin?: number;
   readonly urgente: boolean;

@@ -4,6 +4,7 @@ import { ok, type Result } from '../../domain/shared/result.js';
 import type { ErrorApp } from '../errores.js';
 import type { ClienteRepository, LocalConPin } from '../ports/out/clientes.js';
 import type { EntregaRepository } from '../ports/out/entregas.js';
+import { respaldoGemini } from '../../domain/entidades/pin-gemini.js';
 
 const ENTREGAS_POR_LOCAL = 20;
 const MAXIMO_A_REVISAR = 400;
@@ -19,12 +20,14 @@ const PRIORIDAD: Readonly<Record<NivelRespaldoPin, number>> = { respaldado: 0, e
  * La lista para revisar pines, como la de fotos: «por verificar» (con cuánto respaldan las entregas a cada pin, lo más seguro primero) y
  * «verificados» (los más recientes primero, con si los verificó una persona o las entregas). Nada cambia solo al mirarla.
  */
-export const crearRevisarPines = ({ clientes, entregas }: { clientes: ClienteRepository; entregas: Pick<EntregaRepository, 'visitasConGpsDeLocales'> }) =>
+export const crearRevisarPines = ({ clientes, entregas }: { clientes: ClienteRepository; entregas: Pick<EntregaRepository, 'visitasConGpsDeLocales' | 'visitasDetenidasDeLocales'> }) =>
   async (actor: Usuario, estado: 'por_verificar' | 'verificados'): Promise<Result<PinesParaRevisar, ErrorApp>> => {
     const locales = await clientes.listarPinesParaRevisar(actor.empresaId, estado, MAXIMO_A_REVISAR);
     // El nivel es información de apoyo: si no se pueden leer las entregas, la lista igual se entrega (sin evidencia).
     const visitas = await entregas.visitasConGpsDeLocales(actor.empresaId, locales.map((l) => l.id), ENTREGAS_POR_LOCAL).catch((): ReadonlyMap<string, readonly VisitaConGps[]> => new Map());
-    const conRespaldo = locales.map((l): PinParaRevisar => ({ ...l, respaldo: respaldoDelPin({ lat: l.lat, lng: l.lng }, l.pinVerificacion !== undefined, visitas.get(l.id) ?? []) }));
+    const ia = locales.filter(l => l.pinFuente === 'gemini').map(l => l.id);
+    const detenidas = ia.length ? await entregas.visitasDetenidasDeLocales?.(actor.empresaId, ia, ENTREGAS_POR_LOCAL).catch((): ReadonlyMap<string, readonly VisitaConGps[]> => new Map()) : undefined;
+    const conRespaldo = locales.map((l): PinParaRevisar => ({ ...l, respaldo: l.pinFuente === 'gemini' ? respaldoGemini(l, l.pinVerificacion !== undefined, detenidas?.get(l.id) ?? []) : respaldoDelPin(l, l.pinVerificacion !== undefined, visitas.get(l.id) ?? []) }));
     const ordenadas = estado === 'por_verificar'
       ? [...conRespaldo].sort((a, b) => PRIORIDAD[a.respaldo.nivel] - PRIORIDAD[b.respaldo.nivel] || b.respaldo.entregas - a.respaldo.entregas)
       : conRespaldo;

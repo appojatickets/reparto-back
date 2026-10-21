@@ -19,6 +19,8 @@ const item = z.object({
   noEncontradaEnMapa: z.boolean().optional(),
   tieneFoto: z.boolean().optional(),
   pinVerificado: z.boolean().optional(),
+  pinFuente: z.string().optional(),
+  pinVerificacion: z.enum(['persona', 'entregas']).optional(),
   fotoVerificada: z.boolean().optional(),
   urgente: z.boolean(),
   antesDeMin: z.number().optional(),

@@ -4510,7 +4510,8 @@
                         "importado",
                         "aprendido",
                         "chofer",
-                        "enlace"
+                        "enlace",
+                        "gemini"
                       ]
                     },
                     "pinVerificado": {
@@ -4522,6 +4523,22 @@
                         "persona",
                         "entregas"
                       ]
+                    },
+                    "pinCorreccion": {
+                      "type": "object",
+                      "properties": {
+                        "lat": {
+                          "type": "number"
+                        },
+                        "lng": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "lat",
+                        "lng"
+                      ],
+                      "additionalProperties": false
                     },
                     "pinRespaldo": {
                       "type": "object",
@@ -12854,7 +12871,8 @@
                               "importado",
                               "aprendido",
                               "chofer",
-                              "enlace"
+                              "enlace",
+                              "gemini"
                             ]
                           },
                           "pinConfianza": {
@@ -16064,6 +16082,16 @@
                           "pinVerificado": {
                             "type": "boolean"
                           },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
+                          },
                           "fotoVerificada": {
                             "type": "boolean"
                           },
@@ -16175,6 +16203,16 @@
                           "pinVerificado": {
                             "type": "boolean"
                           },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
+                          },
                           "fotoVerificada": {
                             "type": "boolean"
                           },
@@ -16240,6 +16278,16 @@
                           },
                           "pinVerificado": {
                             "type": "boolean"
+                          },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
                           },
                           "fotoVerificada": {
                             "type": "boolean"
@@ -16315,6 +16363,16 @@
                           "pinVerificado": {
                             "type": "boolean"
                           },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
+                          },
                           "fotoVerificada": {
                             "type": "boolean"
                           },
@@ -16380,6 +16438,16 @@
                           },
                           "pinVerificado": {
                             "type": "boolean"
+                          },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
                           },
                           "fotoVerificada": {
                             "type": "boolean"
@@ -16454,6 +16522,16 @@
                           },
                           "pinVerificado": {
                             "type": "boolean"
+                          },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
                           },
                           "fotoVerificada": {
                             "type": "boolean"
@@ -17150,6 +17228,16 @@
                           "pinVerificado": {
                             "type": "boolean"
                           },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
+                          },
                           "fotoVerificada": {
                             "type": "boolean"
                           },
@@ -17261,6 +17349,16 @@
                           "pinVerificado": {
                             "type": "boolean"
                           },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
+                          },
                           "fotoVerificada": {
                             "type": "boolean"
                           },
@@ -17326,6 +17424,16 @@
                           },
                           "pinVerificado": {
                             "type": "boolean"
+                          },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
                           },
                           "fotoVerificada": {
                             "type": "boolean"
@@ -17401,6 +17509,16 @@
                           "pinVerificado": {
                             "type": "boolean"
                           },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
+                          },
                           "fotoVerificada": {
                             "type": "boolean"
                           },
@@ -17466,6 +17584,16 @@
                           },
                           "pinVerificado": {
                             "type": "boolean"
+                          },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
                           },
                           "fotoVerificada": {
                             "type": "boolean"
@@ -17540,6 +17668,16 @@
                           },
                           "pinVerificado": {
                             "type": "boolean"
+                          },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
                           },
                           "fotoVerificada": {
                             "type": "boolean"
@@ -18108,6 +18246,16 @@
                           "pinVerificado": {
                             "type": "boolean"
                           },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
+                          },
                           "fotoVerificada": {
                             "type": "boolean"
                           },
@@ -18219,6 +18367,16 @@
                           "pinVerificado": {
                             "type": "boolean"
                           },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
+                          },
                           "fotoVerificada": {
                             "type": "boolean"
                           },
@@ -18284,6 +18442,16 @@
                           },
                           "pinVerificado": {
                             "type": "boolean"
+                          },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
                           },
                           "fotoVerificada": {
                             "type": "boolean"
@@ -18359,6 +18527,16 @@
                           "pinVerificado": {
                             "type": "boolean"
                           },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
+                          },
                           "fotoVerificada": {
                             "type": "boolean"
                           },
@@ -18424,6 +18602,16 @@
                           },
                           "pinVerificado": {
                             "type": "boolean"
+                          },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
                           },
                           "fotoVerificada": {
                             "type": "boolean"
@@ -18498,6 +18686,16 @@
                           },
                           "pinVerificado": {
                             "type": "boolean"
+                          },
+                          "pinFuente": {
+                            "type": "string"
+                          },
+                          "pinVerificacion": {
+                            "type": "string",
+                            "enum": [
+                              "persona",
+                              "entregas"
+                            ]
                           },
                           "fotoVerificada": {
                             "type": "boolean"

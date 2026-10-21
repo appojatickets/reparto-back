@@ -375,7 +375,7 @@ export class PostgresClienteRepository implements ClienteRepository {
     return 'OK';
   }
 
-  async verificarPinPorEntregas(empresaId: string, localId: string, en: Date): Promise<boolean> {
+  async verificarPinPorEntregas(empresaId: string, localId: string, en: Date, pinEsperado?: { readonly lat: number; readonly lng: number }): Promise<boolean> {
     // Sin persona (`pin_verificado_por` nulo): así se distingue de una verificación hecha a mano.
     const r = await this.db
       .updateTable('local')
@@ -384,6 +384,7 @@ export class PostgresClienteRepository implements ClienteRepository {
       .where('empresa_id', '=', empresaId)
       .where('lat', 'is not', null)
       .where('pin_verificado_en', 'is', null)
+      .$if(pinEsperado !== undefined, q => q.where('lat', '=', pinEsperado?.lat ?? 0).where('lng', '=', pinEsperado?.lng ?? 0))
       .executeTakeFirst();
     return r.numUpdatedRows > 0n;
   }
@@ -431,7 +432,7 @@ export class PostgresClienteRepository implements ClienteRepository {
     if (filtro.comunas !== undefined && filtro.comunas.length > 0) q = q.where('l.comuna', 'in', [...filtro.comunas]);
     if (filtro.pin === 'con') q = q.where('l.lat', 'is not', null);
     if (filtro.pin === 'sin') q = q.where('l.lat', 'is', null);
-    if (filtro.pin === 'aproximado') q = q.where('l.lat', 'is not', null).where('l.pin_fuente', '=', 'geocodificador').where(sql<number>`coalesce(l.pin_confianza, 0)`, '<', 0.7);
+    if (filtro.pin === 'aproximado') q = q.where('l.lat', 'is not', null).where('l.pin_fuente', 'in', ['geocodificador', 'gemini']).where(sql<number>`coalesce(l.pin_confianza, 0)`, '<', 0.7);
     if (filtro.foto === 'con') q = q.where('l.foto_path', 'is not', null);
     if (filtro.foto === 'sin') q = q.where('l.foto_path', 'is', null);
     if (filtro.texto !== undefined && filtro.texto.trim() !== '') {
@@ -634,10 +635,10 @@ export class PostgresClienteRepository implements ClienteRepository {
     await this.db.updateTable('local').set({ geocod_intento_en: ahora }).where('id', '=', localId).where('empresa_id', '=', empresaId).execute();
   }
 
-  async fijarPinGeocodificado(empresaId: string, localId: string, lat: number, lng: number, confianza: number): Promise<boolean> {
+  async fijarPinGeocodificado(empresaId: string, localId: string, lat: number, lng: number, confianza: number, fuente: 'geocodificador' | 'gemini' = 'geocodificador'): Promise<boolean> {
     const r = await this.db
       .updateTable('local')
-      .set({ lat, lng, pin_estado: 'sugerido', pin_fuente: 'geocodificador', pin_confianza: confianza, geocod_intento_en: new Date() })
+      .set({ lat, lng, pin_estado: 'sugerido', pin_fuente: fuente, pin_confianza: confianza, geocod_intento_en: new Date() })
       .where('id', '=', localId)
       .where('empresa_id', '=', empresaId)
       .where('lat', 'is', null)

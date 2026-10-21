@@ -29,6 +29,8 @@ export interface EntregaRepository {
   visitasConGps(empresaId: string, localId: string, limite: number): Promise<readonly VisitaConGps[]>;
   /** Lo mismo para varios locales a la vez: hasta `porLocal` entregas por local (las más recientes), en una sola consulta. */
   visitasConGpsDeLocales(empresaId: string, localIds: readonly string[], porLocal: number): Promise<ReadonlyMap<string, readonly VisitaConGps[]>>;
+  /** Solo entregas con detención GPS precisa; sin este método los pines de IA nunca se consolidan automáticamente. */
+  visitasDetenidasDeLocales?(empresaId: string, localIds: readonly string[], porLocal: number): Promise<ReadonlyMap<string, readonly VisitaConGps[]>>;
   /** Los avisos de entrega y de cerrado de ese local (de más antiguo a más reciente): con eso se arma lo que se aprendió de él. */
   eventosDeLocal(empresaId: string, localId: string, desde: Date): Promise<readonly { readonly tipo: string; readonly motivo?: string; readonly creadoEn: Date }[]>;
   /** Lo mismo para varios locales a la vez, en una sola consulta (la ruta del día mira todos sus locales). */

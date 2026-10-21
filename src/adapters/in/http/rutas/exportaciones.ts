@@ -15,7 +15,7 @@ const fila = z.object({
   lat: z.number().optional(),
   lng: z.number().optional(),
   pinEstado: z.enum(['pendiente', 'sugerido', 'validado']),
-  pinFuente: z.enum(['geocodificador', 'manual', 'importado', 'aprendido', 'chofer', 'enlace']).optional(),
+  pinFuente: z.enum(['geocodificador', 'manual', 'importado', 'aprendido', 'chofer', 'enlace', 'gemini']).optional(),
   pinConfianza: z.number().optional(),
   nota: z.string().optional(),
   tieneFoto: z.boolean(),
