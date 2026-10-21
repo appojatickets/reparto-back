@@ -23,7 +23,7 @@ export type ParametrosRuteo = {
    */
   readonly epsPrioridad: number;
   /**
-   * Costo por minuto de llegada de CADA parada (0 = ninguno). Con un valor positivo la ruta prefiere visitar antes lo que queda cerca, como
+   * Costo por minuto de viaje acumulado hasta CADA parada (0 = ninguno), sin servicio ni espera. La ruta prefiere visitar antes lo que queda cerca, como
    * hacen los choferes: terminar un sector antes de saltar a otro, aunque el recorrido total quede algo más largo. Se calibra con lo que
    * los choferes de verdad hacen (el orden que se hace manda sobre el sugerido).
    */
