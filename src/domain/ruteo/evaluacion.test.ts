@@ -27,11 +27,12 @@ describe('evaluación de una ruta', () => {
     expect(it.regreso).toBe(555);
   });
 
-  it('con costo por llegada, cada parada suma ε por cada minuto que tarda en llegar (visitar antes lo cercano sale más barato)', () => {
+  it('la cercanía suma solo el viaje acumulado y excluye el tiempo de descarga', () => {
     const sinEps = compilar(problemaPlano([parada('B'), parada('C')]));
     const conEps = compilar({ ...problemaPlano([parada('B'), parada('C')]), parametros: { ...problemaPlano([]).parametros, epsLlegada: 0.5 } });
-    // B llega a +10 min y C a +25 min (10 de viaje + 5 de servicio + 10 de viaje): 0,5·(10 + 25) = 17,5
-    expect(evaluar(conEps, [0, 1], 2) - evaluar(sinEps, [0, 1], 2)).toBeCloseTo(17.5, 9);
+    // B acumula 10 min de viaje y C 20; los 5 de servicio sí permanecen en su ETA.
+    expect(evaluar(conEps, [0, 1], 2) - evaluar(sinEps, [0, 1], 2)).toBeCloseTo(15, 9);
+    expect(detallar(conEps, [0, 1]).llegada).toEqual([490, 505]);
   });
 
   it('detallar y evaluar coinciden', () => {
@@ -82,7 +83,17 @@ describe('evaluación de una ruta', () => {
     const c=compilar(p);
     expect(evaluar(c,[1,0],2)).toBeLessThan(evaluar(c,[0,1],2));
     const sin=compilar({...p,preferenciasRecorrido:[]});
-    expect(evaluar(c,[1,0],2)-evaluar(sin,[1,0],2)).toBe(1.5);
+    expect(evaluar(c,[1,0],2)-evaluar(sin,[1,0],2)).toBeCloseTo(1/60,9);
+  });
+
+  it('cien preferencias aprendidas juntas no añaden más de un segundo por ruta', () => {
+    const p = problemaPlano([parada('A'), parada('B')], {
+      preferenciasRecorrido: Array.from({ length: 100 }, () => ({ antes: 'A', despues: 'B', peso: 1.5 })),
+    });
+    const c = compilar(p);
+    const sin = compilar({ ...p, preferenciasRecorrido: [] });
+    expect(evaluar(c, [1, 0], 2) - evaluar(sin, [1, 0], 2)).toBeCloseTo(1 / 60, 9);
+    expect(evaluar(c, [0, 1], 2)).toBe(evaluar(sin, [0, 1], 2));
   });
 
 });

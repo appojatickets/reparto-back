@@ -19,6 +19,7 @@ export const evaluar = (c: Compilado, orden: ArrayLike<number>, largo: number, c
   let t = c.salida;
   let previo = c.origen;
   let costo = 0;
+  let viajeAcumulado = 0;
   let ultimaComuna = -1;
 
   for (let k = 0; k < largo; k++) {
@@ -30,6 +31,7 @@ export const evaluar = (c: Compilado, orden: ArrayLike<number>, largo: number, c
     const viaje = c.viaje(previo, j, t);
     const llegada = t + viaje;
     costo += viaje;
+    viajeAcumulado += viaje;
 
     const ventanas = c.paradas[j]?.ventanas ?? [];
     let inicio = llegada;
@@ -54,7 +56,9 @@ export const evaluar = (c: Compilado, orden: ArrayLike<number>, largo: number, c
       if (franja) costo += pesoCierreAprendido * franja.p;
     }
     if (c.prioridad[j] === 1) costo += epsPrioridad * (llegada - c.salida);
-    if (epsLlegada > 0) costo += epsLlegada * (llegada - c.salida);
+    // La cercanía depende del recorrido, no de cuánto demora la descarga del vecino.
+    // El servicio y las esperas sí siguen contando para las ventanas y las urgencias.
+    if (epsLlegada > 0) costo += epsLlegada * viajeAcumulado;
     if (pesoOrdenCarga > 0) {
       const r = c.rangoCarga[j] ?? -1;
       if (r >= 0) costo += pesoOrdenCarga * Math.abs(k - r);
@@ -68,12 +72,24 @@ export const evaluar = (c: Compilado, orden: ArrayLike<number>, largo: number, c
     t = inicio + (c.servicio[j] ?? 0);
     previo = j;
   }
-  if(c.preferencias.length>0){
-    const posiciones=new Int32Array(c.n).fill(-1);
-    for(let k=0;k<largo;k++){const j=orden[k];if(j!==undefined)posiciones[j]=k;}
-    let penalizacion=0;
-    for(const p of c.preferencias){const a=posiciones[p.antes]??-1,b=posiciones[p.despues]??-1;if(a>=0&&b>=0&&a>b)penalizacion+=p.peso;if(penalizacion>=5)break;}
-    costo+=Math.min(5,penalizacion);
+  if (c.preferencias.length > 0) {
+    const posiciones = new Int32Array(c.n).fill(-1);
+    for (let k = 0; k < largo; k++) {
+      const j = orden[k];
+      if (j !== undefined) posiciones[j] = k;
+    }
+    let penalizacion = 0;
+    let pesoTotal = 0;
+    for (const p of c.preferencias) {
+      const a = posiciones[p.antes] ?? -1, b = posiciones[p.despues] ?? -1;
+      if (a >= 0 && b >= 0) {
+        pesoTotal += p.peso;
+        if (a > b) penalizacion += p.peso;
+      }
+    }
+    // La memoria desempata recorridos equivalentes: como máximo un segundo
+    // por ruta, sin acumular minutos de desvío al aprender más pares.
+    if (pesoTotal > 0) costo += (penalizacion / pesoTotal) / 60;
   }
   costo += c.viaje(previo, c.deposito, t);
   return costo >= corte ? Infinity : costo;
