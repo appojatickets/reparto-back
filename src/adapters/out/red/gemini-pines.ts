@@ -35,7 +35,7 @@ export const crearGeminiPines = ({ clave, modelo, limiteDiario, buscar = (...a) 
           if (instante < pausaHasta || llamadas >= limiteDiario) return undefined;
           llamadas++;
           const r = await buscar(URL, {
-            method: 'POST', signal: AbortSignal.timeout(8000),
+            method: 'POST', signal: AbortSignal.timeout(15_000),
             headers: { 'x-goog-api-key': clave, 'content-type': 'application/json' },
             body: JSON.stringify({ model: modelo, store: false, system_instruction: instrucciones, input: historial, tools: [herramienta], generation_config: { max_output_tokens: 1024, thinking_level: 'minimal' } }),
           });
@@ -82,8 +82,8 @@ export const crearGeminiPines = ({ clave, modelo, limiteDiario, buscar = (...a) 
           alEstado?.(pin ? 'PIN_ENCONTRADO' : 'SIN_RESULTADO');
           return pin;
         }
-      } catch {
-        alEstado?.('RED_O_RESPUESTA_INVALIDA');
+      } catch (error) {
+        alEstado?.(error instanceof SyntaxError ? 'RESPUESTA_INVALIDA' : error instanceof Error && error.name === 'TimeoutError' ? 'TIEMPO_AGOTADO' : 'RED');
         pausaHasta = ahora() + 60_000;
       }
       return undefined;
