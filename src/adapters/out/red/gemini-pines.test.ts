@@ -3,7 +3,7 @@ import { crearGeminiPines } from './gemini-pines.js';
 const pin = { lat: -33.6, lng: -70.7, precision: 'exacta' as const, comuna: 'San Bernardo', direccion: 'OHiggins 955' };
 const funcion = (direccion = 'OHiggins 955') => ({ type: 'function_call', id: 'call-1', name: 'buscar_mapa', arguments: { direccion } });
 const final = (candidato: unknown) => ({ type: 'model_output', content: [{ type: 'text', text: JSON.stringify({ candidato }) }] });
-const respuesta = (...steps: unknown[]) => new Response(JSON.stringify({ status: 'completed', steps }));
+const respuesta = (...steps: unknown[]) => new Response(JSON.stringify({ status: steps.some(s => (s as { type: string }).type === 'function_call') ? 'requires_action' : 'completed', steps }));
 const opciones = { clave: 'prueba', modelo: 'gemini-3.5-flash-lite', limiteDiario: 50 };
 
 describe('Gemini busca pines mediante una herramienta de mapas', () => {
