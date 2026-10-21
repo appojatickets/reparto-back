@@ -706,3 +706,28 @@ describe('«las agrego en orden»: la ruta es el orden en que el chofer cargó l
     expect(r.ok && r.value.modo).toBe('sugerida');
   });
 });
+
+describe('configuración por día y deshacer el orden', () => {
+  it('guarda las comunas y las mantiene al mover una entrega', async () => {
+    const s = montar({ pendientes: [paradaDe('A', { comuna: 'Maipú' }), paradaDe('B', { comuna: 'San Bernardo' }), paradaDe('C', { comuna: 'Maipú' })] });
+    const r = await s.planificar(despachador, { ...entrada, ordenComunas: ['Maipú', 'San Bernardo'] });
+    expect(r.ok && r.value.paradas.map(p => p.comuna)).toEqual(['Maipú', 'Maipú', 'San Bernardo']);
+    const m = await s.operar(despachador, { ...entrada, version: 1, operacion: { tipo: 'mover', facturaId: 'f-B', posicion: 0 } });
+    expect(m.ok && m.value.paradas[0]?.facturaId).toBe('f-B');
+    expect(m.ok && m.value.ordenComunas).toEqual(['Maipú', 'San Bernardo']);
+  });
+  it('deshace un salto de varias posiciones y rechaza un deshacer desactualizado', async () => {
+    const s = montar();
+    const inicial = await s.planificar(despachador, { ...entrada, orden: 'carga' });
+    if (!inicial.ok) throw new Error('No se planificó');
+    await s.operar(despachador, { ...entrada, version: 1, operacion: { tipo: 'mover', facturaId: 'f-D', posicion: 0 } });
+    const op = { tipo: 'restaurar' as const, orden: ids(inicial.value), fijas: [], modo: 'carga' as const };
+    const r = await s.operar(despachador, { ...entrada, version: 2, operacion: op });
+    expect(r.ok && ids(r.value)).toEqual(ids(inicial.value));
+    expect(r.ok && r.value.modo).toBe('carga');
+    const viejo = await s.operar(despachador, { ...entrada, version: 2, operacion: op });
+    expect(viejo.ok).toBe(false);
+    const invalido = await s.operar(despachador, { ...entrada, version: 3, operacion: { ...op, orden: ['f-A'] } });
+    expect(invalido.ok).toBe(false);
+  });
+});

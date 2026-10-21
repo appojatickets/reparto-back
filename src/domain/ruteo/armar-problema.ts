@@ -4,7 +4,7 @@ import type { Fecha } from '../shared/fechas.js';
 import { diaDeSemana } from '../shared/fechas.js';
 import type { OrdenInicio } from '../entidades/config-empresa.js';
 import { distanciaKm, type Coordenada } from '../valor/coordenada.js';
-import { EPS_LLEGADA_CALIBRADO, PARAMETROS_POR_DEFECTO, PESO_CIERRE_APRENDIDO, PESO_ORDEN_CARGA_CALIBRADO, PESO_ORDEN_INICIO, SERVICIO_POR_DEFECTO_MIN } from './parametros.js';
+import { EPS_LLEGADA_CALIBRADO, PARAMETROS_POR_DEFECTO, PESO_ORDEN_INICIO, SERVICIO_POR_DEFECTO_MIN } from './parametros.js';
 import { crearFactorHorario, crearTiemposConViajes, crearTiemposHaversine, DEPOSITO, ORIGEN } from './tiempos.js';
 import type { ParadaRuta, ProblemaRuta } from './tipos.js';
 
@@ -76,6 +76,7 @@ export const armarProblema = (d: DatosProblema): { readonly problema: ProblemaRu
   return {
     sinPin,
     problema: {
+      avisarCierresAprendidos: true,
       salida: d.salida,
       paradas,
       fijas: (d.fijas ?? []).filter((id) => ids.has(id)),
@@ -84,8 +85,8 @@ export const armarProblema = (d: DatosProblema): { readonly problema: ProblemaRu
       parametros: {
         ...PARAMETROS_POR_DEFECTO,
         epsLlegada: EPS_LLEGADA_CALIBRADO,
-        pesoOrdenCarga: PESO_ORDEN_CARGA_CALIBRADO,
-        pesoCierreAprendido: PESO_CIERRE_APRENDIDO,
+        pesoOrdenCarga: 0,
+        pesoCierreAprendido: 0,
         ...(d.ordenInicio !== undefined && d.ordenInicio !== 'automatico' ? { ordenInicio: d.ordenInicio, pesoOrdenInicio: PESO_ORDEN_INICIO } : {}),
         ...(d.ordenInicio === 'lejano' ? { epsLlegada: 0 } : {}),
         horaLimiteRegresoMin: d.horaLimiteRegresoMin,

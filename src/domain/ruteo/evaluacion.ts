@@ -19,9 +19,14 @@ export const evaluar = (c: Compilado, orden: ArrayLike<number>, largo: number, c
   let t = c.salida;
   let previo = c.origen;
   let costo = 0;
+  let ultimaComuna = -1;
 
   for (let k = 0; k < largo; k++) {
     const j = orden[k] ?? 0;
+    // Se evalúa la ruta entera: también la conexión entre comunas, sin resolver bloques aislados.
+    const comuna = c.rangoComuna[j] ?? 0;
+    if (comuna < ultimaComuna) costo += 100_000;
+    ultimaComuna = comuna;
     const viaje = c.viaje(previo, j, t);
     const llegada = t + viaje;
     costo += viaje;
@@ -110,7 +115,7 @@ export const detallar = (c: Compilado, orden: readonly number[]): Itinerario => 
     inicio.push(ini);
     espera.push(ini - arr);
     atraso.push(tarde);
-    cierre.push(c.problema.parametros.pesoCierreAprendido > 0 ? franjaDeCierre(c, j, ini) : undefined);
+    cierre.push((c.problema.avisarCierresAprendidos || c.problema.parametros.pesoCierreAprendido > 0) ? franjaDeCierre(c, j, ini) : undefined);
     t = ini + (c.servicio[j] ?? 0);
     salida.push(t);
     previo = j;

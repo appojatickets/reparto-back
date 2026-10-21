@@ -15970,6 +15970,13 @@
                     "planificada": {
                       "type": "boolean"
                     },
+                    "ordenComunas": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
                     "modo": {
                       "type": "string",
                       "enum": [
@@ -17008,6 +17015,15 @@
                       "calcular",
                       "carga"
                     ]
+                  },
+                  "ordenComunas": {
+                    "maxItems": 52,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    }
                   }
                 },
                 "required": [
@@ -17039,6 +17055,13 @@
                     },
                     "planificada": {
                       "type": "boolean"
+                    },
+                    "ordenComunas": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     },
                     "modo": {
                       "type": "string",
@@ -17883,6 +17906,49 @@
                           "tipo": {
                             "type": "string",
                             "enum": [
+                              "restaurar"
+                            ]
+                          },
+                          "orden": {
+                            "maxItems": 1000,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            }
+                          },
+                          "fijas": {
+                            "maxItems": 1000,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            }
+                          },
+                          "modo": {
+                            "type": "string",
+                            "enum": [
+                              "sugerida",
+                              "manual",
+                              "carga"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "tipo",
+                          "orden",
+                          "fijas",
+                          "modo"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
                               "ordenar",
                               "insertar",
                               "fijar"
@@ -17947,6 +18013,13 @@
                     },
                     "planificada": {
                       "type": "boolean"
+                    },
+                    "ordenComunas": {
+                      "readOnly": true,
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     },
                     "modo": {
                       "type": "string",

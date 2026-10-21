@@ -32,6 +32,7 @@ const vistaRuta = z.object({
   camionId: z.string(),
   fecha: z.string(),
   planificada: z.boolean(),
+  ordenComunas: z.array(z.string()).readonly().optional(),
   modo: z.enum(['sugerida', 'manual', 'carga']).optional(),
   version: z.number().optional(),
   salidaMin: z.number(),
@@ -64,6 +65,7 @@ const vistaRuta = z.object({
 const operacion = z.discriminatedUnion('tipo', [
   z.object({ tipo: z.enum(['subir', 'bajar', 'primero', 'despues', 'quitar']), facturaId: z.uuid() }),
   z.object({ tipo: z.literal('mover'), facturaId: z.uuid(), posicion: z.number().int().min(0).max(999) }),
+  z.object({ tipo: z.literal('restaurar'), orden: z.array(z.uuid()).max(1000), fijas: z.array(z.uuid()).max(1000), modo: z.enum(['sugerida', 'manual', 'carga']) }),
   z.object({ tipo: z.enum(['ordenar', 'insertar', 'fijar']) }),
   z.object({ tipo: z.literal('salida'), salidaMin: minuto }),
 ]);
@@ -125,7 +127,7 @@ export const rutasDelDia = ({ app, casos, guard }: ContextoRutas): void => {
         tags: ['rutas'],
         summary: 'Armar la ruta desde cero (reemplaza la actual): `calcular` (por defecto) la ordena el sistema; `carga` respeta el orden en que se cargaron las facturas («las agrego en orden»)',
         security: SEGURIDAD,
-        body: z.object({ camionId: z.uuid(), fecha, salidaMin: minuto.optional(), orden: z.enum(['calcular', 'carga']).optional() }),
+        body: z.object({ camionId: z.uuid(), fecha, salidaMin: minuto.optional(), orden: z.enum(['calcular', 'carga']).optional(), ordenComunas: z.array(z.string().trim().min(1).max(80)).max(52).refine(c => new Set(c).size === c.length, 'No repitas comunas').optional() }),
         response: { 200: vistaRuta, ...RESPUESTAS_ERROR },
       },
     },

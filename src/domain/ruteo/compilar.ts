@@ -12,6 +12,7 @@ import { DEPOSITO, ORIGEN, periodoDelMinuto, viajeConCambioDePeriodo } from './t
 export type Compilado = {
   readonly problema: ProblemaRuta;
   readonly preferencias: readonly { readonly antes:number; readonly despues:number; readonly peso:number }[];
+  readonly rangoComuna: readonly number[];
   readonly n: number;
   readonly paradas: readonly ParadaRuta[];
   readonly indice: ReadonlyMap<string, number>;
@@ -74,6 +75,7 @@ export const compilar = (problema: ProblemaRuta): Compilado => {
   const indice = new Map(problema.paradas.map((p,i)=>[p.id,i]));
   const preferencias=(problema.preferenciasRecorrido??[]).slice(0,100).flatMap(p=>{const antes=indice.get(p.antes),despues=indice.get(p.despues);return antes!==undefined&&despues!==undefined?[{antes,despues,peso:Math.max(0,Math.min(1.5,p.peso))}]:[];});
   return {
+    rangoComuna: problema.paradas.map(p => { const i=(problema.ordenComunas ?? []).indexOf(p.comuna ?? ''); return i < 0 ? (problema.ordenComunas?.length ?? 0) : i; }),
     preferencias,
     problema,
     n,
@@ -83,7 +85,7 @@ export const compilar = (problema: ProblemaRuta): Compilado => {
     prioridad: Uint8Array.from(problema.paradas, (p) => (p.prioridad ? 1 : 0)),
     rangoCarga,
     rangoInicio,
-    franjasCierre: problema.parametros.pesoCierreAprendido > 0 ? problema.paradas.map((p) => p.cierreProbable ?? []) : problema.paradas.map(() => []),
+    franjasCierre: (problema.avisarCierresAprendidos || problema.parametros.pesoCierreAprendido > 0) ? problema.paradas.map((p) => p.cierreProbable ?? []) : problema.paradas.map(() => []),
     origen: n,
     deposito: n + 1,
     salida: problema.salida,

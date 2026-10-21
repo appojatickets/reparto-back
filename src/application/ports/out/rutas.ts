@@ -12,6 +12,7 @@ export type RutaGuardada = {
   readonly camionId: string;
   readonly fecha: string;
   readonly salidaMin: number;
+  readonly ordenComunas?: readonly string[];
   readonly modo: ModoRuta;
   readonly version: number;
   /** Ids de factura en el orden de visita. */
@@ -54,6 +55,7 @@ export type GuardarRuta = {
   readonly camionId: string;
   readonly fecha: string;
   readonly salidaMin: number;
+  readonly ordenComunas?: readonly string[];
   readonly modo: ModoRuta;
   readonly orden: readonly string[];
   readonly fijas: readonly string[];

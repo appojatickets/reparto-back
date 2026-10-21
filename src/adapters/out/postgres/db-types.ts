@@ -137,6 +137,7 @@ export type Tabla = {
     fecha_reparto: string;
     salida_min: number;
     modo: Generated<'sugerida' | 'manual' | 'carga'>;
+    orden_comunas: Generated<string[]>;
     version: Generated<number>;
     creado_por: string | null;
     creado_en: Generated<Date>;
