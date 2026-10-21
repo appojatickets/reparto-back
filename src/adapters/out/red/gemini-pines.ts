@@ -46,7 +46,7 @@ export const crearGeminiPines = ({ clave, modelo, limiteDiario, buscar = (...a) 
             return undefined;
           }
           const cuerpo = registro(await r.json());
-          if (cuerpo?.['status'] !== 'completed' || !Array.isArray(cuerpo['steps'])) return undefined;
+          if (!cuerpo || !['completed', 'requires_action'].includes(String(cuerpo['status'])) || !Array.isArray(cuerpo['steps'])) return undefined;
           const pasos: unknown[] = cuerpo['steps'];
           historial.push(...pasos);
           const funciones = pasos.map(registro).filter(p => p?.['type'] === 'function_call');
@@ -69,6 +69,7 @@ export const crearGeminiPines = ({ clave, modelo, limiteDiario, buscar = (...a) 
             }
             continue;
           }
+          if (cuerpo['status'] !== 'completed') return undefined;
           const texto = pasos.flatMap(p => {
             const bloque = registro(p);
             return bloque?.['type'] === 'model_output' && Array.isArray(bloque['content']) ? bloque['content'].flatMap((c: unknown) => { const t = registro(c); return t?.['type'] === 'text' && typeof t['text'] === 'string' ? [t['text']] : []; }) : [];
