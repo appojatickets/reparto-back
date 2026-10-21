@@ -23,6 +23,15 @@ describe('normalizador de direcciones con Gemini', () => {
     expect(cuerpo.generationConfig.temperature).toBe(0);
   });
 
+  it('trae también su estimación de dónde queda, si la da, y la ignora si viene incompleta o no es un número', async () => {
+    const con = await montar(() => respuesta({ calle: 'Los Olmos', numero: 88, lat: -33.6, lng: -70.7 })).normalizador.normalizar('x', 'San Bernardo');
+    expect(con).toEqual({ ok: true, value: { calle: 'Los Olmos', numero: 88, estimada: { lat: -33.6, lng: -70.7 } } });
+    for (const raro of [{ lat: -33.6, lng: null }, { lat: '-33.6', lng: '-70.7' }, { lat: null, lng: null }]) {
+      const r = await montar(() => respuesta({ calle: 'Los Olmos', numero: 88, ...raro })).normalizador.normalizar('x', 'San Bernardo');
+      expect(r).toEqual({ ok: true, value: { calle: 'Los Olmos', numero: 88 } });
+    }
+  });
+
   it('sin número de puerta devuelve solo la calle', async () => {
     const r = await montar(() => respuesta({ calle: 'Camino El Alba', numero: null })).normalizador.normalizar('x', 'Pirque');
     expect(r).toEqual({ ok: true, value: { calle: 'Camino El Alba' } });

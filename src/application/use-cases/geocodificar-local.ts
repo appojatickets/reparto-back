@@ -1,5 +1,5 @@
 import { direccionParaBuscar } from '../../domain/valor/direccion-busqueda.js';
-import { CONFIANZA_CALLE, evaluarGeocodificacion } from '../../domain/valor/geocodificacion.js';
+import { CONFIANZA_CALLE, evaluarGeocodificacion, evaluarPuntoDeModelo } from '../../domain/valor/geocodificacion.js';
 import type { ClienteRepository } from '../ports/out/clientes.js';
 import type { Clock } from '../ports/out/clock.js';
 import type { Geocodificador } from '../ports/out/geocodificador.js';
@@ -13,7 +13,7 @@ export type ResultadoGeocodificar = 'fijado' | 'sin_resultado' | 'ya_tiene_pin' 
  * «sugerido». Sirve para todos los choferes y los días siguientes: cada dirección se busca una sola vez.
  *
  * Si ningún buscador la encuentra (y ninguno falló), el `normalizador` opcional (Gemini) ordena la dirección —corrige errores y abreviaturas— y
- * se busca de nuevo con ese texto. Es la última carta y puede fallar: sin él, o si falla, todo queda como antes. Como el texto lo reescribió
+ * se busca de nuevo con ese texto; si aun así nadie la halla, queda el punto aproximado que estime el modelo, si es creíble. Es la última carta y puede fallar: sin él, o si falla, todo queda como antes. Como el texto lo reescribió
  * un modelo, el punto que se encuentre así queda como aproximado (confianza de calle): el GPS de la primera entrega lo confirma o lo reemplaza.
  */
 export const crearGeocodificarLocal = ({
@@ -71,6 +71,14 @@ export const crearGeocodificarLocal = ({
           const segunda = await probar(reescrita, CONFIANZA_CALLE);
           if (segunda.resultado) return segunda.resultado;
           if (segunda.fallo) return 'detener';
+        }
+        // Último escalón: ningún mapa la halló, pero el modelo estima dónde queda. Si es creíble (en su comuna) queda como pin aproximado, mejor
+        // que el centro de la comuna; la primera entrega con GPS lo reemplaza y, si la calle tiene otras puertas conocidas, mandan ellas.
+        const estimada = n.value.estimada;
+        const creible = estimada ? evaluarPuntoDeModelo(estimada, local.comuna) : undefined;
+        if (estimada && creible) {
+          const fijado = await clientes.fijarPinGeocodificado(empresaId, localId, estimada.lat, estimada.lng, creible.confianza);
+          return fijado ? 'fijado' : 'ya_tiene_pin';
         }
       }
     }

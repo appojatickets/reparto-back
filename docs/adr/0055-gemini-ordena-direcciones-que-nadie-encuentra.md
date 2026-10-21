@@ -4,10 +4,15 @@ Estado: aceptada. Pedido del dueño (2026-10-21): usar Gemini, con la clave grat
 
 ## Qué hace y qué no
 
-- **Solo ordena texto.** Recibe la dirección escrita en la factura y la comuna, y devuelve la calle y el número («Pje Los Olmoz 88 depto 3, Sn Bdo» → «Los Olmos», 88). **Nunca devuelve coordenadas**: el punto lo sigue poniendo un buscador de mapas (Nominatim u OpenRouteService). Un pin inventado entraría a la ruta como si fuera real y causaría el zigzag que el ADR 0054 quita.
-- **Es la última carta.** Se consulta solo cuando Nominatim y ORS ya probaron y ninguno la encontró (ninguno falló). Se busca de nuevo con el texto ordenado; si lo encuentran, el pin queda como **aproximado** (confianza de calle, 0,6, aunque el mapa diga «exacta»): el texto lo reescribió un modelo, así que el GPS de la primera entrega lo confirma o lo reemplaza, y la ruta lo trata como pin de calle (ADR 0054).
-- **Mismas reglas de siempre:** el punto hallado debe estar en la Región Metropolitana y en la comuna del local; si no, no se acepta.
-- **Una sola vez por local:** al terminar se anota el intento, como hoy. Se gasta como mucho un pedido de Gemini por local, no por día.
+- **Ordena el texto.** Recibe la dirección escrita en la factura y la comuna, y devuelve la calle y el número («Pje Los Olmoz 88 depto 3, Sn Bdo» → «Los Olmos», 88). Con ese texto se busca de nuevo en Nominatim y ORS, que son quienes ponen el punto preciso.
+- **Es la última carta.** Se consulta solo cuando Nominatim y ORS ya probaron y ninguno la encontró (ninguno falló). Si lo encuentran con el texto ordenado, el pin queda como **aproximado** (confianza de calle, 0,6, aunque el mapa diga «exacta»): el texto lo reescribió un modelo.
+- **Último escalón: un punto aproximado estimado por el modelo** (revisión del 2026-10-21; la primera versión no lo aceptaba). Si ningún mapa la halla ni con el texto ordenado, se usa la latitud/longitud que estima Gemini, pero solo si es creíble (`evaluarPuntoDeModelo`: dentro de la Región Metropolitana y a no más de 9 km del centro de su comuna, 30 km en las comunas grandes y rurales) y siempre con **confianza 0,3**. Razón: un punto aproximado y plausible ordena mejor la ruta que el centro de la comuna, donde todas las paradas quedaban a distancia 0.
+  - Reutiliza el mecanismo existente de «pin aproximado» (fuente `geocodificador`, confianza < 0,7): la ruta y las listas lo avisan, y **el primer ENTREGADO con GPS lo reemplaza** (ADR 0024). No hay migración. La confianza 0,3 distingue estos pines de los que salieron de un mapa, para poder medir después cuánto aciertan.
+  - En la ruta pierde ante cualquier dato mejor: si la calle tiene otras puertas con pin conocido, la ubicación por calle y número (ADR 0054) pasa por encima de este punto.
+  - Riesgo que se acepta: hasta la primera entrega, el enlace de navegación de ese local apunta a un lugar aproximado (la interfaz ya lo marca como aproximado).
+- **Mismas reglas de siempre** para lo que devuelve un mapa: en la Región Metropolitana y en la comuna del local; si no, no se acepta.
+- **Una sola vez por local:** al terminar se anota el intento, como hoy. Se gasta como mucho un pedido de Gemini por local, no por día; el mismo pedido trae el texto ordenado y la estimación.
+- **El motor no depende de Gemini.** Sin clave, o si falla, la ruta se arma igual (ADR 0054); Gemini solo agrega pines que antes no existían.
 
 ## Puede fallar, y no pasa nada
 

@@ -130,6 +130,26 @@ describe('cuando ningún buscador la encuentra, Gemini ordena la dirección y se
     expect(m.clientes.fijarPinGeocodificado).toHaveBeenCalledWith('empresa-1', 'l-1', -33.6, -70.7, 0.6);
   });
 
+  it('si ningún mapa la halla ni con el texto ordenado, queda el punto aproximado que estimó Gemini si es creíble en su comuna (confianza 0,3)', async () => {
+    const m = montarConGemini(() => Promise.resolve(ok({ calle: 'Los Olmos', numero: 88, estimada: { lat: -33.595, lng: -70.705 } })), () => Promise.resolve(err('SIN_RESULTADO' as const)));
+    expect(await m.caso('empresa-1', 'l-1')).toBe('fijado');
+    expect(m.clientes.fijarPinGeocodificado).toHaveBeenCalledWith('empresa-1', 'l-1', -33.595, -70.705, 0.3);
+    expect(m.clientes.marcarIntentoGeocodificacion).not.toHaveBeenCalled();
+  });
+
+  it('una estimación que cae lejos de su comuna se descarta: queda sin resultado, como si Gemini no hubiera ayudado', async () => {
+    const m = montarConGemini(() => Promise.resolve(ok({ calle: 'Los Olmos', numero: 88, estimada: { lat: -33.4, lng: -70.4 } })), () => Promise.resolve(err('SIN_RESULTADO' as const)));
+    expect(await m.caso('empresa-1', 'l-1')).toBe('sin_resultado');
+    expect(m.clientes.fijarPinGeocodificado).not.toHaveBeenCalled();
+    expect(m.clientes.marcarIntentoGeocodificacion).toHaveBeenCalledTimes(1);
+  });
+
+  it('un mapa que sí la halla manda sobre la estimación de Gemini', async () => {
+    const m = montarConGemini(() => Promise.resolve(ok({ calle: 'Los Olmos', numero: 88, estimada: { lat: -33.595, lng: -70.705 } })), (c) => Promise.resolve(c.startsWith('Los Olmos 88') ? hallado : err('SIN_RESULTADO' as const)));
+    expect(await m.caso('empresa-1', 'l-1')).toBe('fijado');
+    expect(m.clientes.fijarPinGeocodificado).toHaveBeenCalledWith('empresa-1', 'l-1', -33.6, -70.7, 0.6);
+  });
+
   it('si el primer buscador ya la encontró, Gemini ni se consulta', async () => {
     const m = montarConGemini(() => Promise.resolve(err('FALLO' as const)), () => Promise.resolve(hallado));
     expect(await m.caso('empresa-1', 'l-1')).toBe('fijado');
