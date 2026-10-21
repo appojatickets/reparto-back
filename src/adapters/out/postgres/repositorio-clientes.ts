@@ -483,7 +483,7 @@ export class PostgresClienteRepository implements ClienteRepository {
         if (!l) return 'NO_ENCONTRADO' as const;
         const cambio = l.direccion !== datos.direccion || l.comuna !== datos.comuna;
         // El pin que halló el buscador por la dirección anterior ya no sirve: se borra para buscarlo con la corregida. Uno verificado o puesto por una persona o por entregas se conserva.
-        const pinDelBuscador = cambio && l.lat !== null && l.pin_fuente === 'geocodificador' && l.pin_verificado_en === null;
+        const pinDelBuscador = cambio && l.lat !== null && (l.pin_fuente === 'geocodificador' || l.pin_fuente === 'gemini') && l.pin_verificado_en === null;
         await trx
           .updateTable('local')
           .set({
