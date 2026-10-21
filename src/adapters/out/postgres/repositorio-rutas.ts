@@ -16,7 +16,7 @@ export class PostgresRutaRepository implements RutaRepository {
   async obtener(empresaId: string, camionId: string, fecha: string): Promise<RutaGuardada | undefined> {
     const r = await this.db
       .selectFrom('ruta')
-      .select(['id', 'camion_id', 'salida_min', 'modo', 'version'])
+      .select(['id', 'camion_id', 'salida_min', 'modo', 'version', 'orden_comunas'])
       .where('empresa_id', '=', empresaId)
       .where('camion_id', '=', camionId)
       .where('fecha_reparto', '=', fecha)
@@ -28,6 +28,7 @@ export class PostgresRutaRepository implements RutaRepository {
       camionId: r.camion_id,
       fecha,
       salidaMin: r.salida_min,
+      ordenComunas: r.orden_comunas,
       modo: r.modo,
       version: r.version,
       orden: paradas.map((p) => p.factura_id),
@@ -117,7 +118,7 @@ export class PostgresRutaRepository implements RutaRepository {
         if (d.versionEsperada !== undefined && existente.version !== d.versionEsperada) return err('VERSION_DESACTUALIZADA' as const);
         version = existente.version + 1;
         id = existente.id;
-        await trx.updateTable('ruta').set({ salida_min: d.salidaMin, modo: d.modo, version, actualizado_en: sql<Date>`now()` }).where('id', '=', id).execute();
+        await trx.updateTable('ruta').set({ salida_min: d.salidaMin, modo: d.modo, orden_comunas: [...(d.ordenComunas ?? [])], version, actualizado_en: sql<Date>`now()` }).where('id', '=', id).execute();
         await trx.deleteFrom('parada_ruta').where('ruta_id', '=', id).execute();
       } else {
         if (d.versionEsperada !== undefined) return err('VERSION_DESACTUALIZADA' as const);
@@ -125,7 +126,7 @@ export class PostgresRutaRepository implements RutaRepository {
         id = (
           await trx
             .insertInto('ruta')
-            .values({ empresa_id: empresaId, camion_id: d.camionId, fecha_reparto: d.fecha, salida_min: d.salidaMin, modo: d.modo, creado_por: d.usuarioId })
+            .values({ empresa_id: empresaId, camion_id: d.camionId, fecha_reparto: d.fecha, salida_min: d.salidaMin, modo: d.modo, orden_comunas: [...(d.ordenComunas ?? [])], creado_por: d.usuarioId })
             .returning('id')
             .executeTakeFirstOrThrow()
         ).id;
@@ -134,7 +135,7 @@ export class PostgresRutaRepository implements RutaRepository {
         const fijas = new Set(d.fijas);
         await trx.insertInto('parada_ruta').values(d.orden.map((facturaId, orden) => ({ ruta_id: id, factura_id: facturaId, orden, fijada: fijas.has(facturaId) }))).execute();
       }
-      return ok({ id, camionId: d.camionId, fecha: d.fecha, salidaMin: d.salidaMin, modo: d.modo, version, orden: d.orden, fijas: d.fijas });
+      return ok({ id, camionId: d.camionId, fecha: d.fecha, salidaMin: d.salidaMin, ordenComunas: d.ordenComunas ?? [], modo: d.modo, version, orden: d.orden, fijas: d.fijas });
     });
   }
 

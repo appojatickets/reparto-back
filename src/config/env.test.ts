@@ -13,6 +13,7 @@ describe('loadEnv', () => {
   it('aplica valores por defecto', () => {
     const env = loadEnv(valid);
     expect(env.PORT).toBe(3000);
+    expect(env.GEMINI_ENABLED).toBe(false);
     expect(env.NODE_ENV).toBe('development');
     expect(env.AUTH_EMAIL_DOMAIN).toBe('usuarios.reparto.test');
     expect(env.SUPABASE_ANON_KEY).toBeUndefined();
@@ -31,4 +32,10 @@ describe('loadEnv', () => {
       expect((e as InvalidEnvError).issues.join()).toContain('JOB_TOKEN');
     }
   });
+});
+
+it('interpreta la bandera de Gemini sin activar por error el texto false', () => {
+  expect(loadEnv({ ...valid, GEMINI_ENABLED: 'false' }).GEMINI_ENABLED).toBe(false);
+  expect(loadEnv({ ...valid, GEMINI_ENABLED: 'true' }).GEMINI_ENABLED).toBe(true);
+  expect(() => loadEnv({ ...valid, GEMINI_ENABLED: 'si' })).toThrow(InvalidEnvError);
 });

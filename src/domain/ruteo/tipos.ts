@@ -27,6 +27,9 @@ export type ParadaRuta = {
  * decidió hacer primero y que el motor no mueve.
  */
 export type ProblemaRuta = {
+  /** Muestra cierres probables como aviso aunque no influyan en el orden. */
+  readonly avisarCierresAprendidos?: boolean;
+  readonly ordenComunas?: readonly string[];
   readonly preferenciasRecorrido?: readonly { readonly antes: string; readonly despues: string; readonly peso: number }[];
   /** Hora de salida del depósito o, al reoptimizar, la hora actual (minutos del día). */
   readonly salida: number;

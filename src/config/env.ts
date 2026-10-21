@@ -12,6 +12,8 @@ const schema = z.object({
   SUPABASE_ANON_KEY: z.string().min(1).optional(),
   /** Dominio de los correos sintéticos de las cuentas (`jperez@<dominio>`); nunca se envía un correo. */
   AUTH_EMAIL_DOMAIN: z.string().min(3).regex(/^[a-z0-9.-]+$/).default('usuarios.reparto.test'),
+  /** Reservado para la próxima etapa de IA; desactivado mientras se termina el motor de rutas. */
+  GEMINI_ENABLED: z.enum(['true', 'false']).default('false').transform(v => v === 'true'),
   MAIL_API_KEY: z.string().optional(),
   /** Identifica a la aplicación ante el servicio gratuito de mapas (Nominatim lo exige). Conviene incluir un correo o la URL del sitio. */
   /** Clave de OpenRouteService (plan gratuito): con ella la ruta usa tiempos de manejar por calles. Si falta, la ruta mide en línea recta. */
