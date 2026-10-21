@@ -2,6 +2,7 @@
 export type Fecha = string;
 
 export const ZONA_CHILE = 'America/Santiago';
+const FORMATO_FECHA = new Intl.DateTimeFormat('en-CA', { timeZone: ZONA_CHILE, year: 'numeric', month: '2-digit', day: '2-digit' });
 
 const PATRON = /^(\d{4})-(\d{2})-(\d{2})$/;
 
@@ -15,7 +16,7 @@ export const esFechaValida = (texto: string): boolean => {
 
 /** Fecha de hoy en Chile para un instante dado (el servidor corre en UTC: a las 22:00 en Chile ya es «mañana» en UTC). */
 export const fechaEnChile = (instante: Date): Fecha =>
-  new Intl.DateTimeFormat('en-CA', { timeZone: ZONA_CHILE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(instante);
+  FORMATO_FECHA.format(instante);
 
 export const sumarDias = (fecha: Fecha, dias: number): Fecha => {
   const m = PATRON.exec(fecha);

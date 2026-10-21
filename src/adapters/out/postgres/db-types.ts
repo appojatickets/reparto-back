@@ -27,7 +27,7 @@ export type Tabla = {
     lat: number | null;
     lng: number | null;
     pin_estado: Generated<'pendiente' | 'sugerido' | 'validado'>;
-    pin_fuente: 'geocodificador' | 'manual' | 'importado' | 'aprendido' | 'chofer' | 'enlace' | null;
+    pin_fuente: 'geocodificador' | 'manual' | 'importado' | 'aprendido' | 'chofer' | 'enlace' | 'gemini' | null;
     pin_confianza: number | null;
     foto_path: string | null;
     foto_por: string | null;
@@ -137,6 +137,7 @@ export type Tabla = {
     fecha_reparto: string;
     salida_min: number;
     modo: Generated<'sugerida' | 'manual' | 'carga'>;
+    orden_comunas: Generated<string[]>;
     version: Generated<number>;
     creado_por: string | null;
     creado_en: Generated<Date>;

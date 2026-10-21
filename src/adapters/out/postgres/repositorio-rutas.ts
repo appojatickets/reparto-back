@@ -16,7 +16,7 @@ export class PostgresRutaRepository implements RutaRepository {
   async obtener(empresaId: string, camionId: string, fecha: string): Promise<RutaGuardada | undefined> {
     const r = await this.db
       .selectFrom('ruta')
-      .select(['id', 'camion_id', 'salida_min', 'modo', 'version'])
+      .select(['id', 'camion_id', 'salida_min', 'modo', 'version', 'orden_comunas'])
       .where('empresa_id', '=', empresaId)
       .where('camion_id', '=', camionId)
       .where('fecha_reparto', '=', fecha)
@@ -28,6 +28,7 @@ export class PostgresRutaRepository implements RutaRepository {
       camionId: r.camion_id,
       fecha,
       salidaMin: r.salida_min,
+      ordenComunas: r.orden_comunas,
       modo: r.modo,
       version: r.version,
       orden: paradas.map((p) => p.factura_id),
@@ -40,7 +41,7 @@ export class PostgresRutaRepository implements RutaRepository {
       .selectFrom('factura as f')
       .innerJoin('local as l', 'l.id', 'f.local_id')
       .innerJoin('cliente as c', 'c.id', 'l.cliente_id')
-      .select(['f.id', 'f.folio', 'f.antes_de_min', 'f.urgente', 'f.nota', 'f.total', 'l.id as local_id', 'c.razon_social', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng', 'l.pin_fuente', 'l.pin_confianza', 'l.geocod_intento_en', 'l.foto_path', 'l.pin_verificado_en', 'l.foto_verificada_en', 'f.creado_en'])
+      .select(['f.id', 'f.folio', 'f.antes_de_min', 'f.urgente', 'f.nota', 'f.total', 'l.id as local_id', 'c.razon_social', 'l.direccion', 'l.comuna', 'l.lat', 'l.lng', 'l.pin_fuente', 'l.pin_confianza', 'l.geocod_intento_en', 'l.foto_path', 'l.pin_verificado_en', 'l.pin_verificado_por', 'l.foto_verificada_en', 'f.creado_en'])
       .where('f.empresa_id', '=', empresaId)
       .where('f.camion_id', '=', camionId)
       .where('f.fecha_reparto', '=', fecha)
@@ -72,9 +73,10 @@ export class PostgresRutaRepository implements RutaRepository {
       comuna: f.comuna,
       ...(f.lat !== null && f.lng !== null ? { lat: f.lat, lng: f.lng } : {}),
       ...(f.lat === null && f.geocod_intento_en !== null ? { busquedaSinResultado: true } : {}),
-      ...(f.lat !== null && f.pin_fuente === 'geocodificador' && (f.pin_confianza ?? 0) < 0.7 ? { pinAproximado: true } : {}),
+      ...(f.lat !== null && f.pin_verificado_en === null && ((f.pin_fuente === 'geocodificador' && (f.pin_confianza ?? 0) < 0.7) || f.pin_fuente === 'gemini') ? { pinAproximado: true } : {}),
       ...(f.foto_path !== null ? { tieneFoto: true } : {}),
-      ...(f.lat !== null && f.pin_verificado_en !== null ? { pinVerificado: true } : {}),
+      ...(f.lat !== null && f.pin_verificado_en !== null ? { pinVerificado: true, pinVerificacion: f.pin_verificado_por === null ? 'entregas' as const : 'persona' as const } : {}),
+      ...(f.pin_fuente !== null ? { pinFuente: f.pin_fuente } : {}),
       ...(f.foto_path !== null && f.foto_verificada_en !== null ? { fotoVerificada: true } : {}),
       ...(f.antes_de_min !== null ? { antesDeMin: f.antes_de_min } : {}),
       urgente: f.urgente,
@@ -109,8 +111,13 @@ export class PostgresRutaRepository implements RutaRepository {
       .where('l.comuna', 'in', comunas)
       .where('l.lat', 'is not', null)
       .where('l.lng', 'is not', null)
-      // Un pin hallado por el buscador solo hasta la calle (confianza baja) no dice dónde está esa puerta.
-      .where((eb) => eb.or([eb('l.pin_fuente', 'is distinct from', 'geocodificador'), eb('l.pin_confianza', '>=', 0.7)]))
+      // Un pin hallado por el buscador solo hasta la calle (confianza baja), o propuesto por Gemini sin verificar, no dice dónde está esa puerta.
+      .where((eb) =>
+        eb.or([
+          eb('l.pin_verificado_en', 'is not', null),
+          eb.and([eb('l.pin_fuente', 'is distinct from', 'gemini'), eb.or([eb('l.pin_fuente', 'is distinct from', 'geocodificador'), eb('l.pin_confianza', '>=', 0.7)])]),
+        ]),
+      )
       .execute();
     return filas.flatMap((f) => (f.lat !== null && f.lng !== null ? [{ localId: f.id, direccion: f.direccion, comuna: f.comuna, lat: f.lat, lng: f.lng }] : []));
   }
@@ -132,7 +139,7 @@ export class PostgresRutaRepository implements RutaRepository {
         if (d.versionEsperada !== undefined && existente.version !== d.versionEsperada) return err('VERSION_DESACTUALIZADA' as const);
         version = existente.version + 1;
         id = existente.id;
-        await trx.updateTable('ruta').set({ salida_min: d.salidaMin, modo: d.modo, version, actualizado_en: sql<Date>`now()` }).where('id', '=', id).execute();
+        await trx.updateTable('ruta').set({ salida_min: d.salidaMin, modo: d.modo, orden_comunas: [...(d.ordenComunas ?? [])], version, actualizado_en: sql<Date>`now()` }).where('id', '=', id).execute();
         await trx.deleteFrom('parada_ruta').where('ruta_id', '=', id).execute();
       } else {
         if (d.versionEsperada !== undefined) return err('VERSION_DESACTUALIZADA' as const);
@@ -140,7 +147,7 @@ export class PostgresRutaRepository implements RutaRepository {
         id = (
           await trx
             .insertInto('ruta')
-            .values({ empresa_id: empresaId, camion_id: d.camionId, fecha_reparto: d.fecha, salida_min: d.salidaMin, modo: d.modo, creado_por: d.usuarioId })
+            .values({ empresa_id: empresaId, camion_id: d.camionId, fecha_reparto: d.fecha, salida_min: d.salidaMin, modo: d.modo, orden_comunas: [...(d.ordenComunas ?? [])], creado_por: d.usuarioId })
             .returning('id')
             .executeTakeFirstOrThrow()
         ).id;
@@ -149,7 +156,7 @@ export class PostgresRutaRepository implements RutaRepository {
         const fijas = new Set(d.fijas);
         await trx.insertInto('parada_ruta').values(d.orden.map((facturaId, orden) => ({ ruta_id: id, factura_id: facturaId, orden, fijada: fijas.has(facturaId) }))).execute();
       }
-      return ok({ id, camionId: d.camionId, fecha: d.fecha, salidaMin: d.salidaMin, modo: d.modo, version, orden: d.orden, fijas: d.fijas });
+      return ok({ id, camionId: d.camionId, fecha: d.fecha, salidaMin: d.salidaMin, ordenComunas: d.ordenComunas ?? [], modo: d.modo, version, orden: d.orden, fijas: d.fijas });
     });
   }
 

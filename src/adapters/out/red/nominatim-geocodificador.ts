@@ -27,7 +27,10 @@ const aGeocodificacion = (r: Resultado): Geocodificacion | undefined => {
   const lng = Number(r.lon);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return undefined;
   const comuna = comunaDe(r.address);
-  return { lat, lng, precision: precisionDe(r), ...(comuna !== undefined ? { comuna } : {}) };
+  const a = typeof r.address === 'object' && r.address !== null ? r.address as Record<string, unknown> : {};
+  const calle = a['road'] ?? a['pedestrian'], numero = a['house_number'];
+  const direccion = typeof calle === 'string' && typeof numero === 'string' ? `${calle} ${numero}` : undefined;
+  return { lat, lng, precision: precisionDe(r), ...(comuna !== undefined ? { comuna } : {}), ...(direccion ? { direccion } : {}) };
 };
 
 /**

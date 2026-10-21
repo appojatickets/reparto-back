@@ -71,6 +71,8 @@ export const casosVacios = (): CasosDeUso => {
     operarRuta: sinImplementar,
     miJornada: sinImplementar,
     iniciarJornada: sinImplementar,
+    visitasPendientes: () => Promise.resolve({ ok:true, value:[] }),
+    cajas: { actual: () => Promise.resolve(null), guardar: sinImplementar, cerrar: sinImplementar, historial: () => Promise.resolve([]) },
     terminarJornada: sinImplementar,
     registrarPosiciones: sinImplementar,
     verAnalitica: sinImplementar,

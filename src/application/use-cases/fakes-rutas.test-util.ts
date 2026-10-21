@@ -37,7 +37,7 @@ export const fakeRutas = (pendientes: FacturaParaRuta[] = [], hechas: HechaConUb
     pinesDeLocales: vi.fn<RutaRepository['pinesDeLocales']>(() => Promise.resolve([])),
     guardar: vi.fn<RutaRepository['guardar']>((_e, d: GuardarRuta) => {
       if (d.versionEsperada !== undefined && d.versionEsperada !== guardada?.version) return Promise.resolve(err('VERSION_DESACTUALIZADA' as const));
-      guardada = { id: 'r-1', camionId: d.camionId, fecha: d.fecha, salidaMin: d.salidaMin, modo: d.modo, version: (guardada?.version ?? 0) + 1, orden: d.orden, fijas: d.fijas };
+      guardada = { id: 'r-1', camionId: d.camionId, fecha: d.fecha, salidaMin: d.salidaMin, ordenComunas: d.ordenComunas ?? [], modo: d.modo, version: (guardada?.version ?? 0) + 1, orden: d.orden, fijas: d.fijas };
       return Promise.resolve(ok(guardada));
     }),
     borrar: vi.fn<RutaRepository['borrar']>(() => {
@@ -81,5 +81,6 @@ export const fakeEntregasRuta = () =>
     eventosDeLocales: vi.fn<EntregaRepository['eventosDeLocales']>(() => Promise.resolve(new Map())),
     eventosDeLocal: vi.fn<EntregaRepository['eventosDeLocal']>(() => Promise.resolve([])),
     visitasConGps: vi.fn<EntregaRepository['visitasConGps']>(() => Promise.resolve([])),
+    visitasDetenidasDeLocales: vi.fn<NonNullable<EntregaRepository['visitasDetenidasDeLocales']>>(() => Promise.resolve(new Map())),
     visitasConGpsDeLocales: vi.fn<EntregaRepository['visitasConGpsDeLocales']>(() => Promise.resolve(new Map())),
   }) satisfies EntregaRepository;

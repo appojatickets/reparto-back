@@ -47,6 +47,17 @@ const factura = async (s: Awaited<ReturnType<typeof sembrar>>, folio: string, no
 };
 
 describe('rutas en Postgres', () => {
+  it('una llegada GPS conserva la hora observada y no marca la factura como entregada', async () => {
+    const s = await sembrar();
+    const facturaId = await factura(s, 'gps', 'Almacén A');
+    const ocurridoEn = new Date('2026-10-05T12:34:00Z');
+    await new PostgresEntregaRepository(db).registrar(s.empresa, { tipo: 'llegada', facturaId, localId: s.local('Almacén A'), camionId: s.camion, usuarioId: s.usuario, origen: 'auto', ocurridoEn });
+    const evento = await db.selectFrom('entrega_evento').select(['creado_en', 'origen']).where('empresa_id', '=', s.empresa).where('factura_id', '=', facturaId).executeTakeFirstOrThrow();
+    expect(evento.creado_en.toISOString()).toBe(ocurridoEn.toISOString());
+    expect(evento.origen).toBe('auto');
+    expect((await db.selectFrom('factura').select('estado').where('id', '=', facturaId).executeTakeFirstOrThrow()).estado).toBe('pendiente');
+  });
+
   it('lista las pendientes del camión y día con pin, condiciones y el horario del local', async () => {
     const s = await sembrar();
     const a = await factura(s, '1', 'Almacén A', { antesDeMin: 720, nota: 'portón' });
@@ -175,7 +186,7 @@ describe('horario manual en Postgres', () => {
     expect(await horarios.obtenerManual(s.empresa, '00000000-0000-4000-8000-000000000000')).toBeUndefined();
   });
 
-  it('no toca los horarios aprendidos y el cerrado manual saca la parada de la ruta', async () => {
+  it('conserva el horario aprendido y deja el cerrado manual al final de la ruta marcado en riesgo', async () => {
     const s = await sembrar();
     await db.insertInto('horario_local').values({ empresa_id: s.empresa, local_id: s.local('Almacén A'), dias: [1], desde: '09:00', hasta: '20:00', fuente: 'aprendido' }).execute();
     await horarios.reemplazarManual(s.empresa, s.local('Almacén A'), [{ dia: 1, cerrado: true, tramos: [] }]);
@@ -187,8 +198,9 @@ describe('horario manual en Postgres', () => {
     const servicios = crearServiciosDeRuta({ rutas, empresas, camiones, facturas, entregas: new PostgresEntregaRepository(db), jornadas: new PostgresJornadaRepository(db), registro: new PostgresRegistroAprendizajeRepository(db), clock: { now: () => new Date('2026-10-05T12:00:00Z') }, resolverCamion: pasarCamion });
     const usuario = { id: s.usuario, empresaId: s.empresa, rol: 'despachador' as const, username: 'd', nombre: 'D', activo: true, editor: false };
     const p = await servicios.planificar(usuario, { camionId: s.camion, fecha: FECHA }); // 2026-10-05 es lunes: Almacén A está cerrado
-    expect(p.ok && p.value.paradas.map((x) => x.cliente)).toEqual(['Bazar B']);
-    expect(p.ok && p.value.noAtendidas.map((x) => x.cliente)).toEqual(['Almacén A']);
+    expect(p.ok && p.value.paradas.map((x) => x.cliente)).toEqual(['Bazar B', 'Almacén A']);
+    expect(p.ok && p.value.noAtendidas).toEqual([]);
+    expect(p.ok && p.value.enRiesgo.find((x) => x.cliente === 'Almacén A')?.conflictos).toEqual(['Según su horario hoy no atiende.']);
   });
 });
 

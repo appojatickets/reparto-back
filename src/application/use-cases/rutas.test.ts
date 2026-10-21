@@ -289,6 +289,21 @@ describe('cada cálculo y cada movimiento de la ruta queda guardado para aprende
 });
 
 describe('la ruta usa lo que el sistema aprendió', () => {
+  it('acorta el regreso con atención GPS medida manteniendo las mismas distancias y paradas', async () => {
+    const pendientes = [paradaDe('A'), paradaDe('B'), paradaDe('C'), paradaDe('D')];
+    const base = montar({ pendientes });
+    const rutas = fakeRutas(pendientes);
+    const aprendizaje = { parametros: () => Promise.resolve([{ clave: 'servicio_min' as const, ambito: 'gps:camion:cam-1', valor: 3, muestras: 30, confianza: 0.9 }]) };
+    const real = crearServiciosDeRuta({ rutas: rutas.repo, empresas: fakeEmpresas(), camiones: fakeCamionesRuta(), facturas: fakeFacturasRuta(), entregas: fakeEntregasRuta(), jornadas: fakeJornadas(), registro: fakeRegistro(), aprendizaje, clock: crearReloj('2026-10-05T10:00:00Z').clock, resolverCamion: resolverDePrueba() });
+    const a = await base.planificar(despachador, entrada);
+    const b = await real.planificar(despachador, entrada);
+    expect(a.ok && b.ok).toBe(true);
+    if (!a.ok || !b.ok) return;
+    expect(b.value.paradas).toHaveLength(4);
+    expect(b.value.paradas.every((p) => Math.abs(p.salida - p.inicioServicio - 3) < 0.01)).toBe(true);
+    expect(b.value.regreso ?? Infinity).toBeLessThan(a.value.regreso ?? 0);
+  });
+
   it('un camión más lento que lo calculado alarga los tiempos de viaje de su ruta (ritmo aprendido) y un local lento alarga su atención', async () => {
     const base = montar({ pendientes: [paradaDe('A'), paradaDe('B')] });
     const aprendizaje = { parametros: () => Promise.resolve([{ clave: 'ritmo' as const, ambito: 'camion:cam-1', valor: 1.5, muestras: 40, confianza: 1 }, { clave: 'servicio_min' as const, ambito: 'local:l-A', valor: 30, muestras: 6, confianza: 0.6 }]) };
@@ -328,7 +343,7 @@ describe('el orden en que el chofer cargó las facturas', () => {
   });
 });
 
-describe('una calle se hace de una vez (ADR 0054)', () => {
+describe('una calle se hace de una vez (ADR 0056)', () => {
   const sinPin = (n: string, direccion: string, cargadaEn: number): ReturnType<typeof paradaDe> => {
     const { facturaId, localId, razonSocial, comuna, urgente, horarios } = paradaDe(n);
     return { facturaId, localId, razonSocial, direccion, comuna, urgente, horarios, cargadaEn };
@@ -746,5 +761,30 @@ describe('«las agrego en orden»: la ruta es el orden en que el chofer cargó l
     const { s } = await enOrden();
     const r = await s.planificar(despachador, entrada);
     expect(r.ok && r.value.modo).toBe('sugerida');
+  });
+});
+
+describe('configuración por día y deshacer el orden', () => {
+  it('guarda las comunas y las mantiene al mover una entrega', async () => {
+    const s = montar({ pendientes: [paradaDe('A', { comuna: 'Maipú' }), paradaDe('B', { comuna: 'San Bernardo' }), paradaDe('C', { comuna: 'Maipú' })] });
+    const r = await s.planificar(despachador, { ...entrada, ordenComunas: ['Maipú', 'San Bernardo'] });
+    expect(r.ok && r.value.paradas.map(p => p.comuna)).toEqual(['Maipú', 'Maipú', 'San Bernardo']);
+    const m = await s.operar(despachador, { ...entrada, version: 1, operacion: { tipo: 'mover', facturaId: 'f-B', posicion: 0 } });
+    expect(m.ok && m.value.paradas[0]?.facturaId).toBe('f-B');
+    expect(m.ok && m.value.ordenComunas).toEqual(['Maipú', 'San Bernardo']);
+  });
+  it('deshace un salto de varias posiciones y rechaza un deshacer desactualizado', async () => {
+    const s = montar();
+    const inicial = await s.planificar(despachador, { ...entrada, orden: 'carga' });
+    if (!inicial.ok) throw new Error('No se planificó');
+    await s.operar(despachador, { ...entrada, version: 1, operacion: { tipo: 'mover', facturaId: 'f-D', posicion: 0 } });
+    const op = { tipo: 'restaurar' as const, orden: ids(inicial.value), fijas: [], modo: 'carga' as const };
+    const r = await s.operar(despachador, { ...entrada, version: 2, operacion: op });
+    expect(r.ok && ids(r.value)).toEqual(ids(inicial.value));
+    expect(r.ok && r.value.modo).toBe('carga');
+    const viejo = await s.operar(despachador, { ...entrada, version: 2, operacion: op });
+    expect(viejo.ok).toBe(false);
+    const invalido = await s.operar(despachador, { ...entrada, version: 3, operacion: { ...op, orden: ['f-A'] } });
+    expect(invalido.ok).toBe(false);
   });
 });

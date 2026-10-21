@@ -37,6 +37,12 @@ export const detectarLlegada = (puntos: readonly PuntoGps[], destino: Coordenada
     return enMarcha ? undefined : primero;
   };
   for (const p of puntos) {
+    const previo = tramo[tramo.length - 1];
+    if (previo && (p.tomadoEn.getTime() - previo.tomadoEn.getTime() > 120_000 || p.tomadoEn.getTime() <= previo.tomadoEn.getTime())) {
+      const r = confirma();
+      if (r) return r;
+      tramo = [];
+    }
     if (cerca(p, destino)) tramo.push(p);
     else {
       const r = confirma();

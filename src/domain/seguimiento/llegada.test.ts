@@ -6,6 +6,10 @@ const en = (segundos: number, extra: Partial<PuntoGps> = {}): PuntoGps => ({ lat
 const lejos = (segundos: number): PuntoGps => ({ lat: PIN.lat + 0.01, lng: PIN.lng, tomadoEn: new Date(1_700_000_000_000 + segundos * 1000) }); // ≈ 1,1 km
 
 describe('detectar la llegada del camión a un pin', () => {
+  it('no convierte dos puntos separados por una pérdida de GPS en una permanencia', () => {
+    expect(detectarLlegada([en(0), en(500)], PIN)).toBeUndefined();
+  });
+
   it('cerca del pin y quedándose un rato: llegó, y devuelve el primer punto del tramo', () => {
     const r = detectarLlegada([lejos(0), en(60), en(120), en(180)], PIN);
     expect(r?.tomadoEn.getTime()).toBe(en(60).tomadoEn.getTime());

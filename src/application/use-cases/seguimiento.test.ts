@@ -8,7 +8,7 @@ const chofer = usuarioDe({ id: 'u-chofer', rol: 'chofer' });
 const { clock } = crearReloj('2026-10-05T12:00:00Z');
 const AHORA = new Date('2026-10-05T12:00:00Z').getTime();
 const PIN = { lat: -33.5, lng: -70.7 };
-const punto = (segAntes: number, extra: Record<string, unknown> = {}) => ({ lat: PIN.lat + 0.0002, lng: PIN.lng, tomadoEn: new Date(AHORA - segAntes * 1000), ...extra });
+const punto = (segAntes: number, extra: Record<string, unknown> = {}) => ({ lat: PIN.lat + 0.0002, lng: PIN.lng, tomadoEn: new Date(AHORA - segAntes * 1000), precisionM: 10, ...extra });
 
 const montar = (opciones: { yaLlego?: string[]; sinJornada?: boolean } = {}) => {
   const registro = fakeRegistro();
@@ -44,7 +44,7 @@ describe('seguimiento del camión', () => {
     const r = await t.caso(chofer, [punto(120), punto(60), punto(10)]);
     expect(r.ok && r.value.llegadasAutomaticas).toEqual(['f-A']);
     expect(t.entregas.registrar).toHaveBeenCalledTimes(1);
-    expect(t.entregas.registrar).toHaveBeenCalledWith('empresa-1', expect.objectContaining({ tipo: 'llegada', facturaId: 'f-A', camionId: 'cam-1', usuarioId: 'u-chofer', origen: 'auto' }));
+    expect(t.entregas.registrar).toHaveBeenCalledWith('empresa-1', expect.objectContaining({ ocurridoEn: punto(120).tomadoEn, tipo: 'llegada', facturaId: 'f-A', camionId: 'cam-1', usuarioId: 'u-chofer', origen: 'auto' }));
   });
 
   it('no repite la llegada si una persona (o un aviso anterior) ya la anotó', async () => {

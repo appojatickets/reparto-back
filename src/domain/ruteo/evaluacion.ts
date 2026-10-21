@@ -15,20 +15,26 @@ export const franjaDeCierre = (c: Compilado, j: number, minuto: number): FranjaC
  * Todos los términos son ≥ 0, así que se puede cortar en cuanto se supera `corte` (poda para la búsqueda local).
  */
 export const evaluar = (c: Compilado, orden: ArrayLike<number>, largo: number, corte = Infinity): number => {
-  const { mu, omega, penalizacionRiesgo, epsPrioridad, epsLlegada, pesoOrdenCarga, pesoOrdenCargaPin, pesoOrdenInicio, pesoCierreAprendido, pesoCalle } = c.problema.parametros;
+  const { mu, omega, penalizacionRiesgo, epsPrioridad, epsLlegada, pesoOrdenCarga, pesoOrdenInicio, pesoCierreAprendido, pesoCalle } = c.problema.parametros;
   let t = c.salida;
   let previo = c.origen;
   let costo = 0;
-  const conCarga = pesoOrdenCarga > 0 || (pesoOrdenCargaPin ?? 0) > 0;
+  let viajeAcumulado = 0;
+  let ultimaComuna = -1;
   // Calles ya visitadas en esta ruta: se marcan con el número de esta evaluación, así no hay que limpiar nada entre una y otra.
   const evaluacion = (c.contadorDeEvaluaciones[0] = (c.contadorDeEvaluaciones[0] ?? 0) + 1);
   let calleAnterior = -1;
 
   for (let k = 0; k < largo; k++) {
     const j = orden[k] ?? 0;
+    // Se evalúa la ruta entera: también la conexión entre comunas, sin resolver bloques aislados.
+    const comuna = c.rangoComuna[j] ?? 0;
+    if (comuna < ultimaComuna) costo += 100_000;
+    ultimaComuna = comuna;
     const viaje = c.viaje(previo, j, t);
     const llegada = t + viaje;
     costo += viaje;
+    viajeAcumulado += viaje;
 
     const ventanas = c.paradas[j]?.ventanas ?? [];
     let inicio = llegada;
@@ -53,10 +59,12 @@ export const evaluar = (c: Compilado, orden: ArrayLike<number>, largo: number, c
       if (franja) costo += pesoCierreAprendido * franja.p;
     }
     if (c.prioridad[j] === 1) costo += epsPrioridad * (llegada - c.salida);
-    if (epsLlegada > 0) costo += epsLlegada * (llegada - c.salida);
-    if (conCarga) {
+    // La cercanía depende del recorrido, no de cuánto demora la descarga del vecino.
+    // El servicio y las esperas sí siguen contando para las ventanas y las urgencias.
+    if (epsLlegada > 0) costo += epsLlegada * viajeAcumulado;
+    if (pesoOrdenCarga > 0) {
       const r = c.rangoCarga[j] ?? -1;
-      if (r >= 0) costo += (c.pesoCarga[j] ?? 0) * Math.abs(k - r);
+      if (r >= 0) costo += pesoOrdenCarga * Math.abs(k - r);
     }
     if (pesoCalle > 0) {
       const calle = c.calle[j] ?? -1;
@@ -75,6 +83,25 @@ export const evaluar = (c: Compilado, orden: ArrayLike<number>, largo: number, c
 
     t = inicio + (c.servicio[j] ?? 0);
     previo = j;
+  }
+  if (c.preferencias.length > 0) {
+    const posiciones = new Int32Array(c.n).fill(-1);
+    for (let k = 0; k < largo; k++) {
+      const j = orden[k];
+      if (j !== undefined) posiciones[j] = k;
+    }
+    let penalizacion = 0;
+    let pesoTotal = 0;
+    for (const p of c.preferencias) {
+      const a = posiciones[p.antes] ?? -1, b = posiciones[p.despues] ?? -1;
+      if (a >= 0 && b >= 0) {
+        pesoTotal += p.peso;
+        if (a > b) penalizacion += p.peso;
+      }
+    }
+    // La memoria desempata recorridos equivalentes: como máximo un segundo
+    // por ruta, sin acumular minutos de desvío al aprender más pares.
+    if (pesoTotal > 0) costo += (penalizacion / pesoTotal) / 60;
   }
   costo += c.viaje(previo, c.deposito, t);
   return costo >= corte ? Infinity : costo;
@@ -116,7 +143,7 @@ export const detallar = (c: Compilado, orden: readonly number[]): Itinerario => 
     inicio.push(ini);
     espera.push(ini - arr);
     atraso.push(tarde);
-    cierre.push(c.problema.parametros.pesoCierreAprendido > 0 ? franjaDeCierre(c, j, ini) : undefined);
+    cierre.push((c.problema.avisarCierresAprendidos || c.problema.parametros.pesoCierreAprendido > 0) ? franjaDeCierre(c, j, ini) : undefined);
     t = ini + (c.servicio[j] ?? 0);
     salida.push(t);
     previo = j;

@@ -12,14 +12,16 @@ const schema = z.object({
   SUPABASE_ANON_KEY: z.string().min(1).optional(),
   /** Dominio de los correos sintéticos de las cuentas (`jperez@<dominio>`); nunca se envía un correo. */
   AUTH_EMAIL_DOMAIN: z.string().min(3).regex(/^[a-z0-9.-]+$/).default('usuarios.reparto.test'),
+  /** Asistencia de direcciones: solo se usa si el interruptor está activo y existe una clave. */
+  GEMINI_ENABLED: z.enum(['true', 'false']).default('false').transform(v => v === 'true'),
+  GEMINI_API_KEY: z.string().trim().optional().transform(v => v || undefined),
+  GEMINI_MODEL: z.string().regex(/^[a-z0-9.-]+$/).default('gemini-3.5-flash-lite'),
+  GEMINI_DAILY_LIMIT: z.coerce.number().int().min(1).max(1000).default(50),
   MAIL_API_KEY: z.string().optional(),
   /** Identifica a la aplicación ante el servicio gratuito de mapas (Nominatim lo exige). Conviene incluir un correo o la URL del sitio. */
   /** Clave de OpenRouteService (plan gratuito): con ella la ruta usa tiempos de manejar por calles. Si falta, la ruta mide en línea recta. */
   ORS_PROFILE: z.enum(['driving-car', 'driving-hgv']).default('driving-car'),
   ORS_API_KEY: z.string().min(10).optional(),
-  /** Clave de Gemini (plan gratuito): ordena las direcciones que ningún buscador encuentra. Opcional; sin ella (o si falla) todo sigue igual. */
-  GEMINI_API_KEY: z.string().min(10).optional(),
-  GEMINI_MODEL: z.string().min(3).regex(/^[a-z0-9.-]+$/).default('gemini-flash-lite-latest'),
   /** Lo pone Render solo: el commit que está corriendo. Se muestra en el estado del sistema. */
   RENDER_GIT_COMMIT: z.string().optional(),
   GEOCODER_USER_AGENT: z.string().min(8).default('reparto-api/1.0 (+https://reparto-front.vercel.app)'),

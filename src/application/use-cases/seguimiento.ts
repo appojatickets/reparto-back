@@ -1,3 +1,4 @@
+import { puntosDelPin } from '../../domain/seguimiento/visitas-observadas.js';
 import type { Usuario } from '../../domain/entidades/usuario.js';
 import { fechaEnChile } from '../../domain/shared/fechas.js';
 import { ok, type Result } from '../../domain/shared/result.js';
@@ -60,16 +61,18 @@ export const crearRegistrarPosiciones = ({ registro, rutas, entregas, resolverCa
     const pendientes = (await rutas.facturasPendientes(actor.empresaId, camionId, fecha)).filter((f) => f.lat !== undefined && f.lng !== undefined && !f.pinAproximado);
     const llegadasAutomaticas: string[] = [];
     if (pendientes.length > 0) {
-      const recientes = await registro.posicionesDesde(actor.empresaId, camionId, new Date(ahora - VENTANA_LLEGADA_MS));
+      const recientes = await registro.posicionesDesde(actor.empresaId, camionId, new Date(Math.min(ahora - VENTANA_LLEGADA_MS, (validos[0]?.tomadoEn.getTime() ?? ahora) - 120_000)));
       const yaLlego = await entregas.conLlegada(actor.empresaId, pendientes.map((f) => f.facturaId));
       const ruta = await rutas.obtener(actor.empresaId, camionId, fecha);
       for (const f of pendientes) {
         if (yaLlego.has(f.facturaId) || f.lat === undefined || f.lng === undefined) continue;
-        const punto = detectarLlegada(recientes, { lat: f.lat, lng: f.lng });
+        const pines = pendientes.flatMap(p => p.lat !== undefined && p.lng !== undefined ? [{ facturaId:p.facturaId,localId:p.localId,lat:p.lat,lng:p.lng }] : []);
+        const destino = { facturaId:f.facturaId,localId:f.localId,lat:f.lat,lng:f.lng };
+        const punto = detectarLlegada(puntosDelPin(recientes,destino,pines), destino);
         if (!punto) continue;
         const lugar = ruta ? ruta.orden.indexOf(f.facturaId) + 1 : 0;
         await entregas.registrar(actor.empresaId, {
-          tipo: 'llegada', facturaId: f.facturaId, localId: f.localId, camionId, usuarioId: actor.id, origen: 'auto',
+          ocurridoEn: punto.tomadoEn, tipo: 'llegada', facturaId: f.facturaId, localId: f.localId, camionId, usuarioId: actor.id, origen: 'auto',
           lat: punto.lat, lng: punto.lng, ...(punto.precisionM !== undefined ? { precisionM: punto.precisionM } : {}),
           ...(ruta && lugar > 0 ? { posicionEnRuta: lugar, paradasEnRuta: ruta.orden.length } : {}),
         });

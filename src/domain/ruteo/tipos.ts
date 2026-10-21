@@ -22,11 +22,6 @@ export type ParadaRuta = {
   readonly cierreProbable?: readonly FranjaCierreProbable[];
   /** La calle (escrita siempre igual, con la comuna) en que está: la ruta prefiere terminar una calle antes de dejarla y volver. */
   readonly calle?: string;
-  /**
-   * No se sabe bien dónde está (sin pin exacto y sin una calle que la ubique): solo la adivinanza por el orden de carga o el centro de la comuna.
-   * El orden de carga la guía; a las que sí se ubican por su pin o su calle y número las guía la geometría.
-   */
-  readonly ubicacionIncierta?: boolean;
 };
 
 /**
@@ -34,6 +29,10 @@ export type ParadaRuta = {
  * decidió hacer primero y que el motor no mueve.
  */
 export type ProblemaRuta = {
+  /** Muestra cierres probables como aviso aunque no influyan en el orden. */
+  readonly avisarCierresAprendidos?: boolean;
+  readonly ordenComunas?: readonly string[];
+  readonly preferenciasRecorrido?: readonly { readonly antes: string; readonly despues: string; readonly peso: number }[];
   /** Hora de salida del depósito o, al reoptimizar, la hora actual (minutos del día). */
   readonly salida: number;
   readonly paradas: readonly ParadaRuta[];

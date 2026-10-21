@@ -232,18 +232,3 @@ describe('optimizar · una calle se hace de una vez', () => {
     expect(a.costo).toBe(b.costo);
   });
 });
-
-describe('optimizar · el orden de carga solo guía lo que no se sabe dónde está', () => {
-  const parametros = { ...PARAMETROS_POR_DEFECTO, pesoOrdenCarga: 1, pesoOrdenCargaPin: 0 };
-
-  it('con la ubicación conocida no pesa: queda lo que decide la geometría (aquí, un empate que resuelve el orden de entrada)', () => {
-    const paradas = [parada('X', { ordenCarga: 2 }), parada('Y', { ordenCarga: 0 }), parada('Z', { ordenCarga: 1 })];
-    const sinCarga = optimizar(problemaPlano(paradas, { parametros: PARAMETROS_POR_DEFECTO }));
-    expect(optimizar(problemaPlano(paradas, { parametros })).orden).toEqual(sinCarga.orden);
-  });
-
-  it('si no se sabe dónde está (solo se adivina), sí guía', () => {
-    const paradas = [parada('X', { ordenCarga: 2, ubicacionIncierta: true }), parada('Y', { ordenCarga: 0, ubicacionIncierta: true }), parada('Z', { ordenCarga: 1, ubicacionIncierta: true })];
-    expect(optimizar(problemaPlano(paradas, { parametros })).orden).toEqual(['Y', 'Z', 'X']);
-  });
-});

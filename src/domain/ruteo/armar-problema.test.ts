@@ -50,12 +50,11 @@ describe('armarProblema', () => {
     expect(r.problema.fijas).toEqual(['B']);
   });
 
-  it('la ruta de la aplicación solo desempata por llegar antes, castiga volver a una calle y deja el orden de carga solo para lo que no se sabe dónde está', () => {
+  it('la ruta de la aplicación castiga volver a una calle y no se deja llevar por el orden de carga', () => {
     const { parametros } = armarProblema({ ...base, entradas: [e('A')] }).problema;
     expect(parametros.epsLlegada).toBeLessThanOrEqual(0.01);
     expect(parametros.pesoCalle).toBeGreaterThan(0);
-    expect(parametros.pesoOrdenCarga).toBeGreaterThan(0);
-    expect(parametros.pesoOrdenCargaPin).toBe(0);
+    expect(parametros.pesoOrdenCarga).toBe(0);
   });
 
   it('en la aplicación los horarios no gobiernan el orden: no cuestan nada al ordenar y ninguna parada se manda al final por su horario', () => {
@@ -66,11 +65,10 @@ describe('armarProblema', () => {
     expect(gobiernan).toMatchObject({ horariosGobiernan: true, penalizacionRiesgo: 10_000, mu: 5 });
   });
 
-  it('pasa la calle y si la ubicación es incierta a la parada', () => {
-    const r = armarProblema({ ...base, entradas: [e('A', { calle: 'San Bernardo|colon', ubicacionIncierta: true }), e('B')] });
-    expect(r.problema.paradas[0]).toMatchObject({ calle: 'San Bernardo|colon', ubicacionIncierta: true });
+  it('pasa la calle a la parada', () => {
+    const r = armarProblema({ ...base, entradas: [e('A', { calle: 'San Bernardo|colon' }), e('B')] });
+    expect(r.problema.paradas[0]).toMatchObject({ calle: 'San Bernardo|colon' });
     expect(r.problema.paradas[1]).not.toHaveProperty('calle');
-    expect(r.problema.paradas[1]).not.toHaveProperty('ubicacionIncierta');
   });
 
   it('el problema armado se puede optimizar y cumple las invariantes', () => {

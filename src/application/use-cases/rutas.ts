@@ -1,3 +1,4 @@
+import { preferenciasRecorrido, type PatronRecorrido } from '../../domain/aprendizaje/patrones-recorrido.js';
 import type { ConfigEmpresa, Deposito } from '../../domain/entidades/config-empresa.js';
 import type { Usuario } from '../../domain/entidades/usuario.js';
 import { esFechaValida, fechaEnChile, minutosEnChile } from '../../domain/shared/fechas.js';
@@ -46,6 +47,8 @@ export type ItemVista = {
   readonly tieneFoto?: boolean;
   /** Insignias: el pin está verificado y la foto de la fachada está verificada. */
   readonly pinVerificado?: boolean;
+  readonly pinFuente?: string;
+  readonly pinVerificacion?: 'persona' | 'entregas';
   readonly fotoVerificada?: boolean;
   readonly urgente: boolean;
   readonly antesDeMin?: number;
@@ -67,6 +70,7 @@ export type VistaRuta = {
   readonly camionId: string;
   readonly fecha: string;
   readonly planificada: boolean;
+  readonly ordenComunas?: readonly string[];
   readonly modo?: ModoRuta;
   readonly version?: number;
   readonly salidaMin: number;
@@ -92,6 +96,7 @@ export type Operacion =
   | { readonly tipo: 'subir' | 'bajar' | 'primero' | 'despues' | 'quitar'; readonly facturaId: string }
   /** Arrastrar y soltar: la parada queda en la posición `posicion` (0 = la primera) de la lista de paradas en orden. */
   | { readonly tipo: 'mover'; readonly facturaId: string; readonly posicion: number }
+  | { readonly tipo: 'restaurar'; readonly orden: readonly string[]; readonly fijas: readonly string[]; readonly modo: ModoRuta }
   | { readonly tipo: 'ordenar' | 'insertar' }
   /** PASAR A MANUAL: se congela el orden que se ve y desde ahí nada se reordena solo (modo «carga»). */
   | { readonly tipo: 'fijar' }
@@ -107,7 +112,7 @@ type Dependencias = {
   /** Cada cálculo o movimiento de la ruta queda guardado (el sistema aprende de lo que sugirió y de lo que la gente corrigió). */
   readonly registro: RegistroAprendizajeRepository;
   /** Lo que el analizador aprendió (ritmo del camión, tiempo de atención por local). Sin esto la ruta usa sus valores de respaldo. */
-  readonly aprendizaje?: Pick<AprendizajeRepository, 'parametros'>;
+  readonly aprendizaje?: Pick<AprendizajeRepository, 'parametros'> & Partial<Pick<AprendizajeRepository, 'ultimaEjecucion'>>;
   /** Tiempos de manejar por calles (si hay servicio de rutas configurado); sin esto, o si falla, la ruta mide en línea recta. */
   readonly viajes?: ViajesPorCalle;
   readonly clock: Clock;
@@ -117,6 +122,9 @@ type Dependencias = {
 };
 
 type Contexto = {
+  readonly patrones: readonly PatronRecorrido[];
+  readonly camionId: string;
+  readonly usuarioId: string;
   readonly config: ConfigEmpresa;
   readonly deposito: Deposito;
   readonly items: readonly FacturaParaRuta[];
@@ -133,8 +141,6 @@ type Contexto = {
   readonly estimadas: ReadonlyMap<string, Coordenada>;
   /** La calle de cada factura pendiente (con su comuna): la ruta termina una calle antes de dejarla. */
   readonly calles: ReadonlyMap<string, string>;
-  /** Pendientes de las que solo se adivina dónde están (sin pin exacto y sin calle que las ubique): el orden de carga las guía. */
-  readonly inciertas: ReadonlySet<string>;
   /** Franjas en que cada local suele estar cerrado según lo aprendido (solo las de evidencia suficiente y probabilidad alta; ADR 0050). */
   readonly cierres: ReadonlyMap<string, readonly FranjaCierreProbable[]>;
 };
@@ -152,13 +158,15 @@ const itemDe = (f: FacturaParaRuta): ItemVista => ({
   ...(f.lat !== undefined && f.lng !== undefined ? { lat: f.lat, lng: f.lng, ...(f.pinAproximado ? { ubicacionAproximada: true } : {}) } : centroDeComuna(f.comuna) !== undefined ? { ubicacionAproximada: true, ...(f.busquedaSinResultado ? { noEncontradaEnMapa: true } : {}) } : {}),
   ...(f.tieneFoto ? { tieneFoto: true } : {}),
   ...(f.pinVerificado ? { pinVerificado: true } : {}),
+  ...(f.pinFuente ? { pinFuente: f.pinFuente } : {}),
+  ...(f.pinVerificacion ? { pinVerificacion: f.pinVerificacion } : {}),
   ...(f.fotoVerificada ? { fotoVerificada: true } : {}),
   urgente: f.urgente,
   ...(f.antesDeMin !== undefined ? { antesDeMin: f.antesDeMin } : {}),
   ...(f.nota !== undefined ? { nota: f.nota } : {}),
 });
 
-const entradaDe = (f: FacturaParaRuta, servicioMin?: number, estimada?: Coordenada, ordenCarga?: number, cierreProbable?: readonly FranjaCierreProbable[], calle?: string, incierta = false): EntradaParada => {
+const entradaDe = (f: FacturaParaRuta, servicioMin?: number, estimada?: Coordenada, ordenCarga?: number, cierreProbable?: readonly FranjaCierreProbable[], calle?: string): EntradaParada => {
   // Sin pin exacto la ruta no se detiene: se ubica junto a las demás puertas de su calle, entre sus vecinas de carga o, si no hay, por el centro
   // de la comuna, hasta que haya un pin. Un pin hallado solo hasta la calle cede ante lo estimado por su calle y número.
   const exacto = f.lat !== undefined && f.lng !== undefined && f.pinAproximado !== true;
@@ -175,7 +183,6 @@ const entradaDe = (f: FacturaParaRuta, servicioMin?: number, estimada?: Coordena
     ...(ordenCarga !== undefined ? { ordenCarga } : {}),
     ...(cierreProbable !== undefined && cierreProbable.length > 0 ? { cierreProbable } : {}),
     ...(calle !== undefined ? { calle } : {}),
-    ...(incierta ? { ubicacionIncierta: true } : {}),
   };
 };
 
@@ -238,6 +245,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
         ]).catch((): ViajesDeLaRuta => ({ minutos: () => undefined, conCalles: false }))
       : { minutos: () => undefined, conCalles: false };
     return ok({
+      patrones: aprendizaje?.ultimaEjecucion ? (await aprendizaje.ultimaEjecucion(actor.empresaId).catch(() => undefined))?.resumen.patronesRecorrido ?? [] : [], camionId, usuarioId:actor.id,
       config, deposito: config.deposito, items, guardada, hechas, aprendido, viajes: viajesDeLaRuta, cierres, ...ubicadas,
       ...(esHoy ? { ahoraMin: minutosEnChile(clock.now()) } : {}),
       ...(ultima ? { origen: { lat: ultima.lat, lng: ultima.lng } } : {}),
@@ -245,20 +253,22 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
   };
 
   /** `salida` es la planificada; el cálculo de hoy no puede empezar antes de «ahora» y parte de donde está el camión. */
-  const problemaDe = (ctx: Contexto, fecha: string, salida: number, fijas: readonly string[]) =>
-    armarProblema({
+  const problemaDe = (ctx: Contexto, fecha: string, salida: number, fijas: readonly string[]) => {
+    const armado = armarProblema({
       fecha,
       deposito: ctx.deposito,
       ...(ctx.origen ? { origen: ctx.origen } : {}),
       salida: ctx.ahoraMin !== undefined ? Math.max(salida, ctx.ahoraMin) : salida,
       horaLimiteRegresoMin: ctx.config.horaLimiteRegresoMin,
       ...(ctx.config.ordenInicio ? { ordenInicio: ctx.config.ordenInicio } : {}),
-      entradas: ctx.items.map((f) => entradaDe(f, ctx.aprendido.servicioMin(f.localId), ctx.estimadas.get(f.facturaId), ctx.ordenCarga.get(f.facturaId), ctx.cierres.get(f.localId), ctx.calles.get(f.facturaId), ctx.inciertas.has(f.facturaId))),
+      entradas: ctx.items.map((f) => entradaDe(f, ctx.aprendido.servicioMin(f.localId), ctx.estimadas.get(f.facturaId), ctx.ordenCarga.get(f.facturaId), ctx.cierres.get(f.localId), ctx.calles.get(f.facturaId))),
       // El ritmo aprendido solo afecta los tramos de respaldo; armarProblema separa ambas fuentes.
       ritmo: ctx.aprendido.ritmo,
       viajeMin: ctx.viajes.minutos,
       fijas,
     });
+    return {...armado,problema:{...armado.problema,ordenComunas:ctx.guardada?.ordenComunas ?? [],preferenciasRecorrido:preferenciasRecorrido(ctx.patrones,ctx.items,ctx.camionId,ctx.usuarioId,fecha)}};
+  };
 
   const vistaDe = (
     ctx: Contexto,
@@ -282,6 +292,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
       camionId,
       fecha,
       planificada: plan !== undefined,
+      ordenComunas: plan?.problema.ordenComunas ?? ctx.guardada?.ordenComunas ?? [],
       ...(plan ? { modo: plan.modo, version: plan.version, regreso: plan.solucion.regreso, regresoTardio: plan.solucion.regresoTardio } : {}),
       salidaMin,
       ...(plan && plan.problema.salida !== salidaMin ? { calculadaDesdeMin: plan.problema.salida } : {}),
@@ -321,6 +332,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
       camionId,
       fecha,
       salidaMin: salidaPlan,
+      ordenComunas: estado.problema.ordenComunas ?? [],
       modo: estado.modo,
       orden: estado.solucion.orden,
       fijas: estado.problema.fijas,
@@ -354,18 +366,19 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
    * Arma la ruta desde cero (reemplaza la anterior, incluso si estaba acomodada a mano). Con `orden: 'carga'` («las agrego en orden») la ruta
    * es el orden en que el chofer cargó las facturas y no se optimiza; si no, el sistema la calcula.
    */
-  const planificar = async (actor: Usuario, entrada: { camionId: string; fecha: string; salidaMin?: number | undefined; orden?: 'calcular' | 'carga' | undefined }): Promise<Result<VistaRuta, ErrorApp>> => {
+  const planificar = async (actor: Usuario, entrada: { camionId: string; fecha: string; salidaMin?: number | undefined; orden?: 'calcular' | 'carga' | undefined; ordenComunas?: readonly string[] | undefined }): Promise<Result<VistaRuta, ErrorApp>> => {
     const ctx = await cargar(actor, entrada.camionId, entrada.fecha);
     if (!ctx.ok) return ctx;
     const salida = entrada.salidaMin ?? ctx.value.guardada?.salidaMin ?? ctx.value.config.salidaPorDefectoMin;
     if (!Number.isInteger(salida) || salida < 0 || salida > 1439) return err(errorApp('VALIDACION', 'La hora de salida no es válida.'));
     const { problema, sinPin } = problemaDe(ctx.value, entrada.fecha, salida, []);
     if (entrada.orden === 'carga') {
-      const r = ordenarPorCarga({ problema, orden: [] }, ctx.value.ordenCarga);
+      const r = ordenarPorCarga({ problema: { ...problema, ordenComunas: entrada.ordenComunas ?? problema.ordenComunas }, orden: [] }, ctx.value.ordenCarga);
       return guardarYVer(actor, ctx.value, entrada.camionId, entrada.fecha, salida, { problema: r.problema, solucion: r.solucion, modo: 'carga' }, sinPin, { tipo: 'planificar' });
     }
-    const solucion = optimizar(problema, { presupuesto: presupuesto() });
-    return guardarYVer(actor, ctx.value, entrada.camionId, entrada.fecha, salida, { problema, solucion, modo: 'sugerida' }, sinPin, { tipo: 'planificar' });
+    const configurado = { ...problema, ordenComunas: entrada.ordenComunas ?? problema.ordenComunas };
+    const solucion = optimizar(configurado, { presupuesto: presupuesto() });
+    return guardarYVer(actor, ctx.value, entrada.camionId, entrada.fecha, salida, { problema: configurado, solucion, modo: 'sugerida' }, sinPin, { tipo: 'planificar' });
   };
 
   const operar = async (actor: Usuario, entrada: { camionId: string; fecha: string; version: number; operacion: Operacion }): Promise<Result<VistaRuta, ErrorApp>> => {
@@ -423,6 +436,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
           return enOrden(moverAPosicion(estado, op.facturaId, 0));
         case 'despues':
           return enOrden(moverAPosicion(estado, op.facturaId, orden.length));
+        case 'restaurar':
         case 'quitar':
         case 'ordenar':
         case 'insertar':
@@ -433,6 +447,13 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
     };
 
     const aplicar = (): Result<ResultadoOperacion & { modo: ModoRuta }, ErrorApp> => {
+      if (op.tipo === 'restaurar') {
+        const pendientes = orden.filter(id => items.some(f => f.facturaId === id));
+        if (new Set(op.orden).size !== op.orden.length || op.orden.length !== pendientes.length || op.orden.some(id => !pendientes.includes(id))) return err(errorApp('CONFLICTO', 'La ruta cambió. Recarga antes de deshacer.'));
+        if (op.fijas.some((id, i) => op.orden[i] !== id)) return err(errorApp('VALIDACION', 'Las posiciones fijadas deben encabezar el orden.'));
+        const restaurado = { ...problema, fijas: op.fijas };
+        return ok({ problema: restaurado, solucion: evaluarOrden(restaurado, op.orden), modo: op.modo });
+      }
       // CALCULAR MI RUTA ('ordenar') saca a la ruta del orden de carga: la ordena el sistema.
       if (guardada.modo === 'carga' && op.tipo !== 'ordenar') return aplicarEnOrden();
       switch (op.tipo) {
@@ -466,7 +487,7 @@ export const crearServiciosDeRuta = ({ rutas, empresas, camiones, facturas, entr
     };
     const r = aplicar();
     if (!r.ok) return r;
-    return guardarYVer(actor, ctx2, entrada.camionId, entrada.fecha, salida, r.value, sinPin, { tipo: op.tipo, ...('facturaId' in op ? { facturaId: op.facturaId } : {}) }, entrada.version);
+    return guardarYVer(actor, ctx2, entrada.camionId, entrada.fecha, salida, r.value, sinPin, { tipo: op.tipo === 'restaurar' ? 'ordenar' : op.tipo, ...('facturaId' in op ? { facturaId: op.facturaId } : {}) }, entrada.version);
   };
 
   /**

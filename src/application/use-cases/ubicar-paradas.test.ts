@@ -37,10 +37,13 @@ describe('ubicarFacturas', () => {
     const pin = conPin('1', 'Colón 100', -33.6, -70.7);
     const r = ubicarFacturas([pin, factura('2', 'Colón 130'), factura('3', 'Freire 900')], []);
     expect(km(r.estimadas.get('f-2'), { lat: -33.6, lng: -70.7 })).toBeLessThan(0.06);
-    expect(r.inciertas.has('f-2')).toBe(false);
-    // La que no comparte calle con nadie solo se adivina por el orden de carga.
-    expect(r.inciertas.has('f-3')).toBe(true);
     expect(r.estimadas.has('f-1')).toBe(false);
+  });
+
+  it('las facturas con pin exacto no llevan calle: la geometría ya sabe cómo se recorren y forzarlas a quedar juntas hace perder kilómetros', () => {
+    const r = ubicarFacturas([conPin('1', 'Colón 100', -33.6, -70.7), factura('2', 'Colón 130')], []);
+    expect(r.calles.has('f-1')).toBe(false);
+    expect(r.calles.has('f-2')).toBe(true);
   });
 
   it('las calles se reconocen aunque la factura traiga «Avenida» o el complemento de la oficina', () => {
@@ -66,10 +69,6 @@ describe('ubicarFacturas', () => {
     expect(a && b ? distanciaKm(a, b) : NaN).toBeLessThan(1);
     expect(r.calles.get('f-2')).toBe(r.calles.get('f-4'));
     expect(r.calles.get('f-2')).not.toBe(r.calles.get('f-3'));
-    // Nada de su calle se conoce: el orden de carga guía a la calle entera (todas comparten su lugar de carga), no desordena sus números.
-    expect(r.inciertas.has('f-2')).toBe(true);
-    expect(r.ordenCarga.get('f-2')).toBe(r.ordenCarga.get('f-4'));
-    expect(r.ordenCarga.get('f-4')).toBe(r.ordenCarga.get('f-6'));
   });
 
   it('un pin que el buscador halló solo hasta la calle cede ante lo que dicen las puertas conocidas de esa calle', () => {
@@ -81,7 +80,6 @@ describe('ubicarFacturas', () => {
   it('una dirección sin calle reconocible se ubica entre sus vecinas de carga, como antes', () => {
     const r = ubicarFacturas([conPin('1', 'Colón 100', -33.6, -70.8), factura('2', 'Ubicación en el mapa'), conPin('3', 'Freire 5', -33.6, -70.6)], []);
     expect(r.estimadas.get('f-2')?.lng).toBeCloseTo(-70.7, 5);
-    expect(r.inciertas.has('f-2')).toBe(true);
     expect(r.calles.has('f-2')).toBe(false);
   });
 });

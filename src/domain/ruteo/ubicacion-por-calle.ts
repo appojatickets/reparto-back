@@ -80,13 +80,6 @@ const sobreLaCalle = (numero: number | undefined, anclas: readonly AnclaDeCalle[
   return correr(cercana.coordenada, (distancia * sentido.este) / largo, (distancia * sentido.norte) / largo);
 };
 
-export type UbicacionesPorCalle = {
-  /** Dónde queda cada parada que había que ubicar. */
-  readonly ubicadas: ReadonlyMap<string, Coordenada>;
-  /** Las que se ubicaron sin ninguna puerta conocida de su calle: la calle entera está donde la adivina el orden de carga, no donde se sabe. */
-  readonly sinPuertasConocidas: ReadonlySet<string>;
-};
-
 /**
  * Dónde está, aproximadamente, cada parada que no tiene un pin exacto, usando su calle y el número de la puerta (en vez de dejarla en el
  * centro de la comuna, donde todas quedaban a distancia cero y la ruta las intercalaba con otras calles):
@@ -100,7 +93,7 @@ export const ubicarPorCalle = (
   paradas: readonly ParadaPorUbicar[],
   anclasExternas: readonly AnclaDeCalle[],
   porCarga: (comuna: string, orden: number) => Coordenada | undefined,
-): UbicacionesPorCalle => {
+): ReadonlyMap<string, Coordenada> => {
   const grupos = new Map<string, ParadaPorUbicar[]>();
   const anclasPor = new Map<string, AnclaDeCalle[]>();
   const agregarAncla = (a: AnclaDeCalle): void => {
@@ -118,7 +111,6 @@ export const ubicarPorCalle = (
   }
 
   const salida = new Map<string, Coordenada>();
-  const sinPuertasConocidas = new Set<string>();
   for (const [k, miembros] of grupos) {
     const anclas = anclasPor.get(k) ?? [];
     if (anclas.length > 0) {
@@ -128,7 +120,6 @@ export const ubicarPorCalle = (
     const primero = miembros[0];
     if (!primero) continue;
     const propios = miembros.flatMap((p) => (p.coordenada ? [p.coordenada] : []));
-    miembros.forEach((p) => sinPuertasConocidas.add(p.id));
     const base = propios.length > 0 ? promedio(propios) : (porCarga(primero.comuna, mediana(miembros.map((p) => p.orden))) ?? centroDeComuna(primero.comuna));
     if (!base) continue;
     const numeros = miembros.flatMap((p) => (p.numero !== undefined ? [p.numero] : []));
@@ -139,5 +130,5 @@ export const ubicarPorCalle = (
       salida.set(p.id, correr(base, metros, 0));
     }
   }
-  return { ubicadas: salida, sinPuertasConocidas };
+  return salida;
 };

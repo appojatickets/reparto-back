@@ -12,6 +12,7 @@ export type RutaGuardada = {
   readonly camionId: string;
   readonly fecha: string;
   readonly salidaMin: number;
+  readonly ordenComunas?: readonly string[];
   readonly modo: ModoRuta;
   readonly version: number;
   /** Ids de factura en el orden de visita. */
@@ -37,6 +38,8 @@ export type FacturaParaRuta = {
   readonly tieneFoto?: boolean;
   /** Alguien verificó el pin del local y el admin dio por buena su foto: se muestran como insignias ✓. */
   readonly pinVerificado?: boolean;
+  readonly pinFuente?: string;
+  readonly pinVerificacion?: 'persona' | 'entregas';
   readonly fotoVerificada?: boolean;
   readonly antesDeMin?: number;
   readonly urgente: boolean;
@@ -57,6 +60,7 @@ export type GuardarRuta = {
   readonly camionId: string;
   readonly fecha: string;
   readonly salidaMin: number;
+  readonly ordenComunas?: readonly string[];
   readonly modo: ModoRuta;
   readonly orden: readonly string[];
   readonly fijas: readonly string[];

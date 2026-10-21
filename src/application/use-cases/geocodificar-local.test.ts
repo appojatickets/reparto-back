@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { err, ok } from '../../domain/shared/result.js';
 import type { Geocodificador } from '../ports/out/geocodificador.js';
-import type { NormalizadorDeDirecciones } from '../ports/out/normalizador-direcciones.js';
 import { crearReloj } from './fakes.test-util.js';
 import { fakeClientes, localDe } from './fakes-clientes.test-util.js';
 import { crearGeocodificarLocal } from './geocodificar-local.js';
@@ -112,82 +111,34 @@ describe('buscar el pin de un local por su dirección', () => {
   });
 });
 
-describe('cuando ningún buscador la encuentra, Gemini ordena la dirección y se busca de nuevo', () => {
-  const sucia = () => localDe({ direccion: 'Pje Los Olmoz 88 depto 3', comuna: 'San Bernardo' });
-  const montarConGemini = (normalizar: NormalizadorDeDirecciones['normalizar'], encontrar: (consulta: string) => ReturnType<Geocodificador['buscar']>) => {
-    const clientes = fakeClientes([sucia()]);
-    const buscar = vi.fn<Geocodificador['buscar']>(encontrar);
-    const normalizarFn = vi.fn<NormalizadorDeDirecciones['normalizar']>(normalizar);
-    return { clientes, buscar, normalizar: normalizarFn, caso: crearGeocodificarLocal({ clientes, geocodificadores: [{ buscar }], clock, normalizador: { normalizar: normalizarFn } }) };
+describe('asistencia de direcciones tras fallar los mapas', () => {
+  const montarIa = (conPin = false) => {
+    const clientes = fakeClientes([localDe({ direccion: 'OHigins 955', comuna: 'San Bernardo', ...(conPin ? { lat: -33.59, lng: -70.71 } : {}) })]);
+    const buscar = vi.fn<Geocodificador['buscar']>().mockResolvedValue(err('SIN_RESULTADO'));
+    const esperar = vi.fn<((ms: number) => Promise<void>)>().mockResolvedValue(undefined);
+    const normalizar = vi.fn().mockResolvedValue("O'Higgins 955");
+    return { clientes, buscar, normalizar, esperar, caso: crearGeocodificarLocal({ clientes, geocodificadores: [{ buscar }], normalizador: { normalizar }, esperar, clock }) };
   };
-  const hallado = ok({ lat: -33.6, lng: -70.7, precision: 'exacta' as const, comuna: 'San Bernardo' });
-
-  it('busca con la dirección ordenada y deja el pin como aproximado (confianza de calle), aunque el mapa diga que es exacto', async () => {
-    const m = montarConGemini(() => Promise.resolve(ok({ calle: 'Los Olmos', numero: 88 })), (c) => Promise.resolve(c.startsWith('Los Olmos 88') ? hallado : err('SIN_RESULTADO' as const)));
-    expect(await m.caso('empresa-1', 'l-1')).toBe('fijado');
-    expect(m.normalizar).toHaveBeenCalledWith('Pje Los Olmoz 88 depto 3', 'San Bernardo');
-    expect(m.buscar).toHaveBeenLastCalledWith('Los Olmos 88, San Bernardo, Región Metropolitana, Chile');
-    expect(m.clientes.fijarPinGeocodificado).toHaveBeenCalledWith('empresa-1', 'l-1', -33.6, -70.7, 0.6);
+  it('solo usa coordenadas del mapa y deja aproximada la propuesta de IA', async () => {
+    const s = montarIa();
+    s.buscar.mockResolvedValueOnce(err('SIN_RESULTADO')).mockResolvedValueOnce(ok({ lat: -33.59, lng: -70.71, precision: 'exacta', comuna: 'San Bernardo' }));
+    expect(await s.caso('empresa-1', 'l-1')).toBe('fijado');
+    expect(s.normalizar).toHaveBeenCalledWith('OHigins 955', 'San Bernardo');
+    expect(s.esperar).toHaveBeenCalledWith(1000);
+    expect(s.buscar).toHaveBeenLastCalledWith("O'Higgins 955, San Bernardo, Región Metropolitana, Chile");
+    expect(s.clientes.fijarPinGeocodificado).toHaveBeenCalledWith('empresa-1', 'l-1', -33.59, -70.71, 0.6);
   });
-
-  it('si ningún mapa la halla ni con el texto ordenado, queda el punto aproximado que estimó Gemini si es creíble en su comuna (confianza 0,3)', async () => {
-    const m = montarConGemini(() => Promise.resolve(ok({ calle: 'Los Olmos', numero: 88, estimada: { lat: -33.595, lng: -70.705 } })), () => Promise.resolve(err('SIN_RESULTADO' as const)));
-    expect(await m.caso('empresa-1', 'l-1')).toBe('fijado');
-    expect(m.clientes.fijarPinGeocodificado).toHaveBeenCalledWith('empresa-1', 'l-1', -33.595, -70.705, 0.3);
-    expect(m.clientes.marcarIntentoGeocodificacion).not.toHaveBeenCalled();
+  it('no consume IA si ya hay pin, el mapa acierta o existe una caída de mapas', async () => {
+    const conPin = montarIa(true); expect(await conPin.caso('empresa-1', 'l-1')).toBe('ya_tiene_pin'); expect(conPin.normalizar).not.toHaveBeenCalled();
+    const directo = montarIa(); directo.buscar.mockResolvedValue(ok({ lat: -33.59, lng: -70.71, precision: 'exacta', comuna: 'San Bernardo' }));
+    expect(await directo.caso('empresa-1', 'l-1')).toBe('fijado'); expect(directo.normalizar).not.toHaveBeenCalled();
+    const caido = montarIa(); caido.buscar.mockResolvedValue(err('LIMITE'));
+    expect(await caido.caso('empresa-1', 'l-1')).toBe('detener'); expect(caido.normalizar).not.toHaveBeenCalled();
   });
-
-  it('una estimación que cae lejos de su comuna se descarta: queda sin resultado, como si Gemini no hubiera ayudado', async () => {
-    const m = montarConGemini(() => Promise.resolve(ok({ calle: 'Los Olmos', numero: 88, estimada: { lat: -33.4, lng: -70.4 } })), () => Promise.resolve(err('SIN_RESULTADO' as const)));
-    expect(await m.caso('empresa-1', 'l-1')).toBe('sin_resultado');
-    expect(m.clientes.fijarPinGeocodificado).not.toHaveBeenCalled();
-    expect(m.clientes.marcarIntentoGeocodificacion).toHaveBeenCalledTimes(1);
-  });
-
-  it('un mapa que sí la halla manda sobre la estimación de Gemini', async () => {
-    const m = montarConGemini(() => Promise.resolve(ok({ calle: 'Los Olmos', numero: 88, estimada: { lat: -33.595, lng: -70.705 } })), (c) => Promise.resolve(c.startsWith('Los Olmos 88') ? hallado : err('SIN_RESULTADO' as const)));
-    expect(await m.caso('empresa-1', 'l-1')).toBe('fijado');
-    expect(m.clientes.fijarPinGeocodificado).toHaveBeenCalledWith('empresa-1', 'l-1', -33.6, -70.7, 0.6);
-  });
-
-  it('si el primer buscador ya la encontró, Gemini ni se consulta', async () => {
-    const m = montarConGemini(() => Promise.resolve(err('FALLO' as const)), () => Promise.resolve(hallado));
-    expect(await m.caso('empresa-1', 'l-1')).toBe('fijado');
-    expect(m.normalizar).not.toHaveBeenCalled();
-  });
-
-  it('si Gemini falla o no entiende la dirección, queda como antes: sin resultado y se anota el intento', async () => {
-    for (const e of ['FALLO', 'SIN_RESULTADO'] as const) {
-      const m = montarConGemini(() => Promise.resolve(err(e)), () => Promise.resolve(err('SIN_RESULTADO' as const)));
-      expect(await m.caso('empresa-1', 'l-1')).toBe('sin_resultado');
-      expect(m.clientes.marcarIntentoGeocodificacion).toHaveBeenCalledTimes(1);
-    }
-  });
-
-  it('si a Gemini se le acabó el cupo, se detiene sin anotar el intento (se vuelve a probar más tarde)', async () => {
-    const m = montarConGemini(() => Promise.resolve(err('LIMITE' as const)), () => Promise.resolve(err('SIN_RESULTADO' as const)));
-    expect(await m.caso('empresa-1', 'l-1')).toBe('detener');
-    expect(m.clientes.marcarIntentoGeocodificacion).not.toHaveBeenCalled();
-  });
-
-  it('si Gemini devuelve lo mismo que ya se buscó, no repite la búsqueda', async () => {
-    const m = montarConGemini(() => Promise.resolve(ok({ calle: 'Pje Los Olmoz 88 depto 3' })), () => Promise.resolve(err('SIN_RESULTADO' as const)));
-    // La dirección ya limpia es «Pasaje Los Olmoz 88»: otra escritura sí se busca, la idéntica no.
-    const antes = m.buscar.mock.calls.length;
-    await m.caso('empresa-1', 'l-1');
-    expect(m.buscar.mock.calls.length - antes).toBeLessThanOrEqual(2);
-  });
-
-  it('un punto hallado con el texto de Gemini sigue pasando por las mismas reglas: en otra comuna no se acepta', async () => {
-    const m = montarConGemini(() => Promise.resolve(ok({ calle: 'Los Olmos', numero: 88 })), () => Promise.resolve(ok({ lat: -33.4, lng: -70.6, precision: 'exacta' as const, comuna: 'Providencia' })));
-    expect(await m.caso('empresa-1', 'l-1')).toBe('sin_resultado');
-    expect(m.clientes.fijarPinGeocodificado).not.toHaveBeenCalled();
-  });
-
-  it('si un buscador falla al probar el texto de Gemini, se detiene sin anotar el intento', async () => {
-    let n = 0;
-    const m = montarConGemini(() => Promise.resolve(ok({ calle: 'Los Olmos', numero: 88 })), () => Promise.resolve(++n === 1 ? err('SIN_RESULTADO' as const) : err('RED' as const)));
-    expect(await m.caso('empresa-1', 'l-1')).toBe('detener');
-    expect(m.clientes.marcarIntentoGeocodificacion).not.toHaveBeenCalled();
+  it('un fallo de IA conserva el funcionamiento normal y rechaza coordenadas en otra comuna', async () => {
+    const s = montarIa(); s.normalizar.mockRejectedValue(new Error('sin cuota'));
+    expect(await s.caso('empresa-1', 'l-1')).toBe('sin_resultado'); expect(s.clientes.fijarPinGeocodificado).not.toHaveBeenCalled();
+    const otra = montarIa(); otra.buscar.mockResolvedValueOnce(err('SIN_RESULTADO')).mockResolvedValueOnce(ok({ lat: -33.59, lng: -70.71, precision: 'exacta', comuna: 'Buin' }));
+    expect(await otra.caso('empresa-1', 'l-1')).toBe('sin_resultado'); expect(otra.clientes.fijarPinGeocodificado).not.toHaveBeenCalled();
   });
 });

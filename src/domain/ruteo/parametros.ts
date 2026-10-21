@@ -15,7 +15,7 @@ export type ParametrosRuteo = {
   /**
    * ¿Los horarios de los locales gobiernan el orden? Si es false (la cercanía manda), el horario no cuesta nada al ordenar —ni riesgo, ni atraso,
    * ni espera— y las paradas que ya cerraron no se mandan al final: se ordenan por cercanía como las demás. El horario sigue sirviendo para avisar
-   * («llegaría a las 14:10 y cierra a las 13:00»). Es la decisión de la aplicación (ADR 0056); el motor puro lo deja en true.
+   * («llegaría a las 14:10 y cierra a las 13:00»). Es la decisión de la aplicación (ADR 0057); el motor puro lo deja en true.
    */
   readonly horariosGobiernan: boolean;
   /** w_j: costo de dejar sin atender una parada (ventana ya vencida). */
@@ -29,7 +29,7 @@ export type ParametrosRuteo = {
    */
   readonly epsPrioridad: number;
   /**
-   * Costo por minuto de llegada de CADA parada (0 = ninguno). Con un valor positivo la ruta prefiere visitar antes lo que queda cerca, como
+   * Costo por minuto de viaje acumulado hasta CADA parada (0 = ninguno), sin servicio ni espera. La ruta prefiere visitar antes lo que queda cerca, como
    * hacen los choferes: terminar un sector antes de saltar a otro, aunque el recorrido total quede algo más largo. Se calibra con lo que
    * los choferes de verdad hacen (el orden que se hace manda sobre el sugerido).
    */
@@ -39,12 +39,6 @@ export type ParametrosRuteo = {
    * parece al de entrega (correlación 0,8–0,9 en las rutas reales), así que es una pista de lo que el chofer piensa hacer.
    */
   readonly pesoOrdenCarga: number;
-  /**
-   * Lo mismo para las paradas cuya ubicación sí se conoce (pin exacto, o ubicadas por su calle y número). Si no se indica, vale `pesoOrdenCarga`.
-   * Ahí la geometría ya dice qué queda cerca de qué: seguir el orden de carga contra ella es lo que hace ir y volver por las mismas calles, así
-   * que la aplicación lo deja en 0. `pesoOrdenCarga` queda para las que no se sabe dónde están.
-   */
-  readonly pesoOrdenCargaPin?: number;
   /**
    * Costo (minutos) de volver a una calle que la ruta ya había dejado: cada calle se visita de una vez, con todos sus números juntos. Es un
    * castigo blando; un horario duro puede obligar a partirla.
@@ -107,13 +101,6 @@ export const EPS_LLEGADA_DESEMPATE = 0.005;
 export const PESO_ORDEN_CARGA_CALIBRADO = 1;
 
 /**
- * Peso del orden de carga para las paradas cuya ubicación se conoce (pin exacto, o ubicadas por su calle y número). Ahí la geometría sabe qué
- * queda cerca de qué; seguir además el orden en que se cargaron las facturas (que no sigue las calles) la saca de ahí y la hace ir y volver por
- * las mismas zonas. Solo guía a las que no se sabe dónde están, que es cuando de verdad ayuda.
- */
-export const PESO_ORDEN_CARGA_CON_PIN = 0;
-
-/**
  * Castigo (minutos) por volver a una calle que la ruta ya había dejado, en la ruta que arma la aplicación. Una calle se hace de una vez: 3, 7 y
  * 12 de «Calle X» seguidas y no «3, otra calle, 12». Es blando para que un horario duro, que sí puede partir una calle, siga mandando.
  */
@@ -136,11 +123,11 @@ export const PESO_CIERRE_APRENDIDO = 30;
 
 /**
  * ¿Los horarios gobiernan el orden de la ruta que arma la aplicación? No: la cercanía de las paradas es lo único firme; los horarios (cargados a
- * mano o aprendidos), las urgencias y los locales cerrados cambian durante el día y los maneja el chofer en terreno (ADR 0056). En 20 rutas
+ * mano o aprendidos), las urgencias y los locales cerrados cambian durante el día y los maneja el chofer en terreno (ADR 0057). En 20 rutas
  * simuladas de 30 paradas con horario en el 30 % de los locales, con los horarios mandando la ruta recorría 96 km y se cruzaba 5,7 veces; cuando
- * solo avisan, 73,5 km y 0,1 cruces (sin horarios: 70,9 km).
+ * solo avisan, 73 km y 0,1 cruces (sin horarios: 70,9 km).
  */
 export const HORARIOS_GOBIERNAN_EL_ORDEN = false;
 
-/** Con los horarios sin gobernar: no cuestan nada al ordenar. Lo aprendido sobre cierres conserva un peso ínfimo solo para seguir avisando CIERRE_PROBABLE. */
-export const PARAMETROS_HORARIOS_SOLO_AVISAN = Object.freeze({ horariosGobiernan: false, penalizacionRiesgo: 0, mu: 0, omega: 0, pesoCierreAprendido: 0.001 });
+/** Con los horarios sin gobernar: no cuestan nada al ordenar. El aviso de cierre probable sigue (`avisarCierresAprendidos`). */
+export const PARAMETROS_HORARIOS_SOLO_AVISAN = Object.freeze({ horariosGobiernan: false, penalizacionRiesgo: 0, mu: 0, omega: 0 });

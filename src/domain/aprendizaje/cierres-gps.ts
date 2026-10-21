@@ -4,14 +4,14 @@ import { mediana, type EventoObs, type LocalObs, type PosicionObs } from './anal
 
 /**
  * ¿Se puede saber que un local estaba cerrado solo por el recorrido del camión, sin que el chofer toque CERRADO? (ADR 0046)
- * Hipótesis: el camión llega, se queda muy poco junto al pin, se va sin entregar y después vuelve (o entrega más tarde). Aquí no se decide nada
+ * Las visitas breves y los reintentos son candidatos a revisión, no evidencia de cierre. Aquí no se decide nada
  * en la ruta: se junta lo que dice el GPS y se compara con lo que dicen los botones para saber si la hipótesis se sostiene.
  */
 
 /** A cuántos metros del pin se considera que el camión estaba en el local. */
 export const RADIO_CIERRE_M = 80;
 const PRECISION_MAXIMA_M = 60;
-/** Más que esto sin entregar ya no es «llegó, vio que estaba cerrado y se fue». */
+/** Umbral histórico de visita breve para revisión, nunca una clasificación de cerrado. */
 export const PERMANENCIA_CIERRE_MAX_MIN = 5;
 /** Entre dos puntos más separados que esto no se sabe qué pasó (la app estuvo cerrada). */
 const HUECO_MAXIMO_MIN = 10;
@@ -35,7 +35,7 @@ const tramosJuntoAlPin = (recorrido: readonly PosicionObs[], pin: { readonly lat
   for (let i = 0; i < recorrido.length; i += 1) {
     if (!cerca[i]) continue;
     let j = i;
-    while (j + 1 < recorrido.length && cerca[j + 1]) j += 1;
+    while (j + 1 < recorrido.length && cerca[j + 1] && ms(recorrido[j + 1]?.tomadoEn ?? new Date(0)) - ms(recorrido[j]?.tomadoEn ?? new Date(0)) <= HUECO_MAXIMO_MIN * 60_000) j += 1;
     const puntos = recorrido.slice(i, j + 1);
     const primero = recorrido[i];
     const ultimo = recorrido[j];
@@ -100,7 +100,11 @@ const esAvisoDeCerrado = (e: EventoObs): boolean => e.tipo === 'cerrado' || (e.t
 
 export const validarCierresPorGps = (eventos: readonly EventoObs[], locales: ReadonlyMap<string, LocalObs>, posiciones: readonly PosicionObs[]): ValidacionCierres => {
   const recorridos = new Map<string, PosicionObs[]>();
-  for (const p of posiciones) recorridos.set(p.camionId, [...(recorridos.get(p.camionId) ?? []), p]);
+  for (const p of posiciones) {
+    const clave = `${p.camionId}|${fechaEnChile(p.tomadoEn)}`;
+    const lista = recorridos.get(clave) ?? [];
+    lista.push(p); recorridos.set(clave, lista);
+  }
   for (const r of recorridos.values()) r.sort((a, b) => ms(a.tomadoEn) - ms(b.tomadoEn));
 
   const porFactura = new Map<string, EventoObs[]>();
@@ -115,8 +119,8 @@ export const validarCierresPorGps = (eventos: readonly EventoObs[], locales: Rea
   for (const [facturaId, evs] of porFactura) {
     const camionId = evs.find((e) => e.camionId !== undefined)?.camionId;
     const local = locales.get(evs[0]?.localId ?? '');
-    const recorrido = camionId !== undefined ? recorridos.get(camionId) : undefined;
     const dias = new Set(evs.map((e) => fechaEnChile(e.creadoEn)));
+    const recorrido = camionId !== undefined ? [...dias].flatMap((dia) => recorridos.get(`${camionId}|${dia}`) ?? []).sort((a, b) => ms(a.tomadoEn) - ms(b.tomadoEn)) : undefined;
     const tramos = camionId !== undefined && local?.lat !== undefined && local.lng !== undefined && recorrido
       ? tramosJuntoAlPin(recorrido, { lat: local.lat, lng: local.lng }).filter((t) => dias.has(fechaEnChile(t.llegada)))
       : [];

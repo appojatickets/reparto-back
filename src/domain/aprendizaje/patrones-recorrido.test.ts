@@ -1,0 +1,8 @@
+import {describe,expect,it} from 'vitest';
+import {patronesRecorrido,preferenciasRecorrido} from './patrones-recorrido.js';
+const locales=new Map([['A',{id:'A',comuna:'Uno',lat:-33.5,lng:-70.7}],['B',{id:'B',comuna:'Dos',lat:-33.5,lng:-70.7}],['C',{id:'C',comuna:'Tres',lat:-33.5,lng:-70.7}]]);
+const dia=(fecha:string,orden=['A','B','C'])=>orden.map((localId,i)=>({lat:-33.5,lng:-70.7,precisionM:10,facturaId:fecha+localId,localId,camionId:'k',usuarioId:'u',tipo:'llegada' as const,creadoEn:new Date(`${fecha}T${String(12+i).padStart(2,'0')}:00:00Z`)}));
+describe('patrones de recorridos observados',()=>{
+ it('requiere días distintos y aprende pares, ternas y comuna inicial',()=>{const uno=dia('2026-10-03');expect(patronesRecorrido([...uno,...uno,...uno],locales)).toEqual([]);const p=patronesRecorrido([...uno,...dia('2026-10-10'),...dia('2026-10-17')],locales);expect(p).toContainEqual(expect.objectContaining({tipo:'local',antes:['A','B'],despues:'C',dia:6,dias:3}));expect(p).toContainEqual(expect.objectContaining({tipo:'inicio_comuna',despues:'Uno'}));});
+ it('el patrón de sábado de la persona prevalece sobre el global y no se aplica el lunes',()=>{const p=[{tipo:'local' as const,antes:['A'],despues:'B',ambito:'global',dia:null,dias:9,frecuencia:1},{tipo:'local' as const,antes:['A'],despues:'C',ambito:'usuario:u',dia:6,dias:3,frecuencia:1}];const items=['A','B','C'].map(id=>({facturaId:id,localId:id,comuna:id}));expect(preferenciasRecorrido(p,items,'otro','u','2026-10-24')).toEqual([{antes:'A',despues:'C',peso:1.5}]);expect(preferenciasRecorrido(p,items,'otro','u','2026-10-26')).toEqual([{antes:'A',despues:'B',peso:1.5}]);});
+});

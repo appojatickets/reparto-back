@@ -1,3 +1,8 @@
+import { crearGeminiPines } from './adapters/out/red/gemini-pines.js';
+import { crearVisitasPendientes } from './application/use-cases/visitas-pendientes.js';
+import { asegurarEsquemaCajas } from './adapters/out/postgres/esquema-cajas.js';
+import { crearControlCajas } from './application/use-cases/cajas.js';
+import { PostgresCajasRepository } from './adapters/out/postgres/repositorio-cajas.js';
 import { crearVerTrazado } from './application/use-cases/trazado.js';
 import { crearTrazadoOrs } from './adapters/out/red/ors-trazado.js';
 import { checkHealth } from './application/use-cases/check-health.js';
@@ -60,7 +65,6 @@ import { crearColaGeocodificacion } from './application/use-cases/cola-geocodifi
 import { crearGeocodificarLocal } from './application/use-cases/geocodificar-local.js';
 import { crearNominatimGeocodificador } from './adapters/out/red/nominatim-geocodificador.js';
 import { crearOrsGeocodificador } from './adapters/out/red/ors-geocodificador.js';
-import { crearGeminiNormalizador } from './adapters/out/red/gemini-normalizador.js';
 import { crearFijarPinDesdeEnlace } from './application/use-cases/pin-desde-enlace.js';
 import { crearResolvedorEnlacesHttp } from './adapters/out/red/resolvedor-enlaces-http.js';
 import { PostgresFotoReporteRepository } from './adapters/out/postgres/repositorio-fotos.js';
@@ -94,6 +98,7 @@ const facturas = new PostgresFacturaRepository(db);
 const empresas = new PostgresEmpresaRepository(db);
 const rutas = new PostgresRutaRepository(db);
 const horarios = new PostgresHorarioRepository(db);
+await asegurarEsquemaCajas(db);
 const jornadas = new PostgresJornadaRepository(db);
 const entregas = new PostgresEntregaRepository(db);
 const emergencias = new PostgresEmergenciaRepository(db);
@@ -105,13 +110,12 @@ const clock = relojDelSistema;
 
 // Casos de uso con sus puertos inyectados
 const resolverCamion = crearResolverCamion({ jornadas, clock });
+const esperarGeocodificacion = (ms: number): Promise<void> => new Promise(resolver => { setTimeout(resolver, ms); });
+console.info('Gemini direcciones:', !env.GEMINI_ENABLED ? 'desactivado' : env.GEMINI_API_KEY ? 'habilitado' : 'sin clave; se mantienen los mapas habituales');
 // Búsqueda del pin por la dirección: una cola en memoria, de a uno por segundo, que no hace esperar a nadie.
-const esperar = (ms: number): Promise<void> => new Promise((resolver) => { setTimeout(resolver, ms); });
-// Gemini (gratis, opcional) solo ordena las direcciones que ningún buscador encontró; puede fallar y entonces todo queda como antes.
-const normalizador = env.GEMINI_API_KEY ? crearGeminiNormalizador({ clave: env.GEMINI_API_KEY, modelo: env.GEMINI_MODEL, esperar, ahora: () => clock.now().getTime() }) : undefined;
 const colaDePines = crearColaGeocodificacion({
-  geocodificar: crearGeocodificarLocal({ clientes, geocodificadores: [crearNominatimGeocodificador(env.GEOCODER_USER_AGENT), ...(env.ORS_API_KEY ? [crearOrsGeocodificador(env.ORS_API_KEY)] : [])], clock, ...(normalizador ? { normalizador } : {}) }),
-  esperar,
+  geocodificar: crearGeocodificarLocal({ clientes, esperar: esperarGeocodificacion, buscadorIA: env.GEMINI_ENABLED && env.GEMINI_API_KEY ? crearGeminiPines({ clave: env.GEMINI_API_KEY, modelo: env.GEMINI_MODEL, limiteDiario: env.GEMINI_DAILY_LIMIT, alEstado: estado => { console.info('Gemini direcciones:', estado); } }) : undefined, geocodificadores: [crearNominatimGeocodificador(env.GEOCODER_USER_AGENT), ...(env.ORS_API_KEY ? [crearOrsGeocodificador(env.ORS_API_KEY)] : [])], clock }),
+  esperar: esperarGeocodificacion,
 });
 const programarPines = (empresaId: string, localIds: readonly string[]): void => { colaDePines.encolar(empresaId, localIds); };
 const aprendizaje = new PostgresAprendizajeRepository(db);
@@ -128,7 +132,7 @@ const analizarAprendizaje: typeof analizarSoloAprendizaje = async (empresaId) =>
 };
 
 // El analizador corre en segundo plano: poco después de terminar una ruta (con calma, juntando varias) y cada pocas horas. Nunca bloquea una petición.
-const CADA_HORAS = 3;
+const CADA_HORAS = 1;
 let analizando = false;
 let programado: NodeJS.Timeout | undefined;
 const analizarTodo = async (): Promise<void> => {
@@ -149,6 +153,8 @@ const analizarPronto = (): void => {
 };
 const terminarJornada = crearTerminarJornada({ jornadas, facturas, rutas, registro, clock });
 const casos: CasosDeUso = {
+  visitasPendientes: crearVisitasPendientes({ registro, rutas, clock, resolverCamion }),
+  cajas: crearControlCajas({ cajas: new PostgresCajasRepository(db), jornadas, clock }),
   checkHealth: () => checkHealth({ db: dbHealth, clock, ...(env.RENDER_GIT_COMMIT ? { version: env.RENDER_GIT_COMMIT.slice(0, 7) } : {}) }),
   autenticar: crearAutenticarUsuario({ identidad, usuarios, clock }),
   iniciarSesion: crearIniciarSesion({ identidad, usuarios, intentos, clock, dominioCorreo: env.AUTH_EMAIL_DOMAIN }),

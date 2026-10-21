@@ -1,3 +1,5 @@
+import type { crearVisitasPendientes } from '../../../application/use-cases/visitas-pendientes.js';
+import type { crearControlCajas } from '../../../application/use-cases/cajas.js';
 import type { crearVerTrazado } from '../../../application/use-cases/trazado.js';
 import type { HealthReport } from '../../../application/use-cases/check-health.js';
 import type { crearActualizarLocal } from '../../../application/use-cases/actualizar-local.js';
@@ -40,6 +42,8 @@ import type { crearRefrescarSesion } from '../../../application/use-cases/refres
 
 /** Todo lo que el adaptador HTTP necesita del resto de la aplicación; `main` lo arma y lo inyecta. */
 export type CasosDeUso = {
+  readonly visitasPendientes: ReturnType<typeof crearVisitasPendientes>;
+  readonly cajas: ReturnType<typeof crearControlCajas>;
   readonly checkHealth: () => Promise<HealthReport>;
   readonly autenticar: ReturnType<typeof crearAutenticarUsuario>;
   readonly iniciarSesion: ReturnType<typeof crearIniciarSesion>;

@@ -1,3 +1,6 @@
+import { patronesRecorrido } from '../../domain/aprendizaje/patrones-recorrido.js';
+import { servicioGpsAprendido } from '../../domain/aprendizaje/servicio-gps.js';
+import { jornadasObservadas } from '../../domain/seguimiento/jornada-observada.js';
 import {
   atenciones, calidadDeJornada, jornadasDelEquipo, capacidadAprendida, cierresFrecuentes, completarConVisitas, pinesDudosos, pinesSugeridos, resumenesDelDia, ritmoAprendido, seguimientoDeLaRuta, servicioAprendido, tramosDeViaje, visitasDeducidas, type EventoObs, type LocalObs, type ParametroAprendido,
 } from '../../domain/aprendizaje/analisis.js';
@@ -26,6 +29,10 @@ const resumenDeFichas = (porLocal: ReadonlyMap<string, readonly EventoObs[]>): {
   return { locales: porLocal.size, conHoraHabitual, conCierreProbable };
 };
 
+/** La cobertura debe respaldar la jornada registrada entera, no solo el fragmento con GPS. */
+const registradoCompleto = (observados: number | undefined, registrados: number | undefined): boolean =>
+  observados !== undefined && registrados !== undefined && registrados > 0 && observados / registrados >= 0.8;
+
 /** Se mira lo de los últimos 90 días: lo viejo ya no representa cómo se reparte hoy. */
 export const VENTANA_ANALISIS_DIAS = 90;
 
@@ -42,15 +49,27 @@ export const crearAnalizarAprendizaje = ({ aprendizaje, empresas, pines, clock }
     const locales = new Map<string, LocalObs>(datos.locales.map((l) => [l.id, l]));
 
     // Casi nadie avisa LLEGUÉ y ENTREGADO se toca al llegar: la atención y el viaje se miden con el recorrido del camión.
-    const visitas = completarConVisitas(datos.eventos, visitasDeducidas(datos.eventos, locales, datos.posiciones));
+    const medidasGps = visitasDeducidas(datos.eventos, locales, datos.posiciones.filter((p) => p.precisionM !== undefined && p.precisionM <= 60));
+    const visitas = completarConVisitas(datos.eventos, medidasGps);
+    const config = await empresas.obtenerConfig(empresaId);
+    const gps = jornadasObservadas(datos.posiciones, datos.eventos, datos.jornadas, config?.deposito);
+    const dias = resumenesDelDia(datos.eventos).map((d) => {
+      const observado = gps.find((g) => g.camionId === d.camionId && g.fecha === d.fecha);
+      const registrada = observado?.inicioRegistrado && observado.finRegistrado
+        ? (Date.parse(observado.finRegistrado) - Date.parse(observado.inicioRegistrado)) / 60_000 : undefined;
+      const cubreJornada = registradoCompleto(observado?.minutosObservados, registrada);
+      const duracion = cubreJornada && observado?.jornadaCerrada && observado.salidaDeposito && observado.regresoDeposito && observado.cobertura >= 0.8
+        ? (Date.parse(observado.regresoDeposito) - Date.parse(observado.salidaDeposito)) / 60_000 : undefined;
+      return duracion !== undefined && duracion >= 5 ? { ...d, duracionMin: Math.round(duracion) } : d;
+    });
     const parametros: ParametroAprendido[] = [
+      ...servicioGpsAprendido(medidasGps),
       ...servicioAprendido(atenciones(visitas.eventos, visitas.salidas)),
       ...ritmoAprendido(tramosDeViaje(visitas.eventos, locales, visitas.salidas)),
-      ...capacidadAprendida(resumenesDelDia(datos.eventos)),
+      ...capacidadAprendida(dias),
     ];
     await aprendizaje.guardarParametros(empresaId, parametros, iniciadoEn);
 
-    const config = await empresas.obtenerConfig(empresaId);
     const deposito = config?.deposito;
     const calidad = deposito ? jornadasDelEquipo(datos.jornadas).flatMap((j) => { const q = calidadDeJornada(j, visitas.eventos, datos.operaciones, locales, deposito); return q ? [q] : []; }) : [];
     if (calidad.length > 0) await aprendizaje.guardarCalidad(empresaId, calidad, iniciadoEn);
@@ -71,6 +90,8 @@ export const crearAnalizarAprendizaje = ({ aprendizaje, empresas, pines, clock }
     for (const [usuarioId, propuestas] of porProponente) pinesProponidos += await pines.crearLote(empresaId, usuarioId, propuestas);
 
     const resumen: ResumenAnalisis = {
+      patronesRecorrido: patronesRecorrido(datos.eventos,locales,datos.jornadas).map(p=>({...p,etiquetas:[...p.antes,p.despues].map(id=>p.tipo==='local'?datos.locales.find(l=>l.id===id)?.direccion??'Local sin dirección':id)})),
+      jornadasGps: gps.slice(0, 60),
       eventos: datos.eventos.length, jornadas: datos.jornadas.length, parametros: parametros.length, jornadasComparadas: calidad.length,
       pinesSugeridos: sugeridos.length, pinesProponidos, seguimientoRuta: seguimientoDeLaRuta(datos.eventos, datos.operaciones), llegadasDeducidas: visitas.llegadasDeducidas,
       pinesDudosos: pinesDudosos(datos.eventos, locales).slice(0, 20), cierresFrecuentes: cierresFrecuentes(datos.eventos).slice(0, 20),

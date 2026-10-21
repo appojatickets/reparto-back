@@ -2,15 +2,53 @@ import { sql } from 'kysely';
 import type { EntregaRepository, NuevoEvento, PosicionConocida } from '../../../application/ports/out/entregas.js';
 import type { VisitaConGps } from '../../../domain/entidades/respaldo-del-pin.js';
 import type { Db } from './client.js';
+import { visitasIndependientes, type EntregaParaPin } from '../../../domain/entidades/pin-gemini.js';
 
 export class PostgresEntregaRepository implements EntregaRepository {
   constructor(private readonly db: Db) {}
+
+  async visitasDetenidasDeLocales(empresaId: string, localIds: readonly string[], porLocal: number): Promise<ReadonlyMap<string, readonly VisitaConGps[]>> {
+    if (localIds.length === 0) return new Map();
+    type Fila = { local_id: string; factura_id: string; lat: number; lng: number; precision_m: number; creado_en: Date; puntos: { lat: number; lng: number; precisionM: number; velocidadMs: number | null; en: string }[] };
+    const { rows } = await sql<Fila>`
+      with unicas as (
+        select distinct on (e.factura_id) e.* from entrega_evento e
+        where e.empresa_id = ${empresaId} and e.local_id in (${sql.join(localIds)})
+          and e.tipo = 'entregado' and e.lat is not null and e.lng is not null
+          and e.precision_m between 0 and 30 and e.camion_id is not null
+          and e.creado_en >= now() - interval '180 days'
+        order by e.factura_id, e.creado_en desc
+      ), recientes as (
+        select u.*, row_number() over(partition by u.local_id order by u.creado_en desc) as n from unicas u
+      )
+      select e.local_id, e.factura_id, e.lat, e.lng, e.precision_m, e.creado_en,
+        coalesce(g.puntos, '[]'::jsonb) as puntos
+      from recientes e
+      left join lateral (
+        select jsonb_agg(jsonb_build_object('lat', p.lat, 'lng', p.lng, 'precisionM', p.precision_m, 'velocidadMs', p.velocidad_ms, 'en', p.tomado_en) order by p.tomado_en) as puntos
+        from posicion_camion p
+        where p.empresa_id = ${empresaId} and p.camion_id = e.camion_id
+          and p.tomado_en between e.creado_en - interval '10 minutes' and e.creado_en + interval '2 minutes'
+          and p.precision_m between 0 and 30
+      ) g on true
+      where e.n <= ${Math.max(1, Math.min(100, porLocal))}
+      order by e.creado_en desc
+    `.execute(this.db);
+    const grupos = new Map<string, EntregaParaPin[]>();
+    for (const f of rows) {
+      const e: EntregaParaPin = { facturaId: f.factura_id, lat: f.lat, lng: f.lng, precisionM: f.precision_m, en: f.creado_en,
+        puntos: f.puntos.map(p => ({ lat: p.lat, lng: p.lng, precisionM: p.precisionM, en: new Date(p.en), ...(p.velocidadMs !== null ? { velocidadMs: p.velocidadMs } : {}) })) };
+      const grupo = grupos.get(f.local_id) ?? []; grupo.push(e); grupos.set(f.local_id, grupo);
+    }
+    return new Map([...grupos].map(([id, es]) => [id, visitasIndependientes(es)]));
+  }
 
   async registrar(empresaId: string, e: NuevoEvento): Promise<void> {
     await this.db.transaction().execute(async (trx) => {
       await trx
         .insertInto('entrega_evento')
         .values({
+          ...(e.ocurridoEn ? { creado_en: e.ocurridoEn } : {}),
           empresa_id: empresaId,
           factura_id: e.facturaId,
           local_id: e.localId,

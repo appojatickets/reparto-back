@@ -27,11 +27,12 @@ describe('evaluación de una ruta', () => {
     expect(it.regreso).toBe(555);
   });
 
-  it('con costo por llegada, cada parada suma ε por cada minuto que tarda en llegar (visitar antes lo cercano sale más barato)', () => {
+  it('la cercanía suma solo el viaje acumulado y excluye el tiempo de descarga', () => {
     const sinEps = compilar(problemaPlano([parada('B'), parada('C')]));
     const conEps = compilar({ ...problemaPlano([parada('B'), parada('C')]), parametros: { ...problemaPlano([]).parametros, epsLlegada: 0.5 } });
-    // B llega a +10 min y C a +25 min (10 de viaje + 5 de servicio + 10 de viaje): 0,5·(10 + 25) = 17,5
-    expect(evaluar(conEps, [0, 1], 2) - evaluar(sinEps, [0, 1], 2)).toBeCloseTo(17.5, 9);
+    // B acumula 10 min de viaje y C 20; los 5 de servicio sí permanecen en su ETA.
+    expect(evaluar(conEps, [0, 1], 2) - evaluar(sinEps, [0, 1], 2)).toBeCloseTo(15, 9);
+    expect(detallar(conEps, [0, 1]).llegada).toEqual([490, 505]);
   });
 
   it('volver a una calle que ya se había dejado cuesta pesoCalle, una sola vez por cada vuelta; seguir en ella no cuesta', () => {
@@ -51,22 +52,6 @@ describe('evaluación de una ruta', () => {
     const con = compilar({ ...base, parametros: { ...base.parametros, pesoCalle: 7 } });
     const sin = compilar(base);
     for (let i = 0; i < 3; i++) expect(evaluar(con, [0, 1, 2], 3) - evaluar(sin, [0, 1, 2], 3)).toBeCloseTo(7, 9);
-  });
-
-  it('el peso del orden de carga depende de si la ubicación es conocida: sin pesoOrdenCargaPin vale el mismo para todas', () => {
-    const ps = [parada('A', { ordenCarga: 0 }), parada('B', { ordenCarga: 1, ubicacionIncierta: true })];
-    const base = problemaPlano(ps);
-    const iguales = compilar({ ...base, parametros: { ...base.parametros, pesoOrdenCarga: 2 } });
-    const distintos = compilar({ ...base, parametros: { ...base.parametros, pesoOrdenCarga: 2, pesoOrdenCargaPin: 0 } });
-    const sin = compilar(base);
-    // [B, A]: cada una está a un lugar de donde le toca
-    expect(evaluar(iguales, [1, 0], 2) - evaluar(sin, [1, 0], 2)).toBeCloseTo(4, 9);
-    expect(evaluar(distintos, [1, 0], 2) - evaluar(sin, [1, 0], 2)).toBeCloseTo(2, 9);
-  });
-
-  it('las paradas que comparten lugar de carga comparten rango: el orden de carga no prefiere ninguna entre ellas', () => {
-    const base = problemaPlano([parada('A', { ordenCarga: 3 }), parada('B', { ordenCarga: 3 }), parada('C', { ordenCarga: 9 })]);
-    expect(Array.from(compilar(base).rangoCarga)).toEqual([0, 0, 2]);
   });
 
   it('detallar y evaluar coinciden', () => {
@@ -112,4 +97,22 @@ describe('evaluación de una ruta', () => {
     const p = compilar(problemaPlano([parada('A', { prioridad: true }), parada('B')]));
     expect(evaluar(p, [0, 1], 2)).toBeLessThan(evaluar(p, [1, 0], 2));
   });
+  it('las secuencias aprendidas solo añaden una pista acotada, sin vencer una ventana dura',()=>{
+    const p=problemaPlano([parada('A'),parada('B',{ventanas:[v(480,500)]})],{preferenciasRecorrido:[{antes:'A',despues:'B',peso:1000}]});
+    const c=compilar(p);
+    expect(evaluar(c,[1,0],2)).toBeLessThan(evaluar(c,[0,1],2));
+    const sin=compilar({...p,preferenciasRecorrido:[]});
+    expect(evaluar(c,[1,0],2)-evaluar(sin,[1,0],2)).toBeCloseTo(1/60,9);
+  });
+
+  it('cien preferencias aprendidas juntas no añaden más de un segundo por ruta', () => {
+    const p = problemaPlano([parada('A'), parada('B')], {
+      preferenciasRecorrido: Array.from({ length: 100 }, () => ({ antes: 'A', despues: 'B', peso: 1.5 })),
+    });
+    const c = compilar(p);
+    const sin = compilar({ ...p, preferenciasRecorrido: [] });
+    expect(evaluar(c, [1, 0], 2) - evaluar(sin, [1, 0], 2)).toBeCloseTo(1 / 60, 9);
+    expect(evaluar(c, [0, 1], 2)).toBe(evaluar(sin, [0, 1], 2));
+  });
+
 });

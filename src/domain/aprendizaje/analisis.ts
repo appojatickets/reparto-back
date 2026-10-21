@@ -50,7 +50,7 @@ export type OperacionObs = {
   readonly creadoEn: Date;
 };
 
-export type JornadaObs = { readonly id: string; readonly camionId: string; readonly fecha: string; readonly desde: Date; readonly hasta?: Date };
+export type JornadaObs = { readonly usuarioId?: string; readonly id: string; readonly camionId: string; readonly fecha: string; readonly desde: Date; readonly hasta?: Date };
 
 const ms = (d: Date): number => d.getTime();
 const redondear = (x: number, decimales = 3): number => Math.round(x * 10 ** decimales) / 10 ** decimales;
@@ -417,7 +417,8 @@ export const cierresFrecuentes = (eventos: readonly EventoObs[]): readonly Cierr
 /** A cuántos metros del pin se considera que el camión estaba en el local. */
 export const RADIO_VISITA_M = 80;
 const PRECISION_VISITA_DEDUCIDA_M = 60;
-const VENTANA_VISITA_MIN = 40;
+// Un aviso muy posterior no permite atribuir una visita anterior al resultado de hoy.
+const VENTANA_VISITA_MIN = 2;
 /** Entre dos puntos del recorrido, más separados que esto no se sabe qué pasó (la app estuvo cerrada). */
 const HUECO_MAXIMO_MIN = 10;
 
@@ -433,12 +434,12 @@ const mitad = (a: Date, b: Date): Date => new Date((ms(a) + ms(b)) / 2);
  */
 export const visitasDeducidas = (eventos: readonly EventoObs[], locales: ReadonlyMap<string, LocalObs>, posiciones: readonly PosicionObs[]): readonly VisitaDeducida[] => {
   const porCamion = new Map<string, PosicionObs[]>();
-  for (const [camionId, lista] of porClave(posiciones, (p) => p.camionId)) porCamion.set(camionId, [...lista].sort((a, b) => ms(a.tomadoEn) - ms(b.tomadoEn)));
+  for (const [clave, lista] of porClave(posiciones, (p) => `${p.camionId}|${dia(p.tomadoEn)}`)) porCamion.set(clave, [...lista].sort((a, b) => ms(a.tomadoEn) - ms(b.tomadoEn)));
   const salida: VisitaDeducida[] = [];
   for (const e of eventos) {
     if (e.tipo !== 'entregado' || e.camionId === undefined) continue;
     const l = locales.get(e.localId);
-    const recorrido = porCamion.get(e.camionId);
+    const recorrido = porCamion.get(`${e.camionId}|${dia(e.creadoEn)}`);
     if (l?.lat === undefined || l.lng === undefined || !recorrido) continue;
     const pin = { lat: l.lat, lng: l.lng };
     const cerca = recorrido.map((p) => (p.precisionM === undefined || p.precisionM <= PRECISION_VISITA_DEDUCIDA_M) && distanciaKm(p, pin) * 1000 <= RADIO_VISITA_M);
@@ -449,7 +450,7 @@ export const visitasDeducidas = (eventos: readonly EventoObs[], locales: Readonl
     for (let i = 0; i < recorrido.length; i += 1) {
       if (!cerca[i]) continue;
       let j = i;
-      while (j + 1 < recorrido.length && cerca[j + 1]) j += 1;
+      while (j + 1 < recorrido.length && cerca[j + 1] && ms(recorrido[j + 1]?.tomadoEn ?? new Date(0)) - ms(recorrido[j]?.tomadoEn ?? new Date(0)) <= HUECO_MAXIMO_MIN * 60_000) j += 1;
       const inicio = ms(recorrido[i]?.tomadoEn ?? new Date(0));
       const fin = ms(recorrido[j]?.tomadoEn ?? new Date(0));
       if (inicio <= entrega + 60_000 && fin >= entrega - VENTANA_VISITA_MIN * 60_000) {

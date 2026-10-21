@@ -18,6 +18,7 @@ const aJson = (j: JornadaConAsignacion) => ({ id: j.id, fecha: j.fecha, desde: j
 export const rutasJornada = ({ app, casos, guard }: ContextoRutas): void => {
   const a = tipada(app);
 
+  a.get('/v1/jornada/visitas', { preHandler:guard('jornada:gestionar'), schema:{ tags:['jornada'],security:SEGURIDAD,response:{200:z.array(z.object({facturaId:z.string(),localId:z.string(),cliente:z.string(),llegada:z.string(),estado:z.enum(['en_local','sin_confirmar'])})),...RESPUESTAS_ERROR} } },async(req,reply)=>{const r=await casos.visitasPendientes(actor(req));return r.ok?reply.send([...r.value]):enviarError(reply,r.error);});
   a.get(
     '/v1/jornada',
     {
@@ -70,6 +71,7 @@ export const rutasJornada = ({ app, casos, guard }: ContextoRutas): void => {
       },
     },
     async (req, reply) => {
+      // El control de cajas es opcional; sin confirmar no genera una ganancia confirmada.
       const r = await casos.terminarJornada(actor(req));
       return reply.send({ resumen: r ? { ...r, desde: r.desde.toISOString(), hasta: r.hasta.toISOString() } : null });
     },

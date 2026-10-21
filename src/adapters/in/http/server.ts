@@ -1,3 +1,4 @@
+import { rutasCajas } from './rutas/cajas.js';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
@@ -44,6 +45,14 @@ export const buildServer = async (deps: HttpDeps): Promise<FastifyInstance> => {
   const app = Fastify({ logger: deps.logger ?? false, trustProxy: true });
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
+
+  // Android HttpURLConnection antiguo agrega form a POST sin cuerpo. Solo tolerar
+  // el cuerpo vacío de estas acciones; no habilitar formularios para el resto de la API.
+  app.addContentTypeParser('application/x-www-form-urlencoded', { parseAs: 'string' }, (req, body, done) => {
+    const accionVacia = req.method === 'POST' && ['/v1/jornada/terminar', '/v1/analitica/ejecutar'].includes(req.routeOptions.url ?? '');
+    if (accionVacia && body.length === 0) { done(null, undefined); return; }
+    done(Object.assign(new Error('El formato enviado no está admitido.'), { statusCode: 415 }));
+  });
 
   // Forma única de error también para datos mal formados (zod) y para fallas inesperadas (sin filtrar detalles).
   app.setErrorHandler((error, req, reply) => {
@@ -94,6 +103,7 @@ export const buildServer = async (deps: HttpDeps): Promise<FastifyInstance> => {
   rutasDelDia(contexto);
   rutasHorarios(contexto);
   rutasJornada(contexto);
+  rutasCajas(contexto);
   rutasAnalitica(contexto);
   rutasEntregas(contexto);
   rutasEmergencias(contexto);

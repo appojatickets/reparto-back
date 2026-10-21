@@ -13,6 +13,7 @@ describe('loadEnv', () => {
   it('aplica valores por defecto', () => {
     const env = loadEnv(valid);
     expect(env.PORT).toBe(3000);
+    expect(env.GEMINI_ENABLED).toBe(false);
     expect(env.NODE_ENV).toBe('development');
     expect(env.AUTH_EMAIL_DOMAIN).toBe('usuarios.reparto.test');
     expect(env.SUPABASE_ANON_KEY).toBeUndefined();
@@ -31,4 +32,18 @@ describe('loadEnv', () => {
       expect((e as InvalidEnvError).issues.join()).toContain('JOB_TOKEN');
     }
   });
+});
+
+it('interpreta la bandera de Gemini sin activar por error el texto false', () => {
+  expect(loadEnv({ ...valid, GEMINI_ENABLED: 'false' }).GEMINI_ENABLED).toBe(false);
+  expect(loadEnv({ ...valid, GEMINI_ENABLED: 'true' }).GEMINI_ENABLED).toBe(true);
+  expect(() => loadEnv({ ...valid, GEMINI_ENABLED: 'si' })).toThrow(InvalidEnvError);
+});
+
+it('configura Gemini como ayuda opcional sin impedir que arranque la app sin clave', () => {
+  expect(loadEnv(valid).GEMINI_MODEL).toBe('gemini-3.5-flash-lite');
+  expect(loadEnv(valid).GEMINI_DAILY_LIMIT).toBe(50);
+  expect(loadEnv({ ...valid, GEMINI_API_KEY: '  ' }).GEMINI_API_KEY).toBeUndefined();
+  expect(loadEnv({ ...valid, GEMINI_API_KEY: ' valor-prueba ', GEMINI_ENABLED: 'true' }).GEMINI_API_KEY).toBe('valor-prueba');
+  expect(() => loadEnv({ ...valid, GEMINI_DAILY_LIMIT: '0' })).toThrow(InvalidEnvError);
 });

@@ -319,8 +319,3 @@ La ley rige desde el 1-dic-2026 (hay un proyecto para aplazarla, aún en trámit
 - Migraciones de la Fase 2 aplicadas en Supabase (7 tablas con RLS activado y sin políticas, bucket privado `fotos`); extensiones `pg_trgm`, `unaccent`, `postgis` habilitadas.
 - Fila de `empresa` creada (nombre provisorio «Mi empresa»; se puede renombrar desde la configuración cuando exista).
 - Despliegue automático: cada push a `main` redespliega Render y Vercel.
-
-## Gemini para direcciones que ningún mapa encuentra (ADR 0055)
-
-- [ ] Render → `reparto-back` → **Environment**: la clave gratuita de Gemini debe llamarse **`GEMINI_API_KEY`** (si la cargaste con otro nombre, renómbrala). Opcional: `GEMINI_MODEL` (por defecto `gemini-flash-lite-latest`). Nunca pegues la clave en el chat. Si algo te pide tarjeta, detente y avísame.
-- Sin la variable todo sigue igual; si Gemini falla o se queda sin cupo, la dirección queda «sin resultado» como hoy y se reintenta después.
