@@ -203,7 +203,7 @@ const casos: CasosDeUso = {
   actualizarVendedor: crearActualizarVendedor({ vendedores }),
   aplicarPlanilla: crearAplicarPlanilla({ camiones, vendedores, usuarios, planillas, jornadas, clock }),
   obtenerPlanilla: crearObtenerPlanilla({ planillas, clock }),
-  registrarFactura: crearRegistrarFactura({ facturas, clock, resolverCamion, programarPines }),
+  registrarFactura: crearRegistrarFactura({ facturas, clock, resolverCamion, programarPines, rutas }),
   buscarPinesPendientes: crearBuscarPinesPendientes({ clientes, cola: colaDePines, clock }),
   estadoBusquedaPines: crearEstadoBusquedaPines({ clientes, cola: colaDePines }),
   listarFacturas: crearListarFacturas({ facturas, clock, resolverCamion }),

@@ -7,23 +7,34 @@ import { errorApp, type ErrorApp } from '../errores.js';
 import type { ResolverCamion } from './jornada.js';
 import type { Clock } from '../ports/out/clock.js';
 import type { CambiosFactura, FacturaDetallada, FacturaRepository, FiltroFacturas } from '../ports/out/facturas.js';
+import type { RutaRepository } from '../ports/out/rutas.js';
 
 const sinCamion = () => errorApp('NO_ENCONTRADO', 'El camión no existe o está desactivado.');
 
 export type EntradaFactura = FacturaCruda & { readonly localId: string; readonly camionId?: string | undefined };
 
-/** Ingreso de una factura. Sin fecha se reparte hoy (hora de Chile). Un folio repetido se informa, nunca se duplica. */
-export const crearRegistrarFactura = ({ facturas, clock, resolverCamion, programarPines }: { facturas: FacturaRepository; clock: Clock; resolverCamion: ResolverCamion; programarPines?: (empresaId: string, localIds: readonly string[]) => void }) =>
+/**
+ * Ingreso de una factura. Sin fecha se reparte hoy (hora de Chile). Un folio repetido se informa, nunca se duplica.
+ *
+ * Con `rutas`, cargar una factura en un camión exige que la organización de su ruta (cómo se cargará y el orden de comunas) ya esté guardada para
+ * ese camión y día: se pregunta una vez, al empezar a cargar, y el sistema organiza con eso en cuenta. Sin ella, no se carga (también para quien use
+ * una app vieja que no lo pida). Una factura sin camión no tiene ruta que organizar.
+ */
+export const crearRegistrarFactura = ({ facturas, clock, resolverCamion, programarPines, rutas }: { facturas: FacturaRepository; clock: Clock; resolverCamion: ResolverCamion; programarPines?: (empresaId: string, localIds: readonly string[]) => void; rutas?: Pick<RutaRepository, 'obtener'> }) =>
   async (actor: Usuario, entrada: EntradaFactura): Promise<Result<FacturaDetallada, ErrorApp>> => {
     const v = validarFactura(entrada);
     if (!v.ok) return err(errorApp('VALIDACION', v.error.map((e) => e.mensaje).join(' '), { errores: v.error }));
     // Un chofer carga siempre en el camión de su jornada.
     const camion = await resolverCamion(actor, entrada.camionId);
     if (!camion.ok) return camion;
+    const fecha = v.value.fecha ?? fechaEnChile(clock.now());
+    if (rutas && camion.value !== undefined && !(await rutas.obtener(actor.empresaId, camion.value, fecha))) {
+      return err(errorApp('VALIDACION', 'Antes de cargar facturas elige cómo se organizará la ruta (y el orden de comunas, si quieres).', { codigo: 'RUTA_SIN_ORGANIZAR' }));
+    }
     const r = await facturas.crear(actor.empresaId, {
       ...(v.value.folio !== undefined ? { folio: v.value.folio } : {}),
       localId: entrada.localId,
-      fecha: v.value.fecha ?? fechaEnChile(clock.now()),
+      fecha,
       ...(camion.value !== undefined ? { camionId: camion.value } : {}),
       ...(v.value.total !== undefined ? { total: v.value.total } : {}),
       ...(v.value.antesDeMin !== undefined ? { antesDeMin: v.value.antesDeMin } : {}),

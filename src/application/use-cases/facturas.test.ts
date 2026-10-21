@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { crearActualizarCamion, crearCrearCamion, crearListarCamiones } from './camiones.js';
 import { crearActualizarFactura, crearListarFacturas, crearRegistrarFactura } from './facturas.js';
 import { crearReloj, usuarioDe } from './fakes.test-util.js';
@@ -71,6 +71,40 @@ describe('registrarFactura', () => {
     expect(!r.ok && r.error.mensaje).toContain('El folio solo puede tener');
     expect(!r.ok && r.error.mensaje).toContain('La hora límite no es válida.');
     expect(facturas.crear).not.toHaveBeenCalled();
+  });
+
+  describe('la organización de la ruta se elige antes de cargar', () => {
+    const guardada = { id: 'r-1', camionId: 'cam-1', fecha: '2026-10-05', salidaMin: 480, modo: 'sugerida' as const, version: 1, orden: [], fijas: [] };
+    const conRutas = (ruta: typeof guardada | undefined) => ({ obtener: vi.fn(() => Promise.resolve(ruta)) });
+
+    it('sin organización guardada para ese camión y día no se carga ninguna factura', async () => {
+      const facturas = fakeFacturas();
+      const rutas = conRutas(undefined);
+      const r = await crearRegistrarFactura({ facturas, clock, resolverCamion: resolverDePrueba(), rutas })(despachador, { folio: '1', localId: LOCAL, camionId: 'cam-1' });
+      expect(!r.ok && r.error).toMatchObject({ codigo: 'VALIDACION', detalle: { codigo: 'RUTA_SIN_ORGANIZAR' } });
+      expect(rutas.obtener).toHaveBeenCalledWith('empresa-1', 'cam-1', '2026-10-05');
+      expect(facturas.crear).not.toHaveBeenCalled();
+    });
+
+    it('con la organización guardada se carga normalmente', async () => {
+      const facturas = fakeFacturas();
+      const r = await crearRegistrarFactura({ facturas, clock, resolverCamion: resolverDePrueba(), rutas: conRutas(guardada) })(despachador, { folio: '1', localId: LOCAL, camionId: 'cam-1' });
+      expect(r.ok).toBe(true);
+      expect(facturas.crear).toHaveBeenCalledTimes(1);
+    });
+
+    it('se mira la fecha de la factura, no solo la de hoy', async () => {
+      const rutas = conRutas(undefined);
+      await crearRegistrarFactura({ facturas: fakeFacturas(), clock, resolverCamion: resolverDePrueba(), rutas })(despachador, { folio: '1', localId: LOCAL, camionId: 'cam-1', fecha: '2026-10-07' });
+      expect(rutas.obtener).toHaveBeenCalledWith('empresa-1', 'cam-1', '2026-10-07');
+    });
+
+    it('una factura sin camión no tiene ruta que organizar: se carga', async () => {
+      const rutas = conRutas(undefined);
+      const r = await crearRegistrarFactura({ facturas: fakeFacturas(), clock, resolverCamion: resolverDePrueba(), rutas })(despachador, { folio: '1', localId: LOCAL });
+      expect(r.ok).toBe(true);
+      expect(rutas.obtener).not.toHaveBeenCalled();
+    });
   });
 
   it.each([
