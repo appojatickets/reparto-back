@@ -36,6 +36,16 @@ const sembrar = async () => {
 };
 
 describe('pines Gemini con recorrido GPS real', () => {
+  it('una dirección corregida descarta el pin Gemini anterior si estaba pendiente, conservando uno confirmado', async () => {
+    const s = await sembrar();
+    await db.updateTable('local').set({ pin_fuente: 'gemini' }).where('id', '=', s.local).execute();
+    expect(await clientes.corregirDireccion(s.empresa, s.local, { direccion: 'Calle Nueva 20', comuna: 'Maipú' })).toBe('OK');
+    expect((await clientes.obtenerLocal(s.empresa, s.local))?.lat).toBeUndefined();
+    await clientes.fijarPinGeocodificado(s.empresa, s.local, PIN.lat, PIN.lng, 0.6, 'gemini');
+    await clientes.verificarPinPorEntregas(s.empresa, s.local, new Date());
+    await clientes.corregirDireccion(s.empresa, s.local, { direccion: 'Calle Nueva 20 A', comuna: 'Maipú' });
+    expect(await clientes.obtenerLocal(s.empresa, s.local)).toMatchObject({ ...PIN, pinVerificado: true });
+  });
   it('consolida solo tras dos entregas con detención del mismo local y respeta empresa y pin esperado', async () => {
     const s = await sembrar();
     const fechas = [2, 1].map(d => new Date(Date.now() - d * 86_400_000).toISOString().slice(0, 10));
