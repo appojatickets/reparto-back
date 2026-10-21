@@ -2,6 +2,7 @@ import { direccionParaBuscar } from '../../domain/valor/direccion-busqueda.js';
 import { evaluarGeocodificacion } from '../../domain/valor/geocodificacion.js';
 import type { ClienteRepository } from '../ports/out/clientes.js';
 import type { Clock } from '../ports/out/clock.js';
+import type { NormalizadorDirecciones } from '../ports/out/normalizador-direcciones.js';
 import type { Geocodificador } from '../ports/out/geocodificador.js';
 
 /** detener: algún buscador no respondió o llegó a su límite y ninguno dio un punto; no se marca el intento, se vuelve a probar más tarde. */
@@ -11,7 +12,7 @@ export type ResultadoGeocodificar = 'fijado' | 'sin_resultado' | 'ya_tiene_pin' 
  * Busca la dirección del local en el mapa y, si el punto sirve (calle o número, en su comuna, dentro de la región), lo deja como su pin
  * «sugerido». Sirve para todos los choferes y los días siguientes: cada dirección se busca una sola vez.
  */
-export const crearGeocodificarLocal = ({ clientes, geocodificadores, clock }: { clientes: ClienteRepository; geocodificadores: readonly Geocodificador[]; clock: Clock }) =>
+export const crearGeocodificarLocal = ({ clientes, geocodificadores, clock, normalizador, esperar }: { clientes: ClienteRepository; geocodificadores: readonly Geocodificador[]; clock: Clock; normalizador?: NormalizadorDirecciones | undefined; esperar?: ((ms: number) => Promise<void>) | undefined }) =>
   async (empresaId: string, localId: string): Promise<ResultadoGeocodificar> => {
     const local = await clientes.obtenerLocal(empresaId, localId);
     if (!local) return 'no_existe';
@@ -35,6 +36,22 @@ export const crearGeocodificarLocal = ({ clientes, geocodificadores, clock }: { 
       if (!aceptada) continue;
       const fijado = await clientes.fijarPinGeocodificado(empresaId, localId, r.value.lat, r.value.lng, aceptada.confianza);
       return fijado ? 'fijado' : 'ya_tiene_pin';
+    }
+    // La IA solo ayuda tras agotar los mapas sin errores; nunca recibe datos del cliente ni su recorrido.
+    if (!fallo && normalizador) {
+      const alternativa = await normalizador.normalizar(calle, local.comuna).catch(() => undefined);
+      if (alternativa) {
+        await esperar?.(1000); // Mantiene al menos un segundo entre consultas al mismo mapa.
+        for (const geocodificador of geocodificadores) {
+          const r = await geocodificador.buscar(`${alternativa}, ${local.comuna}, Región Metropolitana, Chile`);
+          if (!r.ok) { if (r.error !== 'SIN_RESULTADO') fallo = true; continue; }
+          // Una dirección reinterpretada exige confirmación: no asciende a pin preciso aunque el mapa dé un número exacto.
+          const aceptada = evaluarGeocodificacion({ ...r.value, precision: r.value.precision === 'exacta' ? 'calle' : r.value.precision }, local.comuna);
+          if (!aceptada) continue;
+          const fijado = await clientes.fijarPinGeocodificado(empresaId, localId, r.value.lat, r.value.lng, aceptada.confianza);
+          return fijado ? 'fijado' : 'ya_tiene_pin';
+        }
+      }
     }
     // Si algún buscador no respondió (caído o sin cupo) no se da por perdido: no se anota el intento y se vuelve a probar.
     if (fallo) return 'detener';

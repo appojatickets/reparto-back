@@ -1,3 +1,4 @@
+import { crearGeminiDirecciones } from './adapters/out/red/gemini-direcciones.js';
 import { crearVisitasPendientes } from './application/use-cases/visitas-pendientes.js';
 import { asegurarEsquemaCajas } from './adapters/out/postgres/esquema-cajas.js';
 import { crearControlCajas } from './application/use-cases/cajas.js';
@@ -109,10 +110,12 @@ const clock = relojDelSistema;
 
 // Casos de uso con sus puertos inyectados
 const resolverCamion = crearResolverCamion({ jornadas, clock });
+const esperarGeocodificacion = (ms: number): Promise<void> => new Promise(resolver => { setTimeout(resolver, ms); });
+console.info('Gemini direcciones:', !env.GEMINI_ENABLED ? 'desactivado' : env.GEMINI_API_KEY ? 'habilitado' : 'sin clave; se mantienen los mapas habituales');
 // Búsqueda del pin por la dirección: una cola en memoria, de a uno por segundo, que no hace esperar a nadie.
 const colaDePines = crearColaGeocodificacion({
-  geocodificar: crearGeocodificarLocal({ clientes, geocodificadores: [crearNominatimGeocodificador(env.GEOCODER_USER_AGENT), ...(env.ORS_API_KEY ? [crearOrsGeocodificador(env.ORS_API_KEY)] : [])], clock }),
-  esperar: (ms) => new Promise((resolver) => { setTimeout(resolver, ms); }),
+  geocodificar: crearGeocodificarLocal({ clientes, esperar: esperarGeocodificacion, normalizador: env.GEMINI_ENABLED && env.GEMINI_API_KEY ? crearGeminiDirecciones({ clave: env.GEMINI_API_KEY, modelo: env.GEMINI_MODEL, limiteDiario: env.GEMINI_DAILY_LIMIT, alEstado: estado => { console.info('Gemini direcciones:', estado); } }) : undefined, geocodificadores: [crearNominatimGeocodificador(env.GEOCODER_USER_AGENT), ...(env.ORS_API_KEY ? [crearOrsGeocodificador(env.ORS_API_KEY)] : [])], clock }),
+  esperar: esperarGeocodificacion,
 });
 const programarPines = (empresaId: string, localIds: readonly string[]): void => { colaDePines.encolar(empresaId, localIds); };
 const aprendizaje = new PostgresAprendizajeRepository(db);
