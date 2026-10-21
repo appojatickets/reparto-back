@@ -5,6 +5,7 @@ import { PostgresEntregaRepository } from '../../src/adapters/out/postgres/repos
 import { PostgresReporteLocalRepository } from '../../src/adapters/out/postgres/repositorio-reportes-local.js';
 import { PostgresFacturaRepository } from '../../src/adapters/out/postgres/repositorio-facturas.js';
 import { crearObtenerLocal } from '../../src/application/use-cases/obtener-local.js';
+import { crearVerificarPinesRespaldados } from '../../src/application/use-cases/verificar-pines-respaldados.js';
 import { abrirDb, crearEmpresa, crearUsuario } from './utils.js';
 
 const db = abrirDb();
@@ -33,6 +34,41 @@ const sembrar = async () => {
   const actor = { id: usuario, empresaId: empresa, rol: 'admin' as const, username: 'admin', nombre: 'Admin', activo: true, editor: false };
   return { empresa, local, entregar, actor };
 };
+
+describe('pines Gemini con recorrido GPS real', () => {
+  it('una dirección corregida descarta el pin Gemini anterior si estaba pendiente, conservando uno confirmado', async () => {
+    const s = await sembrar();
+    await db.updateTable('local').set({ pin_fuente: 'gemini' }).where('id', '=', s.local).execute();
+    expect(await clientes.corregirDireccion(s.empresa, s.local, { direccion: 'Calle Nueva 20', comuna: 'Maipú' })).toBe('OK');
+    expect((await clientes.obtenerLocal(s.empresa, s.local))?.lat).toBeUndefined();
+    await clientes.fijarPinGeocodificado(s.empresa, s.local, PIN.lat, PIN.lng, 0.6, 'gemini');
+    await clientes.verificarPinPorEntregas(s.empresa, s.local, new Date());
+    await clientes.corregirDireccion(s.empresa, s.local, { direccion: 'Calle Nueva 20 A', comuna: 'Maipú' });
+    expect(await clientes.obtenerLocal(s.empresa, s.local)).toMatchObject({ ...PIN, pinVerificado: true });
+  });
+  it('consolida solo tras dos entregas con detención del mismo local y respeta empresa y pin esperado', async () => {
+    const s = await sembrar();
+    const fechas = [2, 1].map(d => new Date(Date.now() - d * 86_400_000).toISOString().slice(0, 10));
+    for (const fecha of fechas) await s.entregar(fecha, 0);
+    await db.updateTable('local').set({ pin_fuente: 'gemini' }).where('id', '=', s.local).execute();
+    const eventos = await db.selectFrom('entrega_evento').select(['camion_id', 'creado_en']).where('local_id', '=', s.local).orderBy('creado_en').execute();
+    const verificar = crearVerificarPinesRespaldados({ clientes, entregas, clock: { now: () => new Date() } });
+    expect(await verificar(s.empresa)).toBe(0); // Dos botones, sin recorrido.
+    for (let i = 0; i < eventos.length; i++) {
+      const e = eventos[i];
+      if (!e?.camion_id) throw new Error('camión');
+      for (const segundos of [-90, -30]) {
+        await db.insertInto('posicion_camion').values({ empresa_id: s.empresa, camion_id: e.camion_id, usuario_id: s.actor.id, ...PIN, precision_m: 10, velocidad_ms: 0, tomado_en: new Date(e.creado_en.getTime() + segundos * 1000) }).execute();
+      }
+      if (i === 0) expect(await verificar(s.empresa)).toBe(0);
+    }
+    expect((await entregas.visitasDetenidasDeLocales(s.empresa, [s.local], 20)).get(s.local)).toHaveLength(2);
+    expect(await entregas.visitasDetenidasDeLocales((await sembrar()).empresa, [s.local], 20)).toEqual(new Map());
+    expect(await clientes.verificarPinPorEntregas(s.empresa, s.local, new Date(), { lat: PIN.lat + 0.01, lng: PIN.lng })).toBe(false);
+    expect(await verificar(s.empresa)).toBe(1);
+    expect(await clientes.obtenerLocal(s.empresa, s.local)).toMatchObject({ pinFuente: 'gemini', pinVerificacion: 'entregas', pinVerificado: true });
+  });
+});
 
 describe('qué tan firme es el pin según las entregas (Postgres real)', () => {
   it('trae solo ENTREGADO con buen GPS, la más reciente primero, con su fecha, y respeta el límite y la empresa', async () => {

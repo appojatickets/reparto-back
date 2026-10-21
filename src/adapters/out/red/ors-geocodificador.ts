@@ -31,7 +31,9 @@ const aGeocodificacion = (l: Lugar): Geocodificacion | undefined => {
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return undefined;
   const propiedades = l.properties ?? {};
   const comuna = comunaDe(propiedades);
-  return { lat, lng, precision: precisionDe(propiedades), ...(comuna !== undefined ? { comuna } : {}) };
+  const calle = propiedades['street'], numero = propiedades['housenumber'];
+  const direccion = typeof calle === 'string' && (typeof numero === 'string' || typeof numero === 'number') ? `${calle} ${numero}` : undefined;
+  return { lat, lng, precision: precisionDe(propiedades), ...(comuna !== undefined ? { comuna } : {}), ...(direccion ? { direccion } : {}) };
 };
 
 /**

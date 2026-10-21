@@ -80,5 +80,6 @@ export const fakeEntregasRuta = () =>
     eventosDeLocales: vi.fn<EntregaRepository['eventosDeLocales']>(() => Promise.resolve(new Map())),
     eventosDeLocal: vi.fn<EntregaRepository['eventosDeLocal']>(() => Promise.resolve([])),
     visitasConGps: vi.fn<EntregaRepository['visitasConGps']>(() => Promise.resolve([])),
+    visitasDetenidasDeLocales: vi.fn<NonNullable<EntregaRepository['visitasDetenidasDeLocales']>>(() => Promise.resolve(new Map())),
     visitasConGpsDeLocales: vi.fn<EntregaRepository['visitasConGpsDeLocales']>(() => Promise.resolve(new Map())),
   }) satisfies EntregaRepository;

@@ -2,7 +2,7 @@ import type { ClienteImportable } from '../../../domain/importacion/fila-cliente
 import type { Result } from '../../../domain/shared/result.js';
 
 export type EstadoPin = 'pendiente' | 'sugerido' | 'validado';
-export type FuentePin = 'geocodificador' | 'manual' | 'importado' | 'aprendido' | 'chofer' | 'enlace';
+export type FuentePin = 'geocodificador' | 'manual' | 'importado' | 'aprendido' | 'chofer' | 'enlace' | 'gemini';
 
 export type ResultadoBusqueda = {
   readonly localId: string;
@@ -177,7 +177,7 @@ export interface ClienteRepository {
    * Las entregas confirmaron el pin: queda verificado sin que lo mire nadie (no se mueve solo). Solo si tiene pin y todavía no está verificado.
    * Devuelve si lo verificó.
    */
-  verificarPinPorEntregas(empresaId: string, localId: string, en: Date): Promise<boolean>;
+  verificarPinPorEntregas(empresaId: string, localId: string, en: Date, pinEsperado?: { readonly lat: number; readonly lng: number }): Promise<boolean>;
   /** Locales con pin para revisar: los «por verificar» (en orden de comuna) o los «verificados» (los más recientes primero), hasta `limite`. */
   listarPinesParaRevisar(empresaId: string, estado: 'por_verificar' | 'verificados', limite: number): Promise<readonly LocalConPin[]>;
   /** Cuántos locales tienen pin verificado, pin por verificar y ningún pin. */
@@ -213,5 +213,5 @@ export interface ClienteRepository {
   /** Anota que se buscó la dirección de este local (con o sin éxito), para no repetir la búsqueda cada vez. */
   marcarIntentoGeocodificacion(empresaId: string, localId: string, ahora: Date): Promise<void>;
   /** Pin hallado por la dirección («sugerido», fuente geocodificador). Solo si el local no tiene un pin mejor. Devuelve si lo fijó. */
-  fijarPinGeocodificado(empresaId: string, localId: string, lat: number, lng: number, confianza: number): Promise<boolean>;
+  fijarPinGeocodificado(empresaId: string, localId: string, lat: number, lng: number, confianza: number, fuente?: 'geocodificador' | 'gemini'): Promise<boolean>;
 }

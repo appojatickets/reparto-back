@@ -3,7 +3,7 @@ import { posicionSirveParaPin, RADIO_ACUERDO_PIN_M, type PosicionDeEntrega } fro
 import type { VisitaConGps } from './respaldo-del-pin.js';
 
 /** De dónde salió el pin del local. */
-export type FuentePinVerificable = 'geocodificador' | 'manual' | 'importado' | 'aprendido' | 'chofer' | 'enlace';
+export type FuentePinVerificable = 'geocodificador' | 'manual' | 'importado' | 'aprendido' | 'chofer' | 'enlace' | 'gemini';
 
 /**
  * Fuentes que no dependen de una entrega: el buscador por dirección, un enlace pegado, una planilla o una persona. Una entrega con buen
@@ -24,6 +24,7 @@ export const PRECISION_FIRME_M = 25;
  * Lo que manda es lo que se hace: dónde de verdad se entrega.
  */
 export const confirmaElPin = (pin: Coordenada, fuente: FuentePinVerificable | undefined, entrega: PosicionDeEntrega, visitas: readonly VisitaConGps[]): boolean => {
+  if (fuente === 'gemini') return false; // Requiere el flujo de dos visitas con detención, nunca este atajo.
   if (!posicionSirveParaPin(entrega)) return false;
   if (distanciaKm(pin, entrega) * 1000 > RADIO_ACUERDO_PIN_M) return false;
   if (fuente !== undefined && FUENTES_INDEPENDIENTES.includes(fuente)) return true;

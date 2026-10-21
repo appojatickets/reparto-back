@@ -27,7 +27,7 @@ export type Tabla = {
     lat: number | null;
     lng: number | null;
     pin_estado: Generated<'pendiente' | 'sugerido' | 'validado'>;
-    pin_fuente: 'geocodificador' | 'manual' | 'importado' | 'aprendido' | 'chofer' | 'enlace' | null;
+    pin_fuente: 'geocodificador' | 'manual' | 'importado' | 'aprendido' | 'chofer' | 'enlace' | 'gemini' | null;
     pin_confianza: number | null;
     foto_path: string | null;
     foto_por: string | null;
